@@ -94,16 +94,41 @@ class Memory (Framework):
             )
             self.slide_joint(row_selector, groundBody, (0,1), -7, 0)
 
+        # Row followrs
+        followers = []
         for row in range(0,8):
             row_follower_fixtures = []
-            for selector_no in range(0,selector_rods):
+            for selector_no in range(0,selector_rods+1):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+35,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            ejector = self.world.CreateDynamicBody(
+            follower = self.world.CreateDynamicBody(
                 position=(200, 0),
                 fixtures=row_follower_fixtures)
+            followers.append(follower)
+            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
+
+        row_holdoff = self.world.CreateDynamicBody(
+            position=(200,0),
+            fixtures = fixtureDef(shape=makeBox(14+25*selector_rods,0,3,14*memory_rows+20), density=1.0,
+                                  filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
+            )
+        row_holdoff_supports = []
+        for i in range(0,2):
+            pos = (14+25*selector_rods,(14*row)*i)
+            support = self.world.CreateDynamicBody( position=(200,0),
+                                                    fixtures = fixtureDef(shape=makeBox(pos[0], pos[1],3,30), density=1.0,
+                                                                          filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
+            row_holdoff_supports.append(support)
+            self.world.CreateRevoluteJoint(bodyA=support, bodyB=groundBody, anchor=(200+pos[0], pos[1]))
+            self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(200+pos[0]+1.5, pos[1]+30))
+
+        # Rods which connect row selectors to ejectors
+        for r in range(0,memory_rows):
+            self.world.CreateDistanceJoint(bodyA=ejectors[r],
+	                              bodyB=followers[r],
+	                                anchorA=(200, 14*row+10),
+	                              anchorB=(200+selector_no*25+35,14*row+10),
+	                                   collideConnected=False)
             
-            self.slide_joint(ejector, groundBody, (1,0), limit1=0, limit2=20)
-    
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
