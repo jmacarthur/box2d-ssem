@@ -164,7 +164,6 @@ class Memory (Framework):
             followers.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
 
-
         self.rotating_bar(200+25*selector_rods+14,0,14*memory_rows+20, groundBody)
         self.rotating_bar(-20,0,14*memory_rows+20, groundBody)
             
@@ -178,6 +177,8 @@ class Memory (Framework):
 
         self.diverter_set(0,-50, groundBody)
         self.regenerator(0,-80, groundBody)
+        self.diverter_set(0,-120, groundBody)
+        self.diverter_set(-5,-160, groundBody)
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
