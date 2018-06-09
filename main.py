@@ -60,28 +60,52 @@ class Memory (Framework):
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
 
-    def diverter_set(self, xpos, ypos, attachment_body):
+    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False):        
+        filterA = filters[0]
+        filterB = filters[1]
+        if inverted: (filterA, filterB) = (filterB, filterA)
         conrod = self.world.CreateDynamicBody(
             position=(xpos,ypos),
             fixtures = fixtureDef(shape=makeBox(0,15,pitch*8,2), density=1.0,
-                                  filter=filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000)) # Never collides with anything
+                                  filter=filterB) # Never collides with anything
         )
         for c in range(0,8):
             diverter = self.world.CreateDynamicBody(
                 position=(xpos,ypos),
                 fixtures = fixtureDef(shape=makeBox(c*pitch,0,3,20), density=1.0,
-                                      filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
+                                      filter=filterA)
             )
             self.world.CreateRevoluteJoint(bodyA=diverter, bodyB=attachment_body, anchor=(xpos+c*pitch, ypos))
             self.world.CreateRevoluteJoint(bodyA=diverter, bodyB=conrod, anchor=(xpos+c*pitch, ypos+15))
 
+        transfer_band_x = []
+
         for c in range(0,8):
-            self.world.CreateStaticBody(shapes=makeBox(c*pitch+xpos, -12+ypos,2,10))
-            self.world.CreateStaticBody(shapes=makeBox(c*pitch+xpos+11, -12+ypos,2,25))
-            self.world.CreateStaticBody(shapes=makeBox(c*pitch+xpos+2, -12+ypos,11,3))
-        
-        self.world.CreateStaticBody(shapes=circleShape(radius=5, pos=(xpos-10, ypos+15)))
-        self.world.CreateStaticBody(shapes=circleShape(radius=5, pos=(xpos+pitch*8-5, ypos+15)))
+            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos,2,10), filter=filterA))
+            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos+11, -12+ypos,2,25), filter=filterA))
+            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos+2, -12+ypos,11,3), filter=filterA))
+            transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
+
+        if discard:
+            fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (170,-10), (170,-13), (0,-3) ]),
+                                 filter = filterB)
+            self.world.CreateStaticBody(position=(xpos,ypos-11), fixtures=fixture)                
+        else:
+            slope_x = 200
+            slope_y = 100
+            exit_transfer_band_x = []
+            for c in range(0,8):
+                fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ]),
+                                     filter = filterB)
+                self.world.CreateStaticBody(position=(c*pitch+xpos, ypos-10), fixtures=fixture)
+                exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch))
+            self.transfer_bands.append((ypos-10-slope_y+10, ypos-10-slope_y, exit_transfer_band_x, 1))
+
+
+        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=5, pos=(xpos-10, ypos+15)), filter=filterA))
+        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=5, pos=(xpos+pitch*8-5, ypos+15)), filter=filterA))
+
+        self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
 
     def regenerator(self, xpos, ypos, attachment_body, crank_list):
         regen_parts = []
@@ -124,8 +148,8 @@ class Memory (Framework):
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body):
-        for c in range(0,8):
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8):
+        for c in range(0,lines):
             input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
             output_toggle = self.subtractor_output_toggle(xpos+c*pitch-pitch, ypos-150+20*c, attachment_body)
             self.world.CreateDistanceJoint(bodyA=input_toggle,
@@ -260,14 +284,15 @@ class Memory (Framework):
         self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
         
     def add_ball_bearing(self, xpos, ypos, plane):
-        self.world.CreateDynamicBody(
+        bearing = self.world.CreateDynamicBody(
             position=(xpos, ypos),
             fixtures=[fixtureDef(
-                shape=circleShape(radius=6.35/2, pos=(22,150)),
+                shape=circleShape(radius=6.35/2, pos=(0,0)),
                 density=5.0,
                 filter=filters[plane])]
 
         )
+        self.ball_bearings.append((bearing,plane))
 
     def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
@@ -357,7 +382,8 @@ class Memory (Framework):
             self.injector_cranks[i]
     def __init__(self):
         super(Memory, self).__init__()
-
+        self.transfer_bands = []
+        self.ball_bearings = []
         memory_fixed_shapes = []
         for row in range(0,8):
             for col in range(0,8):
@@ -368,20 +394,22 @@ class Memory (Framework):
 
         memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
         
-        for i in range(0,10):
-            test_data = self.add_ball_bearing(-100+7*i,100,0)
-
+        for r in range(0,3):
+            for i in range(0,10):
+                test_data = self.add_ball_bearing(-100+7*i,200+7*r,0)
 
         self.injector(-32,110, groundBody)
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        self.diverter_set(0,-50, groundBody)
+        self.diverter_set(-5,-50, groundBody, discard=True)
         self.regenerator(0,-80, groundBody, self.upper_regenerators)
         self.diverter_set(0,-120, groundBody)
-        self.diverter_set(-5,-160, groundBody)
+        self.diverter_set(200,-260, groundBody, inverted = False)
         self.subtractor(0,-210, groundBody)
         self.lower_regenerators = []
         self.regenerator(0,-380, groundBody, self.lower_regenerators)
+
+        self.subtractor(200,-310, groundBody, lines=5)
 
         self.connect_regenerators()
         # gutter
@@ -396,12 +424,30 @@ class Memory (Framework):
         wall_vertices = self.translate_points(wall_vertices, -300, 0)
         self.world.CreateStaticBody(shapes=polygonShape(vertices=wall_vertices))
 
-        self.ball_bearing_lift(-200,-400,groundBody)
+        #self.ball_bearing_lift(-200,-400,groundBody)
         
+        test_data = self.add_ball_bearing(10,-100,0)
         
     def Step(self, settings):
         super(Memory, self).Step(settings)
-
+        for i in range(0,len(self.ball_bearings)):
+            (b, plane) = self.ball_bearings[i]
+            (x,y) = b.worldCenter
+            for (top, bottom, xbands, source_plane) in self.transfer_bands:
+                if y<top and y>bottom and plane == source_plane:
+                    for (left, right) in xbands:
+                        if x>left and x<right:
+                            self.world.DestroyBody(b)
+                            plane = 1-source_plane
+                            print("Flipping ball bearing from plane %d to plane %d"%(source_plane, plane))
+                            self.ball_bearings[i] = (self.world.CreateDynamicBody(
+                                position=(x, y),
+                                fixtures=[fixtureDef(
+                                    shape=circleShape(radius=6.35/2, pos=(0,0)),
+                                    density=5.0,
+                                    filter=filters[plane])]
+                                
+                            ),plane)
 if __name__ == "__main__":
     main(Memory)
 
