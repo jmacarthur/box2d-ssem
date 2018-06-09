@@ -204,19 +204,19 @@ class Memory (Framework):
         intake_angle = radians(10)
         height = 40
         crank_offset = pitch-10
-        crank_y = 69
+        crank_y = 19
         for c in range(0,8):
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,height-c*pitch*math.sin(intake_angle)-(pitch-7)*math.sin(intake_angle)), (0,height-c*pitch*math.sin(intake_angle)) ]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(xpos, ypos), shapes=divider_shape)
+            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
             
 
         for c in range(0,8):
             divider_vertices = [ (10,-20), (24,-20), (24,-13), (10,-15)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(xpos, ypos), shapes=divider_shape)
+            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
 
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
                                 fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filters[0]) ]
@@ -228,18 +228,18 @@ class Memory (Framework):
             divider_vertices = [ (10,-10), (12,-10), (12,-3), (10,-3)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(xpos, ypos), shapes=divider_shape)
+            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
             
         divider_vertices = [ (0,0), (9*pitch,-9*pitch*math.sin(intake_angle)), (9*pitch,height), (0,height) ]
         divider_vertices = self.translate_points(divider_vertices, xpos, ypos+height+45)
         divider_shape = polygonShape(vertices=divider_vertices)
-        self.world.CreateStaticBody(position=(xpos, ypos), shapes=divider_shape)
+        self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
 
         # End stop on the right
         divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ]
         divider_vertices = self.translate_points(divider_vertices, xpos+8*pitch, ypos+pitch+10)
         divider_shape = polygonShape(vertices=divider_vertices)
-        self.world.CreateStaticBody(position=(xpos, ypos), shapes=divider_shape)
+        self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
         
             
         
@@ -254,26 +254,7 @@ class Memory (Framework):
 
         )
 
-
-    def __init__(self):
-        super(Memory, self).__init__()
-
-        memory_fixed_shapes = []
-        for row in range(0,8):
-            for col in range(0,8):
-                memory_fixed_shapes.append(makeBox(22*col,14*row,14,7))
-                memory_fixed_shapes.append(makeBox(22*col+14-3+1,14*row+6,3,8))
-        groundBox = makeBox(-20,-200,40,1)
-        groundBody = self.world.CreateStaticBody(shapes=groundBox)
-
-        memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
-        
-        test_data = self.add_ball_bearing(-10,0,0)
-
-
-        self.injector(0,50, groundBody)
-
-
+    def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
@@ -337,6 +318,30 @@ class Memory (Framework):
 	                              anchorB=(200+selector_no*25+35,14*row+10),
 	                                   collideConnected=False)
 
+        # Wall on the left of the memory to create the final channel
+        
+        memory_fixed = self.world.CreateStaticBody(shapes=makeBox(-10,0,3,14*8))
+
+            
+    def __init__(self):
+        super(Memory, self).__init__()
+
+        memory_fixed_shapes = []
+        for row in range(0,8):
+            for col in range(0,8):
+                memory_fixed_shapes.append(makeBox(22*col,14*row,14,7))
+                memory_fixed_shapes.append(makeBox(22*col+14-3+1,14*row+6,3,8))
+        groundBox = makeBox(-20,-200,40,1)
+        groundBody = self.world.CreateStaticBody(shapes=groundBox)
+
+        memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
+        
+        test_data = self.add_ball_bearing(-10,0,0)
+
+
+        self.injector(-32,110, groundBody)
+        self.memory_module(0,0, groundBody)
+      
         self.diverter_set(0,-50, groundBody)
         self.regenerator(0,-80, groundBody)
         self.diverter_set(0,-120, groundBody)
