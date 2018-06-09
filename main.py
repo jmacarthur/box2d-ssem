@@ -28,8 +28,24 @@ class Memory (Framework):
             lowerTranslation=limit1,
             upperTranslation=limit2,
             enableLimit=True,
+        )
+
+    def rotating_bar(self, xpos, ypos, height, attachment_body):
+        row_holdoff = self.world.CreateDynamicBody(
+            position=(xpos,0),
+            fixtures = fixtureDef(shape=makeBox(0,0,3,height), density=1.0,
+                                  filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
             )
-        
+        row_holdoff_supports = []
+        for i in range(0,2):
+            pos = (0,(14*6)*i)
+            support = self.world.CreateDynamicBody( position=(xpos,0),
+                                                    fixtures = fixtureDef(shape=makeBox(pos[0], pos[1],3,30), density=1.0,
+                                                                          filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
+            row_holdoff_supports.append(support)
+            self.world.CreateRevoluteJoint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
+            self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
+
     
     def __init__(self):
         super(Memory, self).__init__()
@@ -106,21 +122,10 @@ class Memory (Framework):
             followers.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
 
-        row_holdoff = self.world.CreateDynamicBody(
-            position=(200,0),
-            fixtures = fixtureDef(shape=makeBox(14+25*selector_rods,0,3,14*memory_rows+20), density=1.0,
-                                  filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
-            )
-        row_holdoff_supports = []
-        for i in range(0,2):
-            pos = (14+25*selector_rods,(14*row)*i)
-            support = self.world.CreateDynamicBody( position=(200,0),
-                                                    fixtures = fixtureDef(shape=makeBox(pos[0], pos[1],3,30), density=1.0,
-                                                                          filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
-            row_holdoff_supports.append(support)
-            self.world.CreateRevoluteJoint(bodyA=support, bodyB=groundBody, anchor=(200+pos[0], pos[1]))
-            self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(200+pos[0]+1.5, pos[1]+30))
 
+        self.rotating_bar(200+25*selector_rods+14,0,14*memory_rows+20, groundBody)
+        self.rotating_bar(-20,0,14*memory_rows+20, groundBody)
+            
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
             self.world.CreateDistanceJoint(bodyA=ejectors[r],
