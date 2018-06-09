@@ -26,7 +26,7 @@ class Memory (Framework):
 
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         memory_fixed = self.world.CreateStaticBody(shapes = memory_fixed_shapes)
-        bodyA = self.world.CreateDynamicBody(
+        test_data = self.world.CreateDynamicBody(
             position=(-10, 0),
             fixtures=[fixtureDef(
                 shape=circleShape(radius=6.35/2, pos=(22,150)),
@@ -78,6 +78,23 @@ class Memory (Framework):
 
             )
 
+
+        row_selector_fixtures = []
+        for row in range(0,8):
+            selector_no = 0
+            enabled = (row >> selector_no) & 1
+            row_selector_fixtures.append(
+                fixtureDef(shape=makeBox(14,14*row+7*enabled,14,7),             density=1.0,
+                           filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
+                )
+            
+        row_selector = self.world.CreateDynamicBody(
+            position=(200, 0),
+            fixtures=row_selector_fixtures,
+        )
+
+
+            
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
