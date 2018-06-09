@@ -83,7 +83,7 @@ class Memory (Framework):
         self.world.CreateStaticBody(shapes=circleShape(radius=5, pos=(xpos-10, ypos+15)))
         self.world.CreateStaticBody(shapes=circleShape(radius=5, pos=(xpos+pitch*8-5, ypos+15)))
 
-    def regenerator(self, xpos, ypos, attachment_body):
+    def regenerator(self, xpos, ypos, attachment_body, crank_list):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
@@ -97,7 +97,9 @@ class Memory (Framework):
                                 fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+8, 3, 12), density=1.0) ]
 
             bellcrank = self.world.CreateDynamicBody(fixtures = bellcrank_shape)
-            self.world.CreateRevoluteJoint(bodyA=bellcrank, bodyB=attachment_body, anchor=(xpos+c*pitch, -12+ypos+20))
+            anchorpos = (xpos+c*pitch, -12+ypos+20)
+            self.world.CreateRevoluteJoint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos)
+            crank_list.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             
         pusher_body = self.world.CreateDynamicBody(fixtures = pusher_parts)
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0)
@@ -211,7 +213,7 @@ class Memory (Framework):
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
             
-
+        self.injector_cranks = []
         for c in range(0,8):
             divider_vertices = [ (10,-20), (24,-20), (24,-13), (10,-15)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
@@ -222,8 +224,11 @@ class Memory (Framework):
                                 fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filters[0]) ]
 
             bellcrank = self.world.CreateDynamicBody(fixtures = bellcrank_shape)
-            self.world.CreateRevoluteJoint(bodyA=bellcrank, bodyB=attachment_body, anchor=(xpos+c*pitch+crank_offset, ypos+crank_y+10))
+            anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
+            self.world.CreateRevoluteJoint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos)
+            self.injector_cranks.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
 
+            
         for c in range(0,9):
             divider_vertices = [ (10,-10), (12,-10), (12,-3), (10,-3)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
@@ -240,9 +245,6 @@ class Memory (Framework):
         divider_vertices = self.translate_points(divider_vertices, xpos+8*pitch, ypos+pitch+10)
         divider_shape = polygonShape(vertices=divider_vertices)
         self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
-        
-            
-        
         
     def add_ball_bearing(self, xpos, ypos, plane):
         self.world.CreateDynamicBody(
@@ -322,7 +324,24 @@ class Memory (Framework):
         
         memory_fixed = self.world.CreateStaticBody(shapes=makeBox(-10,0,3,14*8))
 
-            
+    def connect_regenerators(self):
+        for i in range(0,8):
+            (objectA, posA) = self.injector_cranks[i]
+            (objectB, posB) = self.upper_regenerators[i]
+            self.world.CreateDistanceJoint(bodyA=objectA,
+	                                   bodyB=objectB,
+	                                   anchorA=posA,
+	                                   anchorB=posB,
+	                                   collideConnected=False)
+            (objectA, posA) = self.upper_regenerators[i]
+            (objectB, posB) = self.lower_regenerators[i]
+            self.world.CreateDistanceJoint(bodyA=objectA,
+	                                   bodyB=objectB,
+	                                   anchorA=posA,
+	                                   anchorB=posB,
+	                                   collideConnected=False)
+
+            self.injector_cranks[i]
     def __init__(self):
         super(Memory, self).__init__()
 
@@ -341,15 +360,16 @@ class Memory (Framework):
 
         self.injector(-32,110, groundBody)
         self.memory_module(0,0, groundBody)
-      
+        self.upper_regenerators = []
         self.diverter_set(0,-50, groundBody)
-        self.regenerator(0,-80, groundBody)
+        self.regenerator(0,-80, groundBody, self.upper_regenerators)
         self.diverter_set(0,-120, groundBody)
         self.diverter_set(-5,-160, groundBody)
         self.subtractor(0,-210, groundBody)
-        self.regenerator(0,-380, groundBody)
+        self.lower_regenerators = []
+        self.regenerator(0,-380, groundBody, self.lower_regenerators)
 
-
+        self.connect_regenerators()
         # gutter
         gutter_vertices = [ (0,0), (pitch*9,10), (pitch*9,-10), (0,-10) ]
         gutter_vertices = self.translate_points(gutter_vertices, -20, -420)
