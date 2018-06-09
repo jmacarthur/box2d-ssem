@@ -207,6 +207,14 @@ class Memory (Framework):
         height = 40
         crank_offset = pitch-10
         crank_y = 19
+
+        intake_vertices = [ (0,0), (100,0), (100,10), (0,10) ]
+        intake_vertices = rotate_polygon(intake_vertices, -180 - 10)
+        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+72)
+        intake_shape = polygonShape(vertices=intake_vertices)
+        self.world.CreateStaticBody(position=(0,0), shapes=intake_shape)
+
+
         for c in range(0,8):
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,height-c*pitch*math.sin(intake_angle)-(pitch-7)*math.sin(intake_angle)), (0,height-c*pitch*math.sin(intake_angle)) ]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
@@ -231,6 +239,11 @@ class Memory (Framework):
             
         for c in range(0,9):
             divider_vertices = [ (10,-10), (12,-10), (12,-3), (10,-3)]
+            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
+            divider_shape = polygonShape(vertices=divider_vertices)
+            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
+
+            divider_vertices = [ (21,-6), (23,-6), (23,-3), (21,-3)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
@@ -350,12 +363,13 @@ class Memory (Framework):
             for col in range(0,8):
                 memory_fixed_shapes.append(makeBox(22*col,14*row,14,7))
                 memory_fixed_shapes.append(makeBox(22*col+14-3+1,14*row+6,3,8))
-        groundBox = makeBox(-20,-200,40,1)
+        groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
 
         memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
         
-        test_data = self.add_ball_bearing(-10,0,0)
+        for i in range(0,10):
+            test_data = self.add_ball_bearing(-100+7*i,100,0)
 
 
         self.injector(-32,110, groundBody)
@@ -391,3 +405,4 @@ class Memory (Framework):
 if __name__ == "__main__":
     main(Memory)
 
+    
