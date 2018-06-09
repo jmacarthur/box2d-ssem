@@ -13,6 +13,9 @@ def makeBox(x, y, width, height):
 selector_rods = 3
 memory_rows = 1<<selector_rods
 pitch = 22
+
+filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
+           filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000)]
 class Memory (Framework):
     name = ""
 
@@ -83,12 +86,50 @@ class Memory (Framework):
 
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+20, 10, 3), density=1.0),
                                 fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+8, 3, 12), density=1.0) ]
+
             bellcrank = self.world.CreateDynamicBody(fixtures = bellcrank_shape)
             self.world.CreateRevoluteJoint(bodyA=bellcrank, bodyB=attachment_body, anchor=(xpos+c*pitch, -12+ypos+20))
             
         pusher_body = self.world.CreateDynamicBody(fixtures = pusher_parts)
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0)
+
+    def toggle(self, xpos, ypos, attachment_body):
+        toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
+                            fixtureDef(shape=makeBox(xpos-1.5, ypos, 3, 10), density=1.0) ]
+        toggle = self.world.CreateDynamicBody(fixtures = toggle_shape)
+        self.world.CreateRevoluteJoint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos),
+                                       maxMotorTorque = 10000.0,
+                                       motorSpeed = 0.0,
+                                       enableMotor = True)
+        self.world.CreateStaticBody(shapes=makeBox(xpos-3, ypos-3,6,3))
+        return toggle
         
+    def subtractor_output_toggle(self, xpos, ypos, attachment_body):
+        toggle_shape = [ fixtureDef(shape=makeBox(xpos-1.5, ypos, 3, 10), density=1.0, filter = filter(groupIndex=2,categoryBits=0x0002, maskBits=0x0000)) ]
+        toggle = self.world.CreateDynamicBody(fixtures = toggle_shape )
+        self.world.CreateRevoluteJoint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos))
+        return toggle
+
+    def subtractor(self, xpos, ypos, attachment_body):
+        for c in range(0,8):
+            input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
+            output_toggle = self.subtractor_output_toggle(xpos+c*pitch-pitch, ypos-150+20*c, attachment_body)
+            self.world.CreateDistanceJoint(bodyA=input_toggle,
+	                                   bodyB=output_toggle,
+	                                   anchorA=(xpos, ypos),
+	                                   anchorB=(xpos-pitch,ypos),
+	                                   collideConnected=False)
+    def add_ball_bearing(self, xpos, ypos, plane):
+        self.world.CreateDynamicBody(
+            position=(xpos, ypos),
+            fixtures=[fixtureDef(
+                shape=circleShape(radius=6.35/2, pos=(22,150)),
+                density=10.0,
+                filter=filters[plane])]
+
+        )
+
+
     def __init__(self):
         super(Memory, self).__init__()
 
@@ -103,15 +144,8 @@ class Memory (Framework):
 
         memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
         
-        test_data = self.world.CreateDynamicBody(
-            position=(-10, 0),
-            fixtures=[fixtureDef(
-                shape=circleShape(radius=6.35/2, pos=(22,150)),
-                density=1.0,
-                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))]
-
-        )
-
+        test_data = self.add_ball_bearing(-10,0,0)
+        test_data = self.add_ball_bearing(50,-100,1)
         row_injector_fixtures = []
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
@@ -179,6 +213,7 @@ class Memory (Framework):
         self.regenerator(0,-80, groundBody)
         self.diverter_set(0,-120, groundBody)
         self.diverter_set(-5,-160, groundBody)
+        self.subtractor(0,-250, groundBody)
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
