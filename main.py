@@ -4,7 +4,7 @@ from framework import (Framework, main)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 
 def makeBox(x, y, width, height):
-    return polygonShape(box=(width/2, height/2, (x, y), 0))
+    return polygonShape(box=(width/2, height/2, (x+width/2, y+height/2), 0))
 
 
 # Circle example
@@ -21,11 +21,12 @@ class Memory (Framework):
         for row in range(0,8):
             for col in range(0,8):
                 memory_fixed_shapes.append(makeBox(22*col,14*row,14,7))
-                memory_fixed_shapes.append(makeBox(22*col+7,14*row,3,14))
+                memory_fixed_shapes.append(makeBox(22*col+14-3+1,14*row+6,3,8))
         groundBox = makeBox(-20,-10,40,1)
 
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
-        memory_fixed = self.world.CreateStaticBody(shapes = memory_fixed_shapes)
+        memory_fixed = self.world.CreateStaticBody(shapes=memory_fixed_shapes)
+        
         test_data = self.world.CreateDynamicBody(
             position=(-10, 0),
             fixtures=[fixtureDef(
@@ -37,8 +38,8 @@ class Memory (Framework):
 
         row_injector_fixtures = []
         for col in range(0,8):
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(3+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+7,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
         injectors=[]
         for col in range(0,8):
@@ -49,7 +50,7 @@ class Memory (Framework):
                 anchor=groundBody.worldCenter,
                 axis=(1, 0),
                 lowerTranslation=7,
-                upperTranslation=21,
+                upperTranslation=17,
                 enableLimit=True
             )
                             
@@ -57,7 +58,7 @@ class Memory (Framework):
         row_ejector_fixtures = []
         for col in range(0,8):
             row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+7,3,3,13), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,0,3,13), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         ejectors = []
         for col in range(0,8):
             ejector = self.world.CreateDynamicBody(
@@ -73,7 +74,7 @@ class Memory (Framework):
                 motorSpeed=0.0,
                 enableMotor=True,
                 lowerTranslation=0,
-                upperTranslation=10,
+                upperTranslation=14,
                 enableLimit=True,
 
             )
