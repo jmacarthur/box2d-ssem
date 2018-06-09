@@ -110,6 +110,9 @@ class Memory (Framework):
         self.world.CreateRevoluteJoint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos))
         return toggle
 
+    def translate_points(self, points, xpos, ypos):
+        return [(x+xpos,y+ypos) for (x,y) in points]
+
     def subtractor(self, xpos, ypos, attachment_body):
         for c in range(0,8):
             input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
@@ -119,12 +122,17 @@ class Memory (Framework):
 	                                   anchorA=(xpos, ypos),
 	                                   anchorB=(xpos-pitch,ypos),
 	                                   collideConnected=False)
+            divider_vertices = [ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ]
+            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5, ypos+pitch+10)
+            divider_shape = polygonShape(vertices=divider_vertices)
+            self.world.CreateStaticBody(shapes=divider_shape)
+            
     def add_ball_bearing(self, xpos, ypos, plane):
         self.world.CreateDynamicBody(
             position=(xpos, ypos),
             fixtures=[fixtureDef(
                 shape=circleShape(radius=6.35/2, pos=(22,150)),
-                density=10.0,
+                density=5.0,
                 filter=filters[plane])]
 
         )
@@ -213,7 +221,8 @@ class Memory (Framework):
         self.regenerator(0,-80, groundBody)
         self.diverter_set(0,-120, groundBody)
         self.diverter_set(-5,-160, groundBody)
-        self.subtractor(0,-250, groundBody)
+        self.subtractor(0,-210, groundBody)
+        self.regenerator(0,-380, groundBody)
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
