@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 
+import math
+
 from framework import (Framework, main)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 
 def makeBox(x, y, width, height):
     return polygonShape(box=(width/2, height/2, (x+width/2, y+height/2), 0))
 
+def radians(degrees):
+    return 2*math.pi*float(degrees) / 360
+
+def rotate_polygon(polygon, degrees):
+    new_poly = []
+    r = radians(degrees)
+    return [(x*math.cos(r) - y*math.sin(r), y*math.cos(r) + x*math.sin(r)) for (x,y) in polygon]
 
 # Circle example
 #shape=circleShape(radius=6.35,pos=(0,10)),
@@ -126,7 +135,73 @@ class Memory (Framework):
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(shapes=divider_shape)
-            
+
+    def ball_bearing_lift(self,xpos,ypos,attachment_body):
+        plane = 0
+        radius = 30
+        offset = 80
+        height=500
+        pentagon_points = [(radius*math.cos(i*(math.pi*2)/5), radius*math.sin(i*(math.pi*2)/5)) for i in range(0,5)]
+        
+        base_roller = self.world.CreateDynamicBody(
+            position=(xpos, ypos),
+            fixtures=[fixtureDef(
+                shape=polygonShape(vertices=pentagon_points),
+                density=1.0,
+                filter=filters[plane])]
+        )
+        top_roller = self.world.CreateDynamicBody(
+            position=(xpos+offset, ypos+height),
+            fixtures=[fixtureDef(
+                shape=polygonShape(vertices=pentagon_points),
+                density=1.0,
+                filter=filters[plane])]
+        )
+
+        joint_length = 48
+        chain_links = []
+        link_pos_x = xpos+30
+        link_pos_y = ypos
+        link_angle = 80
+        for i in range(0,30):
+            link_polygon = [ (-5,-5), (joint_length-5,-5), (joint_length-5, 5), (-5,5) ]
+            raiser_polygon = [ ((joint_length-5)/2-1.5,0), ((joint_length-5)/2+1.5,0), ((joint_length-5)/2+1.5,-20), ((joint_length-5)/2-1.5,-20) ]
+            link_polygon = rotate_polygon(link_polygon, link_angle)
+            raiser_polygon = rotate_polygon(raiser_polygon, link_angle)
+            chain_link = self.world.CreateDynamicBody(
+                position=(link_pos_x, link_pos_y),
+                fixtures=[fixtureDef(
+                    shape=polygonShape(vertices=link_polygon),
+                    density=1.0,
+                    filter=filters[plane]),
+                          fixtureDef(
+                    shape=polygonShape(vertices=raiser_polygon),
+                    density=1.0,
+                    filter=filters[plane]),
+                ])
+            chain_links.append(chain_link)
+            if i>0: 
+                self.world.CreateRevoluteJoint(bodyA=chain_link, bodyB=chain_links[i-1], anchor=(link_pos_x, link_pos_y))
+            link_pos_x += math.cos(radians(link_angle))*(joint_length-5)
+            link_pos_y += math.sin(radians(link_angle))*(joint_length-5)
+            if(i>=10 and i<15): link_angle+=(180/5)
+            if(i>=25 and i<30): link_angle+=(180/5)
+        self.world.CreateRevoluteJoint(bodyA=chain_links[0], bodyB=chain_links[-1], anchor=(link_pos_x, link_pos_y))
+
+        self.world.CreateRevoluteJoint(bodyA=base_roller, bodyB=attachment_body, anchor=(xpos,ypos))
+        self.world.CreateRevoluteJoint(bodyA=top_roller, bodyB=attachment_body, anchor=(xpos+offset,ypos+height))
+        idler = self.world.CreateDynamicBody(
+            position=(xpos+offset/4, ypos+height/4),
+            fixtures=[fixtureDef(
+                shape=circleShape(radius=30, pos=(0,0)),
+                density=10.0,
+                filter=filters[0])]
+
+        )
+        self.world.CreateRevoluteJoint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
+
+
+        
     def add_ball_bearing(self, xpos, ypos, plane):
         self.world.CreateDynamicBody(
             position=(xpos, ypos),
@@ -140,7 +215,6 @@ class Memory (Framework):
 
     def __init__(self):
         super(Memory, self).__init__()
-
 
         memory_fixed_shapes = []
         for row in range(0,8):
@@ -223,6 +297,23 @@ class Memory (Framework):
         self.diverter_set(-5,-160, groundBody)
         self.subtractor(0,-210, groundBody)
         self.regenerator(0,-380, groundBody)
+
+
+        # gutter
+        gutter_vertices = [ (0,0), (pitch*9,10), (pitch*9,-10), (0,-10) ]
+        gutter_vertices = self.translate_points(gutter_vertices, -20, -420)
+        gutter_shape = polygonShape(vertices=gutter_vertices)
+        gutter = self.world.CreateStaticBody(shapes=gutter_shape)
+
+        self.world.CreateStaticBody(shapes=polygonShape(vertices=[ (-200,-500),(200,-500), (200,-510), (-200,-510)]))
+        wall_vertices = [ (0,-500), (0,-430), (10,-430), (10,-500) ]
+        self.world.CreateStaticBody(shapes=polygonShape(vertices=wall_vertices))
+        wall_vertices = self.translate_points(wall_vertices, -300, 0)
+        self.world.CreateStaticBody(shapes=polygonShape(vertices=wall_vertices))
+
+        self.ball_bearing_lift(-200,-400,groundBody)
+        
+        
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
