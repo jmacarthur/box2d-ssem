@@ -17,16 +17,19 @@ class Memory (Framework):
         super(Memory, self).__init__()
 
 
-        fixed_shapes = []
+        memory_fixed_shapes = []
         for row in range(0,8):
-            fixed_shapes.append(makeBox(0,21*row,14,7))
-       
-        ground = self.world.CreateStaticBody(shapes=fixed_shapes)
+            for col in range(0,8):
+                memory_fixed_shapes.append(makeBox(22*col,14*row,14,7))
+                memory_fixed_shapes.append(makeBox(22*col+7,14*row,3,14))
+        groundBox = makeBox(-20,-10,40,1)
 
+        groundBody = self.world.CreateStaticBody(shapes=groundBox)
+        memory_fixed = self.world.CreateStaticBody(shapes = memory_fixed_shapes)
         bodyA = self.world.CreateDynamicBody(
             position=(-10, 0),
             fixtures=[fixtureDef(
-                shape=circleShape(radius=6.35, pos=(0,100)),
+                shape=circleShape(radius=6.35/2, pos=(22,150)),
                 density=1.0,
                 filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))]
 
@@ -34,15 +37,47 @@ class Memory (Framework):
 
         row_injector_fixtures = []
         for col in range(0,8):
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(21*col,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=makeBox(3+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+7,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
-        injector = self.world.CreateDynamicBody(
-            position=(-10, 0),
-            fixtures=row_injector_fixtures,
+        injectors=[]
+        for col in range(0,8):
+            injectors.append(self.world.CreateDynamicBody(position=(0, 7+14*col), fixtures=row_injector_fixtures))
+            self.world.CreatePrismaticJoint(
+                bodyA=injectors[-1], 
+                bodyB=groundBody,
+                anchor=groundBody.worldCenter,
+                axis=(1, 0),
+                lowerTranslation=7,
+                upperTranslation=21,
+                enableLimit=True
+            )
+                            
+                             
+        row_ejector_fixtures = []
+        for col in range(0,8):
+            row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+7,3,3,13), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        ejectors = []
+        for col in range(0,8):
+            ejector = self.world.CreateDynamicBody(
+                position=(0, 14*col),
+                fixtures=row_ejector_fixtures,
+            )
+            pj2 = self.world.CreatePrismaticJoint(
+                bodyA=ejector, 
+                bodyB=groundBody,
+                anchor=groundBody.worldCenter,
+                axis=(1, 0),
+                maxMotorForce=100.0,
+                motorSpeed=0.0,
+                enableMotor=True,
+                lowerTranslation=0,
+                upperTranslation=10,
+                enableLimit=True,
 
-        )
+            )
 
-        
     def Step(self, settings):
         super(Memory, self).Step(settings)
 
