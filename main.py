@@ -118,7 +118,7 @@ class Memory (Framework):
                                       filter=filter(groupIndex=1))
             pusher_parts.append(pusher)
 
-            bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+20, 10, 3), density=1.0),
+            bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+20, 10, 3), density=1.0, filter=filters[2]),
                                 fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+8, 3, 12), density=1.0) ]
 
             bellcrank = self.world.CreateDynamicBody(fixtures = bellcrank_shape)
@@ -152,8 +152,8 @@ class Memory (Framework):
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body, lines = 8):
-        output_offset_x = -pitch*9
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1):
+        output_offset_x = pitch*(lines+1)*output_offset_dir
         for c in range(0,lines):
             input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
             output_toggle = self.subtractor_output_toggle(xpos+c*pitch+output_offset_x, ypos-150+20*c, attachment_body)
@@ -168,6 +168,24 @@ class Memory (Framework):
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(shapes=divider_shape)
 
+            # More top-side channels, but for the output
+            divider_vertices = [ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ]
+            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
+            divider_shape = polygonShape(vertices=divider_vertices)
+            self.world.CreateStaticBody(shapes=divider_shape)
+
+            # Bottom-side channels, for the output
+            divider_vertices = [ (-1,0), (1,0), (1,20*c+10), (-1,20*c+10) ]
+            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch+output_offset_x, ypos+pitch-185)
+            divider_shape = polygonShape(vertices=divider_vertices)
+            self.world.CreateStaticBody(shapes=divider_shape)
+
+            divider_vertices = [ (-1,0), (1,0), (1,20*c+50), (-1,20*c+50) ]
+            divider_vertices = self.translate_points(divider_vertices, xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
+            divider_shape = polygonShape(vertices=divider_vertices)
+            self.world.CreateStaticBody(shapes=divider_shape)
+
+            
     def ball_bearing_lift(self,xpos,ypos,attachment_body):
         plane = 0
         radius = 30
@@ -415,11 +433,13 @@ class Memory (Framework):
         self.regenerator(0,-85, groundBody, self.upper_regenerators)
         self.diverter_set(0,-125, groundBody, slope_out=1)
         self.diverter_set(200,-260, groundBody, slope_out=1)
+
+
         self.subtractor(0,-210, groundBody)
         self.lower_regenerators = []
-        self.regenerator(0,-380, groundBody, self.lower_regenerators)
-
-        self.subtractor(200,-310, groundBody, lines=5)
+        self.regenerator(-200,-380, groundBody, self.lower_regenerators)
+        #Program counter
+        self.subtractor(200,-310, groundBody, lines=5, output_offset_dir=1)
 
         self.connect_regenerators()
         # gutter
