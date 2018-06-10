@@ -137,12 +137,15 @@ class Memory (Framework):
                                        maxMotorTorque = 10000.0,
                                        motorSpeed = 0.0,
                                        enableMotor = True)
-        self.world.CreateStaticBody(shapes=makeBox(xpos-3, ypos-3,6,3))
+
+        # Bit that goes under the toggle to stop it moving too far
+        self.world.CreateStaticBody(shapes=makeBox(xpos-3, ypos-3,6,2))
         return toggle
         
     def subtractor_output_toggle(self, xpos, ypos, attachment_body):
-        toggle_shape = [ fixtureDef(shape=makeBox(xpos-1.5, ypos, 3, 10), density=1.0, filter = filter(groupIndex=2,categoryBits=0x0002, maskBits=0x0000)) ]
-        toggle = self.world.CreateDynamicBody(fixtures = toggle_shape )
+        toggle_shape = polygonShape(vertices = [(xpos-1.5,ypos), (xpos+1.5,ypos), (xpos, ypos+10)])
+        toggle_fixtures = [ fixtureDef(shape=toggle_shape, density=1.0, filter = filters[0]) ]
+        toggle = self.world.CreateDynamicBody(fixtures = toggle_fixtures )
         self.world.CreateRevoluteJoint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos))
         return toggle
 
@@ -150,16 +153,18 @@ class Memory (Framework):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
     def subtractor(self, xpos, ypos, attachment_body, lines = 8):
+        output_offset_x = -pitch*9
         for c in range(0,lines):
             input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
-            output_toggle = self.subtractor_output_toggle(xpos+c*pitch-pitch, ypos-150+20*c, attachment_body)
+            output_toggle = self.subtractor_output_toggle(xpos+c*pitch+output_offset_x, ypos-150+20*c, attachment_body)
             self.world.CreateDistanceJoint(bodyA=input_toggle,
 	                                   bodyB=output_toggle,
-	                                   anchorA=(xpos, ypos),
-	                                   anchorB=(xpos-pitch,ypos),
+	                                   anchorA=(xpos, ypos+5),
+	                                   anchorB=(xpos+output_offset_x,ypos+5),
 	                                   collideConnected=False)
+            # Large static bits that form input channels
             divider_vertices = [ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5, ypos+pitch+10)
+            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5, ypos+pitch+9)
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(shapes=divider_shape)
 
