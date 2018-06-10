@@ -34,16 +34,27 @@ class Memory (Framework):
     name = ""
 
 
-    def rotating_bar(self, xpos, ypos, height, attachment_body):
-        row_holdoff = self.add_dynamic_polygon(box_polygon(3,height), xpos, 0, filters[0])
-        row_holdoff_supports = []
+    def vertical_rotating_bar(self, xpos, ypos, height, attachment_body, support_sep=50):
+        bar_body = self.add_dynamic_polygon(box_polygon(3,height), xpos+3, ypos, filters[0])
+        bar_body_2 = self.add_dynamic_polygon(box_polygon(3,height), xpos, ypos-15, filters[0])
         for i in range(0,2):
-            pos = (0,(14*6)*i)
-            support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], pos[1], filters[0])
-            row_holdoff_supports.append(support)
-            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
+            pos = (0,support_sep*i)
+            support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], ypos+pos[1], filters[0])
+            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
 
+    def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=50):
+        bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
+        bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos-15, ypos, filters[0])
+        for i in range(0,2):
+            pos = (support_sep*i,0)
+            support = self.add_dynamic_polygon(box_polygon(30,3), xpos+pos[0], ypos+pos[1], filters[0])
+            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0], ypos+1.5+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+30+pos[0], ypos+1.5+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
+
+            
     def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100):
         filterA = filters[0]
         filterB = filters[1]
@@ -270,11 +281,18 @@ class Memory (Framework):
                     fixtureDef(shape=makeBox(14+25*selector_no,14*row+7*enabled,14,7),             density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
                 )
+            #Pegs which are used to raise the selector rods all at once
+            row_selector_fixtures.append(
+                    fixtureDef(shape=circleShape(radius=5, pos=(14+25*selector_no+7,14*9+14)), density=1.0,
+                               filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
+
             
             row_selector = self.add_multifixture(row_selector_fixtures, 200, 0)
             self.selectors.append(row_selector)
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
 
+        self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
+            
         # Row followers
         followers = []
         for row in range(0,8):
@@ -285,8 +303,8 @@ class Memory (Framework):
             followers.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
 
-        self.rotating_bar(200+25*selector_rods+14,0,14*memory_rows+20, groundBody)
-        self.rotating_bar(-20,0,14*memory_rows+20, groundBody)
+        self.vertical_rotating_bar(200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
+        self.vertical_rotating_bar(-30,20,14*memory_rows-20, groundBody)
             
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
