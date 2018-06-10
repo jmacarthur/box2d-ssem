@@ -261,7 +261,7 @@ class Memory (Framework):
             ejectors.append(ejector)
             self.slide_joint(ejector, groundBody, (1,0), 0, 14)
 
-
+        self.selectors = []
         for selector_no in range(0,selector_rods):
             row_selector_fixtures = []
             for row in range(0,8):
@@ -272,7 +272,8 @@ class Memory (Framework):
                 )
             
             row_selector = self.add_multifixture(row_selector_fixtures, 200, 0)
-            self.slide_joint(row_selector, groundBody, (0,1), -7, 0)
+            self.selectors.append(row_selector)
+            self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
 
         # Row followers
         followers = []
@@ -296,9 +297,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
         # Wall on the left of the memory to create the final channel
-        
-
-        memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0)
+        memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
 
     def connect_regenerators(self):
         for i in range(0,8):
@@ -322,15 +321,14 @@ class Memory (Framework):
     def memory_sender(self, xpos, ypos, attachment_body):
         v1 = [ (0,0), (3.5,-2), (3.5,-7), (0,-7) ]
         v2 = [ (3.5,-2), (7,0), (7,-7), (3.5,-7) ]
-        
+        sensor_poly = [ (0,0), (7,0), (7,-7), (3.5,-9), (0,-7) ]
+        self.memory_sensors = []
         for c in range(0,5):
-            self.add_static_polygon(v1, xpos+c*pitch, ypos)
+            base = self.add_static_polygon(v1, xpos+c*pitch, ypos)
             self.add_static_polygon(v2, xpos+c*pitch, ypos)
-
-        vx = [ (0,0), (7,0), (7,-7), (3.5,-9), (0,-7) ]
-        for c in range(0,5):
-            sensor = self.add_dynamic_polygon(vx, xpos+c*pitch, ypos+20, filter=filters[0])
-            #self.slide_joint(sensor, attachment_body, (0,1), -8,0) # Was causing problems            
+            sensor = self.add_dynamic_polygon(sensor_poly, xpos+c*pitch, ypos+7, filter=filters[0])
+            self.memory_sensors.append(sensor)
+            self.slide_joint(base, sensor, (0,1), 0, 15, friction=False)
 
     # Interface functions to PyBox2D
 
@@ -396,6 +394,18 @@ class Memory (Framework):
 
     
     # End of interface functions
+
+    def connect_memory(self):
+        for i in range(0,len(self.selectors)):
+            bodyA = self.selectors[i]
+            bodyB = self.memory_sensors[i]
+            self.world.CreateDistanceJoint(bodyA=bodyA,
+	                                   bodyB=bodyB,
+	                                   anchorA=bodyA.worldCenter,
+	                                   anchorB=bodyB.worldCenter,
+	                                   collideConnected=False)
+
+            
     
     def __init__(self):
         super(Memory, self).__init__()
@@ -438,7 +448,7 @@ class Memory (Framework):
         gutter_vertices = self.translate_points(gutter_vertices, -20, -420)
         gutter = self.add_static_polygon(gutter_vertices)
 
-        self.add_static_polygon([ (-300,-500),(200,-500), (200,-510), (-300,-510)])
+        self.add_static_polygon([ (-300,-600),(500,-600), (500,-610), (-300,-610)])
         wall_vertices = [ (0,-500), (0,-430), (10,-430), (10,-500) ]
         self.add_static_polygon(wall_vertices)
         wall_vertices = self.translate_points(wall_vertices, -300, 0)
@@ -446,7 +456,7 @@ class Memory (Framework):
 
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.memory_sender(250,-500, groundBody)
-        
+        self.connect_memory()
         print("Scale is {}".format(self.scale))
 
     def Step(self, settings):
