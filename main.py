@@ -61,7 +61,7 @@ class Memory (Framework):
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
 
-    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_out=0):        
+    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100):
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
@@ -91,9 +91,7 @@ class Memory (Framework):
             fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (170,-10), (170,-13), (0,-3) ]),
                                  filter = filterB)
             self.world.CreateStaticBody(position=(xpos,ypos-11), fixtures=fixture)                
-        elif slope_out!=0:
-            slope_x = 200*slope_out
-            slope_y = 100
+        elif slope_x!=0:
             exit_transfer_band_x = []
             for c in range(0,8):
                 fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ]),
@@ -428,11 +426,11 @@ class Memory (Framework):
         self.injector(-32,110, groundBody)
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        self.diverter_set(-5,-20, groundBody, slope_out=-1)
+        self.diverter_set(-5,-20, groundBody, slope_x=-200)
         self.diverter_set(-5,-55, groundBody, discard=True)
         self.regenerator(0,-85, groundBody, self.upper_regenerators)
-        self.diverter_set(0,-125, groundBody, slope_out=1)
-        self.diverter_set(200,-260, groundBody, slope_out=1)
+        self.diverter_set(0,-125, groundBody, slope_x=200)
+        self.diverter_set(200,-260, groundBody, slope_x=140, slope_y=180)
 
 
         self.subtractor(0,-210, groundBody)
