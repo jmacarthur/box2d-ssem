@@ -24,7 +24,8 @@ memory_rows = 1<<selector_rods
 pitch = 22
 
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
-           filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000)]
+           filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
+           filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
 class Memory (Framework):
     name = ""
 
@@ -60,14 +61,14 @@ class Memory (Framework):
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
 
-    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False):        
+    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, diagonals=False):        
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
         conrod = self.world.CreateDynamicBody(
             position=(xpos,ypos),
             fixtures = fixtureDef(shape=makeBox(0,15,pitch*8,2), density=1.0,
-                                  filter=filterB) # Never collides with anything
+                                  filter=filters[2]) # Never collides with anything
         )
         for c in range(0,8):
             diverter = self.world.CreateDynamicBody(
@@ -90,7 +91,7 @@ class Memory (Framework):
             fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (170,-10), (170,-13), (0,-3) ]),
                                  filter = filterB)
             self.world.CreateStaticBody(position=(xpos,ypos-11), fixtures=fixture)                
-        else:
+        elif diagonals:
             slope_x = 200
             slope_y = 100
             exit_transfer_band_x = []
@@ -262,12 +263,15 @@ class Memory (Framework):
 
             
         for c in range(0,9):
-            divider_vertices = [ (10,-10), (12,-10), (12,-3), (10,-3)]
+            
+            # Backstop for swing arm - stops the swing arm falling back too far
+            divider_vertices = [ (10,-12), (11,-12), (11,-3), (10,-3)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
 
-            divider_vertices = [ (21,-6), (23,-6), (23,-3), (21,-3)]
+            # Thing that stops all the ball bearings rolling over the one in the crank
+            divider_vertices = [ (22,-6), (23,-6), (23,-3), (22,-3)]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             divider_shape = polygonShape(vertices=divider_vertices)
             self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
@@ -396,15 +400,16 @@ class Memory (Framework):
         
         for r in range(0,3):
             for i in range(0,10):
-                test_data = self.add_ball_bearing(-100+7*i,200+7*r,0)
+                test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
 
-        self.injector(-32,110, groundBody)
+        self.injector(-27,140, groundBody)
+        self.diverter_set(0,125, groundBody)
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-50, groundBody, discard=True)
         self.regenerator(0,-80, groundBody, self.upper_regenerators)
-        self.diverter_set(0,-120, groundBody)
-        self.diverter_set(200,-260, groundBody, inverted = False)
+        self.diverter_set(0,-120, groundBody, diagonals=True)
+        self.diverter_set(200,-260, groundBody, diagonals=True)
         self.subtractor(0,-210, groundBody)
         self.lower_regenerators = []
         self.regenerator(0,-380, groundBody, self.lower_regenerators)
