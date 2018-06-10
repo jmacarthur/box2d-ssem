@@ -420,7 +420,7 @@ class Memory (Framework):
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-20, groundBody, slope_x=-200)
-        self.diverter_set(-5,-55, groundBody, discard=True)
+        self.diverter_set(-10,-55, groundBody, discard=True)
         self.regenerator(0,-85, groundBody, self.upper_regenerators)
         self.diverter_set(0,-125, groundBody, slope_x=200)
         self.diverter_set(200,-260, groundBody, slope_x=140, slope_y=180)
@@ -428,7 +428,7 @@ class Memory (Framework):
 
         self.subtractor(0,-210, groundBody)
         self.lower_regenerators = []
-        self.regenerator(-200,-380, groundBody, self.lower_regenerators)
+        self.regenerator(-200,-390, groundBody, self.lower_regenerators)
         #Program counter
         self.subtractor(200,-310, groundBody, lines=5, output_offset_dir=1)
 
@@ -446,7 +446,7 @@ class Memory (Framework):
 
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.memory_sender(250,-500, groundBody)
-        test_data = self.add_ball_bearing(10,-100,0)
+        
         print("Scale is {}".format(self.scale))
 
     def Step(self, settings):
@@ -454,8 +454,8 @@ class Memory (Framework):
         for i in range(0,len(self.ball_bearings)):
             (b, plane) = self.ball_bearings[i]
             (x,y) = b.worldCenter
-            x *= self.scale
-            y *= self.scale
+            x /= self.scale
+            y /= self.scale
             for (top, bottom, xbands, source_plane) in self.transfer_bands:
                 if y<top and y>bottom and plane == source_plane:
                     for (left, right) in xbands:
