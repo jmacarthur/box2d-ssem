@@ -96,7 +96,7 @@ class Memory (Framework):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.world.CreateStaticBody(shapes=makeBox(c*pitch+xpos-11, -12+ypos,11,10))
+            self.add_static_polygon(box_polygon(11,10), c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -123,13 +123,11 @@ class Memory (Framework):
                                        enableMotor = True)
 
         # Bit that goes under the toggle to stop it moving too far
-        self.world.CreateStaticBody(shapes=makeBox(xpos-3, ypos-3,6,2))
+        self.add_static_polygon(box_polygon(6,2), xpos-3, ypos-3)
         return toggle
         
     def subtractor_output_toggle(self, xpos, ypos, attachment_body):
-        toggle_shape = polygonShape(vertices = [(xpos-1.5,ypos), (xpos+1.5,ypos), (xpos, ypos+10)])
-        toggle_fixtures = [ fixtureDef(shape=toggle_shape, density=1.0, filter = filters[0]) ]
-        toggle = self.world.CreateDynamicBody(fixtures = toggle_fixtures )
+        toggle = self.add_dynamic_polygon([(xpos-1.5,ypos), (xpos+1.5,ypos), (xpos, ypos+10)], 0,0)
         self.world.CreateRevoluteJoint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos))
         return toggle
 
@@ -147,27 +145,18 @@ class Memory (Framework):
 	                                   anchorB=(xpos+output_offset_x,ypos+5),
 	                                   collideConnected=False)
             # Large static bits that form input channels
-            divider_vertices = [ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5, ypos+pitch+9)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(shapes=divider_shape)
+            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ],
+                                    xpos+c*pitch-pitch+3.5, ypos+pitch+9)
 
             # More top-side channels, but for the output
-            divider_vertices = [ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(shapes=divider_shape)
-
+            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ],
+                                    xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
             # Bottom-side channels, for the output
-            divider_vertices = [ (-1,0), (1,0), (1,20*c+10), (-1,20*c+10) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch+output_offset_x, ypos+pitch-185)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(shapes=divider_shape)
+            self.add_static_polygon([ (-1,0), (1,0), (1,20*c+10), (-1,20*c+10) ],
+                                    xpos+c*pitch+output_offset_x, ypos+pitch-185)
 
-            divider_vertices = [ (-1,0), (1,0), (1,20*c+50), (-1,20*c+50) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(shapes=divider_shape)
+            self.add_static_polygon([ (-1,0), (1,0), (1,20*c+50), (-1,20*c+50) ],
+                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
 
             
     def ball_bearing_lift(self,xpos,ypos,attachment_body):
@@ -177,20 +166,8 @@ class Memory (Framework):
         height=500
         pentagon_points = [(radius*math.cos(i*(math.pi*2)/5), radius*math.sin(i*(math.pi*2)/5)) for i in range(0,5)]
         
-        base_roller = self.world.CreateDynamicBody(
-            position=(xpos, ypos),
-            fixtures=[fixtureDef(
-                shape=polygonShape(vertices=pentagon_points),
-                density=1.0,
-                filter=filters[plane])]
-        )
-        top_roller = self.world.CreateDynamicBody(
-            position=(xpos+offset, ypos+height),
-            fixtures=[fixtureDef(
-                shape=polygonShape(vertices=pentagon_points),
-                density=1.0,
-                filter=filters[plane])]
-        )
+        base_roller = self.add_dynamic_polygon(pentagon_points, xpos, ypos, filters[plane])
+        top_roller = self.add_dynamic_polygon(pentagon_points, xpos+offset, ypos+height, filters[plane])
 
         joint_length = 48
         chain_links = []
@@ -202,6 +179,7 @@ class Memory (Framework):
             raiser_polygon = [ ((joint_length-5)/2-1.5,0), ((joint_length-5)/2+1.5,0), ((joint_length-5)/2+1.5,-20), ((joint_length-5)/2-1.5,-20) ]
             link_polygon = rotate_polygon(link_polygon, link_angle)
             raiser_polygon = rotate_polygon(raiser_polygon, link_angle)
+
             chain_link = self.world.CreateDynamicBody(
                 position=(link_pos_x, link_pos_y),
                 fixtures=[fixtureDef(
@@ -224,14 +202,8 @@ class Memory (Framework):
 
         self.world.CreateRevoluteJoint(bodyA=base_roller, bodyB=attachment_body, anchor=(xpos,ypos))
         self.world.CreateRevoluteJoint(bodyA=top_roller, bodyB=attachment_body, anchor=(xpos+offset,ypos+height))
-        idler = self.world.CreateDynamicBody(
-            position=(xpos+offset/4, ypos+height/4),
-            fixtures=[fixtureDef(
-                shape=circleShape(radius=30, pos=(0,0)),
-                density=10.0,
-                filter=filters[0])]
 
-        )
+        idler = self.add_dyanmic_circle(xpos+offset/4, ypos+height/4, 30, density=10, filter=filters[0])
         self.world.CreateRevoluteJoint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
     def injector(self, xpos, ypos, attachment_body):
@@ -255,11 +227,8 @@ class Memory (Framework):
             
         self.injector_cranks = []
         for c in range(0,8):
-            divider_vertices = [ (10,-20), (24,-20), (24,-13), (10,-15)]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
-
+            self.add_static_polygon([ (10,-20), (24,-20), (24,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
+            
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
                                 fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filters[0]) ]
 
@@ -272,37 +241,20 @@ class Memory (Framework):
         for c in range(0,9):
             
             # Backstop for swing arm - stops the swing arm falling back too far
-            divider_vertices = [ (10,-12), (11,-12), (11,-3), (10,-3)]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
+            self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
 
             # Thing that stops all the ball bearings rolling over the one in the crank
-            divider_vertices = [ (22,-6), (23,-6), (23,-3), (22,-3)]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
-            divider_shape = polygonShape(vertices=divider_vertices)
-            self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
-            
-        divider_vertices = [ (0,0), (9*pitch,-9*pitch*math.sin(intake_angle)), (9*pitch,height), (0,height) ]
-        divider_vertices = self.translate_points(divider_vertices, xpos, ypos+height+45)
-        divider_shape = polygonShape(vertices=divider_vertices)
-        self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
+            self.add_static_polygon([(22,-6), (23,-6), (23,-3), (22,-3)], xpos+c*pitch, ypos+pitch+10)
+
+        self.add_static_polygon([ (0,0), (9*pitch,-9*pitch*math.sin(intake_angle)), (9*pitch,height), (0,height) ],
+                             xpos, ypos+height+45)
 
         # End stop on the right
-        divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ]
-        divider_vertices = self.translate_points(divider_vertices, xpos+8*pitch, ypos+pitch+10)
-        divider_shape = polygonShape(vertices=divider_vertices)
-        self.world.CreateStaticBody(position=(0,0), shapes=divider_shape)
+
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ], xpos+8*pitch, ypos+pitch+10)
         
     def add_ball_bearing(self, xpos, ypos, plane):
-        bearing = self.world.CreateDynamicBody(
-            position=(xpos, ypos),
-            fixtures=[fixtureDef(
-                shape=circleShape(radius=6.35/2, pos=(0,0)),
-                density=5.0,
-                filter=filters[plane])]
-
-        )
+        bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
         self.ball_bearings.append((bearing,plane))
 
     def memory_module(self, xpos, ypos, groundBody):
@@ -405,6 +357,9 @@ class Memory (Framework):
             sensor = self.add_dynamic_polygon(vx, xpos+c*pitch, ypos+20, filter=filters[0])
             #self.slide_joint(sensor, attachment_body, (0,1), -8,0) # Was causing problems
             
+
+    # Interface functions to PyBox2D
+
     def add_static_polygon(self,vertices, xpos, ypos, filter=filters[0]):
         vertices = self.translate_points(vertices, xpos, ypos)
         shape = polygonShape(vertices=vertices)
@@ -412,15 +367,19 @@ class Memory (Framework):
         return self.world.CreateStaticBody(fixtures=fixture)
 
     def add_static_circle(self, xpos, ypos, radius, filter=filters[0]):
-        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=radius, pos=(xpos, ypos)), filter=filter))
+        return self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=radius, pos=(xpos, ypos)), filter=filter))
 
-    
-    def add_dynamic_polygon(self, vertices, xpos, ypos, filter):
+    def add_dynamic_circle(self, xpos, ypos, radius, density=1.0, filter=filters[0]):
+        return self.world.CreateDynamicBody(fixtures=[fixtureDef(shape=circleShape(radius=radius, pos=(xpos,ypos)), density=density, filter=filter)])
+        
+    def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0]):
         vertices = self.translate_points(vertices, xpos, ypos)
         shape = polygonShape(vertices=vertices)
         fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
         return self.world.CreateDynamicBody(fixtures=fixture)
-        
+
+    # End of interface functions
+    
     def __init__(self):
         super(Memory, self).__init__()
         self.transfer_bands = []
