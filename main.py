@@ -5,6 +5,9 @@ import math
 from framework import (Framework, main)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 
+def box_polygon(width,height):
+    return [(0,0), (width,0), (width,height), (0,height)]
+
 def makeBox(x, y, width, height):
     return polygonShape(box=(width/2, height/2, (x+width/2, y+height/2), 0))
 
@@ -46,17 +49,11 @@ class Memory (Framework):
                 upperTranslation=limit2, enableLimit=True)
 
     def rotating_bar(self, xpos, ypos, height, attachment_body):
-        row_holdoff = self.world.CreateDynamicBody(
-            position=(xpos,0),
-            fixtures = fixtureDef(shape=makeBox(0,0,3,height), density=1.0,
-                                  filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
-            )
+        row_holdoff = self.add_dynamic_polygon(box_polygon(3,height), xpos, 0, filters[0])
         row_holdoff_supports = []
         for i in range(0,2):
             pos = (0,(14*6)*i)
-            support = self.world.CreateDynamicBody( position=(xpos,0),
-                                                    fixtures = fixtureDef(shape=makeBox(pos[0], pos[1],3,30), density=1.0,
-                                                                          filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
+            support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], pos[1], filters[0])
             row_holdoff_supports.append(support)
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=attachment_body, anchor=(xpos, ypos+pos[1]))
             self.world.CreateRevoluteJoint(bodyA=support, bodyB=row_holdoff, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
@@ -65,44 +62,33 @@ class Memory (Framework):
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
-        conrod = self.world.CreateDynamicBody(
-            position=(xpos,ypos),
-            fixtures = fixtureDef(shape=makeBox(0,15,pitch*8,2), density=1.0,
-                                  filter=filters[2]) # Never collides with anything
-        )
+        conrod = self.add_dynamic_polygon(box_polygon(pitch*8,2), xpos, ypos+15, filters[2])
         for c in range(0,8):
-            diverter = self.world.CreateDynamicBody(
-                position=(xpos,ypos),
-                fixtures = fixtureDef(shape=makeBox(c*pitch,0,3,20), density=1.0,
-                                      filter=filterA)
-            )
+            diverter = self.add_dynamic_polygon(box_polygon(3,20), c*pitch+xpos, ypos, filterA)
             self.world.CreateRevoluteJoint(bodyA=diverter, bodyB=attachment_body, anchor=(xpos+c*pitch, ypos))
             self.world.CreateRevoluteJoint(bodyA=diverter, bodyB=conrod, anchor=(xpos+c*pitch, ypos+15))
 
         transfer_band_x = []
 
         for c in range(0,8):
-            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos,2,10), filter=filterA))
-            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos+11, -12+ypos,2,25), filter=filterA))
-            self.world.CreateStaticBody(fixtures=fixtureDef(shape=makeBox(c*pitch+xpos+2, -12+ypos,11,3), filter=filterA))
+            self.add_static_polygon(box_polygon(2,10),  c*pitch+xpos,    -12+ypos, filterA)
+            self.add_static_polygon(box_polygon(2,25),  c*pitch+xpos+11, -12+ypos, filterA)
+            self.add_static_polygon(box_polygon(11,13), c*pitch+xpos+2,  -12+ypos, filterA)
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
         if discard:
-            fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (170,-10), (170,-13), (0,-3) ]),
-                                 filter = filterB)
-            self.world.CreateStaticBody(position=(xpos,ypos-11), fixtures=fixture)                
+            self.add_static_polygon([(0,0), (170,-10), (170,-13), (0,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
             exit_transfer_band_x = []
             for c in range(0,8):
-                fixture = fixtureDef(shape=polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ]),
-                                     filter = filterB)
-                self.world.CreateStaticBody(position=(c*pitch+xpos, ypos-10), fixtures=fixture)
+                exit_slope = polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ])
+                self.add_static_polygon(exit_slope, c*pitch+xpos, ypos-10, filter=filterB)
                 exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch))
             self.transfer_bands.append((ypos-10-slope_y+10, ypos-10-slope_y, exit_transfer_band_x, 1))
 
 
-        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=5, pos=(xpos-10, ypos+15)), filter=filterA))
-        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=5, pos=(xpos+pitch*8-5, ypos+15)), filter=filterA))
+        self.add_static_circle(xpos-10, ypos+15, 5, filterA)
+        self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
 
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
 
@@ -405,6 +391,36 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             self.injector_cranks[i]
+
+    def memory_sender(self, xpos, ypos, attachment_body):
+        v1 = [ (0,0), (3.5,-2), (3.5,-7), (0,-7) ]
+        v2 = [ (3.5,-2), (7,0), (7,-7), (3.5,-7) ]
+        
+        for c in range(0,5):
+            self.add_static_polygon(v1, xpos+c*pitch, ypos)
+            self.add_static_polygon(v2, xpos+c*pitch, ypos)
+
+        vx = [ (0,0), (7,0), (7,-7), (3.5,-9), (0,-7) ]
+        for c in range(0,5):
+            sensor = self.add_dynamic_polygon(vx, xpos+c*pitch, ypos+20, filter=filters[0])
+            #self.slide_joint(sensor, attachment_body, (0,1), -8,0) # Was causing problems
+            
+    def add_static_polygon(self,vertices, xpos, ypos, filter=filters[0]):
+        vertices = self.translate_points(vertices, xpos, ypos)
+        shape = polygonShape(vertices=vertices)
+        fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
+        return self.world.CreateStaticBody(fixtures=fixture)
+
+    def add_static_circle(self, xpos, ypos, radius, filter=filters[0]):
+        self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=radius, pos=(xpos, ypos)), filter=filter))
+
+    
+    def add_dynamic_polygon(self, vertices, xpos, ypos, filter):
+        vertices = self.translate_points(vertices, xpos, ypos)
+        shape = polygonShape(vertices=vertices)
+        fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
+        return self.world.CreateDynamicBody(fixtures=fixture)
+        
     def __init__(self):
         super(Memory, self).__init__()
         self.transfer_bands = []
@@ -453,7 +469,7 @@ class Memory (Framework):
         self.world.CreateStaticBody(shapes=polygonShape(vertices=wall_vertices))
 
         #self.ball_bearing_lift(-200,-400,groundBody)
-        
+        self.memory_sender(250,-500, groundBody)
         test_data = self.add_ball_bearing(10,-100,0)
         
     def Step(self, settings):
