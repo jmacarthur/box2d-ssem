@@ -337,19 +337,41 @@ class Memory (Framework):
             self.injector_cranks[i]
 
     def memory_sender(self, xpos, ypos, attachment_body):
-        v1 = [ (0,0), (3.5,-2), (3.5,-7), (0,-7) ]
-        v2 = [ (3.5,-2), (7,0), (7,-7), (3.5,-7) ]
-        sensor_poly = [ (0,0), (7,0), (7,-7), (3.5,-9), (0,-7) ]
+        v1 = [ (0,0), (7,-4), (7,-17), (0,-13) ]
+        entrace_poly = [ (-7,2), (0,0), (0,-5), (-7,0) ]
+        sensor_poly = [ (0,0), (7,-4), (7,-11), (0,-7) ]
+        blocker_poly = [ (7,0), (10,-4), (10,-8), (7,-4) ]
         self.memory_sensors = []
-        for c in range(0,5):
-            base = self.add_static_polygon(v1, xpos+c*pitch, ypos)
-            self.add_static_polygon(v2, xpos+c*pitch, ypos)
+        blocker_fixtures = []
+        for c in range(0,selector_rods):
+            self.add_static_polygon(v1, xpos+c*pitch, ypos)
+            self.add_static_polygon(entrace_poly, xpos+c*pitch, ypos)
+
+            
             sensor = self.add_dynamic_polygon(sensor_poly, xpos+c*pitch, ypos+7, filter=filters[0])
             self.memory_sensors.append(sensor)
-            self.slide_joint(base, sensor, (0,1), 0, 15, friction=False)
+            self.slide_joint(attachment_body, sensor, (0,1), 0, 15, friction=False)
+            blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=self.translate_points(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
+        blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
+        self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
+
+        crank_fixture_1 = fixtureDef(shape=makeBox(-50,-20,20,3), density=1.0, filter=filters[0])
+        crank_fixture_2 = fixtureDef(shape=makeBox(-30,-20,3,20), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=makeBox(-50,-25,10,10), density=10.0, filter=filters[0]) # Heavy weight
+        crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
+        self.revolving_joint(crank, attachment_body, (xpos-30,ypos-20))
+        self.distance_joint(crank, blocker_set, (xpos-50,ypos), (xpos+10,ypos))
 
     # Interface functions to PyBox2D
 
+    def distance_joint(self, bodyA, bodyB, posA, posB):
+        self.world.CreateDistanceJoint(bodyA=bodyA,
+	                               bodyB=bodyB,
+	                               anchorA=(posA[0]*self.scale, posA[1]*self.scale),
+	                               anchorB=(posB[0]*self.scale, posB[1]*self.scale),
+	                               collideConnected=False)
+        
+    
     def add_static_polygon(self,vertices, xpos=0, ypos=0, filter=filters[0]):
         translated_vertices = self.translate_points(vertices, xpos, ypos)
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
@@ -414,6 +436,7 @@ class Memory (Framework):
     # End of interface functions
 
     def connect_memory(self):
+        """ Connects the memory selectors to the memory senders """
         for i in range(0,len(self.selectors)):
             bodyA = self.selectors[i]
             bodyB = self.memory_sensors[i]
@@ -473,7 +496,7 @@ class Memory (Framework):
         self.add_static_polygon(wall_vertices)
 
         #self.ball_bearing_lift(-200,-400,groundBody)
-        self.memory_sender(250,-500, groundBody)
+        self.memory_sender(325+17,-500, groundBody)
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
