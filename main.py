@@ -428,10 +428,15 @@ class Memory (Framework):
                                                
         return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures)
 
-    def revolving_joint(self, bodyA, bodyB, anchor, friction=False):
+    def revolving_joint(self, bodyA, bodyB, anchor, friction=False, motor=0):
         (x,y) = anchor
 
-        if friction:
+        if motor!=0:
+            self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
+                                           maxMotorTorque = 100000.0,
+                                           motorSpeed = motor,
+                                           enableMotor = True)
+        elif friction:
             self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
                                            maxMotorTorque = 10000.0,
                                            motorSpeed = 0.0,
@@ -463,7 +468,15 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    
+    def add_cam(self, xpos, ypos, attachment_body):
+        """ Very basic function which just adds a motorised circle at the moment """
+        radius = 30
+        disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
+        bump_polygon = self.translate_points([ (-10,-3), (-7,3), (7, 3), (10,-3) ], 0, radius)
+        bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])
+        cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
+        self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25)
+        
     def __init__(self):
         super(Memory, self).__init__()
         self.scale = 0.5
@@ -514,14 +527,18 @@ class Memory (Framework):
         # Instruction decoder ROM
         self.rom_followers = []
         self.rom_selectors = []
-        self.add_row_decoder(500, 0, groundBody, self.rom_followers, self.rom_selectors)
+        self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
 
-
+       
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.memory_sender(325+17,-500, groundBody)
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
+        # Cams
+
+        self.add_cam(600,0, groundBody)
+        
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
