@@ -249,6 +249,41 @@ class Memory (Framework):
         bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
         self.ball_bearings.append((bearing,plane))
 
+    def add_row_decoder(self, xpos, ypos, groundBody, follower_array):
+        self.selectors = []
+        for selector_no in range(0,selector_rods):
+            row_selector_fixtures = []
+            for row in range(0,8):
+                enabled = (row >> selector_no) & 1
+                row_selector_fixtures.append(
+                    fixtureDef(shape=makeBox(14+25*selector_no,14*row+7*enabled,14,7),             density=1.0,
+                               filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
+                )
+            #Pegs which are used to raise the selector rods all at once
+            row_selector_fixtures.append(
+                    fixtureDef(shape=circleShape(radius=5, pos=(14+25*selector_no+7,14*9+14)), density=1.0,
+                               filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
+
+            
+            row_selector = self.add_multifixture(row_selector_fixtures, 200, 0)
+            self.selectors.append(row_selector)
+            self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
+
+        self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
+            
+        # Row followers
+        for row in range(0,8):
+            row_follower_fixtures = []
+            for selector_no in range(0,selector_rods+1):
+                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+35,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            follower = self.add_multifixture(row_follower_fixtures, 200, 0)
+            follower_array.append(follower)
+            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
+
+        self.vertical_rotating_bar(200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
+        self.vertical_rotating_bar(-30,20,14*memory_rows-20, groundBody)
+
+        
     def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
         for col in range(0,8):
@@ -272,46 +307,16 @@ class Memory (Framework):
             ejectors.append(ejector)
             self.slide_joint(ejector, groundBody, (1,0), 0, 14)
 
-        self.selectors = []
-        for selector_no in range(0,selector_rods):
-            row_selector_fixtures = []
-            for row in range(0,8):
-                enabled = (row >> selector_no) & 1
-                row_selector_fixtures.append(
-                    fixtureDef(shape=makeBox(14+25*selector_no,14*row+7*enabled,14,7),             density=1.0,
-                               filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
-                )
-            #Pegs which are used to raise the selector rods all at once
-            row_selector_fixtures.append(
-                    fixtureDef(shape=circleShape(radius=5, pos=(14+25*selector_no+7,14*9+14)), density=1.0,
-                               filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
 
-            
-            row_selector = self.add_multifixture(row_selector_fixtures, 200, 0)
-            self.selectors.append(row_selector)
-            self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
-
-        self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
-            
-        # Row followers
-        followers = []
-        for row in range(0,8):
-            row_follower_fixtures = []
-            for selector_no in range(0,selector_rods+1):
-                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+35,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            follower = self.add_multifixture(row_follower_fixtures, 200, 0)
-            followers.append(follower)
-            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
-
-        self.vertical_rotating_bar(200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
-        self.vertical_rotating_bar(-30,20,14*memory_rows-20, groundBody)
+        self.memory_followers = []
+        self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers)
             
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
             self.world.CreateDistanceJoint(bodyA=ejectors[r],
-	                              bodyB=followers[r],
-	                                anchorA=(200, 14*row+10),
-	                              anchorB=(200+selector_no*25+35,14*row+10),
+	                              bodyB=self.memory_followers[r],
+                                      anchorA=(200, 14*r+10),
+	                              anchorB=(200+35,14*r+10),
 	                                   collideConnected=False)
 
         # Wall on the left of the memory to create the final channel
@@ -343,7 +348,7 @@ class Memory (Framework):
         blocker_poly = [ (7,0), (10,-4), (10,-8), (7,-4) ]
         self.memory_sensors = []
         blocker_fixtures = []
-        for c in range(0,selector_rods):
+        for c in range(0,8):
             self.add_static_polygon(v1, xpos+c*pitch, ypos)
             self.add_static_polygon(entrace_poly, xpos+c*pitch, ypos)
 
