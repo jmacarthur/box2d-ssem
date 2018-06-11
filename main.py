@@ -249,8 +249,7 @@ class Memory (Framework):
         bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
         self.ball_bearings.append((bearing,plane))
 
-    def add_row_decoder(self, xpos, ypos, groundBody, follower_array):
-        self.selectors = []
+    def add_row_decoder(self, xpos, ypos, groundBody, follower_array, selector_array):
         for selector_no in range(0,selector_rods):
             row_selector_fixtures = []
             for row in range(0,8):
@@ -265,8 +264,8 @@ class Memory (Framework):
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
 
             
-            row_selector = self.add_multifixture(row_selector_fixtures, 200, 0)
-            self.selectors.append(row_selector)
+            row_selector = self.add_multifixture(row_selector_fixtures, xpos+200, 0)
+            selector_array.append(row_selector)
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
 
         self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
@@ -276,12 +275,11 @@ class Memory (Framework):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+35,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            follower = self.add_multifixture(row_follower_fixtures, 200, 0)
+            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
 
-        self.vertical_rotating_bar(200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
-        self.vertical_rotating_bar(-30,20,14*memory_rows-20, groundBody)
+        self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
 
         
     def memory_module(self, xpos, ypos, groundBody):
@@ -309,7 +307,8 @@ class Memory (Framework):
 
 
         self.memory_followers = []
-        self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers)
+        self.memory_selectors = []
+        self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
             
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
@@ -318,6 +317,9 @@ class Memory (Framework):
                                       anchorA=(200, 14*r+10),
 	                              anchorB=(200+35,14*r+10),
 	                                   collideConnected=False)
+
+        # Gate returner to push all the memory rows back in
+        self.vertical_rotating_bar(xpos-30,20,14*memory_rows-20, groundBody)
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
@@ -442,9 +444,18 @@ class Memory (Framework):
 
     def connect_memory(self):
         """ Connects the memory selectors to the memory senders """
-        for i in range(0,len(self.selectors)):
-            bodyA = self.selectors[i]
+        for i in range(0,len(self.memory_selectors)):
+            bodyA = self.memory_selectors[i]
             bodyB = self.memory_sensors[i]
+            self.world.CreateDistanceJoint(bodyA=bodyA,
+	                                   bodyB=bodyB,
+	                                   anchorA=bodyA.worldCenter,
+	                                   anchorB=bodyB.worldCenter,
+	                                   collideConnected=False)
+
+        for i in range(0,len(self.rom_selectors)):
+            bodyA = self.rom_selectors[i]
+            bodyB = self.memory_sensors[i+5]
             self.world.CreateDistanceJoint(bodyA=bodyA,
 	                                   bodyB=bodyB,
 	                                   anchorA=bodyA.worldCenter,
@@ -499,6 +510,12 @@ class Memory (Framework):
         self.add_static_polygon(wall_vertices)
         wall_vertices = self.translate_points(wall_vertices, -300, 0)
         self.add_static_polygon(wall_vertices)
+
+        # Instruction decoder ROM
+        self.rom_followers = []
+        self.rom_selectors = []
+        self.add_row_decoder(500, 0, groundBody, self.rom_followers, self.rom_selectors)
+
 
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.memory_sender(325+17,-500, groundBody)
