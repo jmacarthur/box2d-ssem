@@ -26,6 +26,7 @@ def rotate_polygon(polygon, degrees):
 selector_rods = 3
 memory_rows = 1<<selector_rods
 pitch = 22
+follower_spacing = 14
 
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
@@ -255,12 +256,12 @@ class Memory (Framework):
             for row in range(0,8):
                 enabled = (row >> selector_no) & 1
                 row_selector_fixtures.append(
-                    fixtureDef(shape=makeBox(14+25*selector_no,14*row+7*enabled,14,7),             density=1.0,
+                    fixtureDef(shape=makeBox(14+25*selector_no,follower_spacing*row+7*enabled,14,7),             density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
                 )
             #Pegs which are used to raise the selector rods all at once
             row_selector_fixtures.append(
-                    fixtureDef(shape=circleShape(radius=5, pos=(14+25*selector_no+7,14*9+14)), density=1.0,
+                    fixtureDef(shape=circleShape(radius=5, pos=(14+25*selector_no+7,follower_spacing*9+14)), density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF)))
 
             
@@ -428,6 +429,16 @@ class Memory (Framework):
                                                
         return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures)
 
+    def add_multipolygon(self, polygons, xpos=0, ypos=0, filter=filters[0]):
+        fixtures = []
+        for p in polygons:
+            fixtures.append(fixtureDef(shape=polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in p]),
+                                               filter=filter,
+                                               density=1.0))
+                                               
+        return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=fixtures)
+
+    
     def revolving_joint(self, bodyA, bodyB, anchor, friction=False, motor=0):
         (x,y) = anchor
 
@@ -476,6 +487,17 @@ class Memory (Framework):
         bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
         self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25)
+
+    def add_instruction_cranks(self, attachment_body, xpos, ypos):
+        len1 = 25
+        len2 = 25
+        thickness = 2.5
+        for i in range(0,8):
+            crank_polygon1 = [ (-thickness,-thickness), (-thickness,-len1-thickness), (thickness,-len1-thickness), (thickness,-thickness) ]
+            crank_polygon2 = [ (-thickness,-thickness), (-thickness,thickness), (len2+thickness,thickness), (len2+thickness,-thickness) ]
+            crank = self.add_multipolygon([crank_polygon1, crank_polygon2], xpos+i*30, ypos-i*follower_spacing)
+            self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
+            self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
         
     def __init__(self):
         super(Memory, self).__init__()
@@ -529,6 +551,7 @@ class Memory (Framework):
         self.rom_selectors = []
         self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
 
+        self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.memory_sender(325+17,-500, groundBody)
@@ -537,7 +560,7 @@ class Memory (Framework):
 
         # Cams
 
-        self.add_cam(600,0, groundBody)
+        self.add_cam(600,-200, groundBody)
         
     def Step(self, settings):
         super(Memory, self).Step(settings)
