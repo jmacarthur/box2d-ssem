@@ -49,12 +49,12 @@ class Memory (Framework):
 
     def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=50):
         bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
-        bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos-15, ypos, filters[0])
+        bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos+15, ypos, filters[0])
         for i in range(0,2):
             pos = (support_sep*i,0)
             support = self.add_dynamic_polygon(box_polygon(30,3), xpos+pos[0], ypos+pos[1], filters[0])
-            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0], ypos+1.5+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+30+pos[0], ypos+1.5+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0]+30, ypos+1.5+pos[1]))
+            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+pos[0], ypos+1.5+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
 
             
@@ -231,17 +231,24 @@ class Memory (Framework):
 
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
-            self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos)
+            self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=False)
             self.injector_cranks.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
-
-            
+            # All-inject bar
+            raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+130, radius=5, density=50.0)
+            self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=False)
+            self.world.CreateDistanceJoint(bodyA=bellcrank,
+	                              bodyB=raiser,
+                                      anchorA=((anchorpos[0]+5)*self.scale,(anchorpos[1]-10)*self.scale),
+	                              anchorB=raiser.worldCenter,
+	                                   collideConnected=False)
+        self.horizontal_rotating_bar(xpos,ypos+110, pitch*9, attachment_body, support_sep=pitch*8)
         for c in range(0,9):
             
             # Backstop for swing arm - stops the swing arm falling back too far
             self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
 
             # Thing that stops all the ball bearings rolling over the one in the crank
-            self.add_static_polygon([(22,-6), (23,-6), (23,-3), (22,-3)], xpos+c*pitch, ypos+pitch+10)
+            self.add_static_polygon([(22,-6), (23,-6), (23,-3), (22,-3)], xpos+c*pitch+1, ypos+pitch+10)
 
         # roof
         roof_height=-20
@@ -526,7 +533,7 @@ class Memory (Framework):
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
 
         for r in range(0,5):
-            for i in range(0,10):
+            for i in range(0,1):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
 
         self.injector(-32,110, groundBody)
