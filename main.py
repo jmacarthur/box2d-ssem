@@ -498,6 +498,11 @@ class Memory (Framework):
             crank = self.add_multipolygon([crank_polygon1, crank_polygon2], xpos+i*30, ypos-i*follower_spacing)
             self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
+            block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*50-50)
+            self.slide_joint(attachment_body, block, (0,1), -8,0)
+                                             
+            self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
+            
         
     def __init__(self):
         super(Memory, self).__init__()
