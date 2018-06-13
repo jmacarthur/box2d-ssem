@@ -23,6 +23,8 @@ def rotate_polygon(polygon, degrees):
 # Circle example
 #shape=circleShape(radius=6.35,pos=(0,10)),
 
+bb_diameter = 6.35
+
 selector_rods = 3
 memory_rows = 1<<selector_rods
 pitch = 22
@@ -209,12 +211,14 @@ class Memory (Framework):
 
         intake_vertices = [ (0,0), (100,0), (100,10), (0,10) ]
         intake_vertices = rotate_polygon(intake_vertices, -180 - 10)
-        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+72)
+        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+55)
         self.add_static_polygon(intake_vertices)
 
 
         for c in range(0,8):
-            divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,height-c*pitch*math.sin(intake_angle)-(pitch-7)*math.sin(intake_angle)), (0,height-c*pitch*math.sin(intake_angle)) ]
+            divider_height = 23
+            height2 =        23
+            divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             self.add_static_polygon(divider_vertices)
             
@@ -239,8 +243,10 @@ class Memory (Framework):
             # Thing that stops all the ball bearings rolling over the one in the crank
             self.add_static_polygon([(22,-6), (23,-6), (23,-3), (22,-3)], xpos+c*pitch, ypos+pitch+10)
 
-        self.add_static_polygon([ (0,0), (9*pitch,-9*pitch*math.sin(intake_angle)), (9*pitch,height), (0,height) ],
-                             xpos, ypos+height+45)
+        # roof
+        roof_height=-20
+        self.add_static_polygon([ (0,roof_height), (9*pitch,roof_height), (9*pitch,0), (0,0) ],
+                                xpos, ypos+height+45)
 
         # End stop on the right
 
@@ -519,7 +525,7 @@ class Memory (Framework):
         groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
 
-        for r in range(0,3):
+        for r in range(0,5):
             for i in range(0,10):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
 
