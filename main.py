@@ -20,9 +20,6 @@ def rotate_polygon(polygon, degrees):
     r = radians(degrees)
     return [(x*math.cos(r) - y*math.sin(r), y*math.cos(r) + x*math.sin(r)) for (x,y) in polygon]
 
-# Circle example
-#shape=circleShape(radius=6.35,pos=(0,10)),
-
 bb_diameter = 6.35
 
 selector_rods = 3
@@ -88,7 +85,7 @@ class Memory (Framework):
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
-
+        self.add_static_polygon(makeBox(xpos-10, ypos, 3,20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
 
     def regenerator(self, xpos, ypos, attachment_body, crank_list):
@@ -539,10 +536,10 @@ class Memory (Framework):
         self.injector(-32,110, groundBody)
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        self.diverter_set(-5,-20, groundBody, slope_x=-200)
-        self.diverter_set(-10,-55, groundBody, discard=True)
-        self.regenerator(0,-85, groundBody, self.upper_regenerators)
-        self.diverter_set(0,-125, groundBody, slope_x=200)
+        self.diverter_set(-5,-20, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
+        self.diverter_set(-15,-55, groundBody, discard=True) # Diverter 2. Discards all output.
+        self.regenerator(-20,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
         self.diverter_set(200,-260, groundBody, slope_x=140, slope_y=180)
 
 
