@@ -282,8 +282,8 @@ class Memory (Framework):
             selector_array.append(row_selector)
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
 
-        self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
-            
+        holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
+        holdoff_bar.attachment_point = (xpos+200,ypos+120)
         # Row followers
         for row in range(0,8):
             row_follower_fixtures = []
@@ -294,7 +294,7 @@ class Memory (Framework):
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
 
         self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
-
+        return holdoff_bar
         
     def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
@@ -322,8 +322,8 @@ class Memory (Framework):
 
         self.memory_followers = []
         self.memory_selectors = []
-        self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
-            
+        main_memory_holdoff = self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
+        
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
             self.world.CreateDistanceJoint(bodyA=ejectors[r],
@@ -337,6 +337,7 @@ class Memory (Framework):
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
+        return main_memory_holdoff
 
     def connect_regenerators(self):
         for i in range(0,8):
@@ -547,7 +548,7 @@ class Memory (Framework):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
         self.injector_cranks = []
         self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
-        self.memory_module(0,0, groundBody)
+        main_memory_holdoff = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-20, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-55, groundBody, discard=True) # Diverter 2. Discards all output.
@@ -597,6 +598,11 @@ class Memory (Framework):
         # Cam 1: Fires memory injector, reading PC into address reg.
         follower_body = self.add_cam(300,200, groundBody, 100)
         self.distance_joint(follower_body, mem_injector_raiser, follower_body.attachment_point, mem_injector_raiser.attachment_point)
+
+        # Cam 2: Main memory lifter
+        follower_body = self.add_cam(200,300, groundBody, 100)
+        self.distance_joint(follower_body, main_memory_holdoff, follower_body.attachment_point, main_memory_holdoff.attachment_point)
+        
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
