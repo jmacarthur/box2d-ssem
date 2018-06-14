@@ -43,6 +43,7 @@ class Memory (Framework):
             self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
+        return bar_body
 
     def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=50):
         bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
@@ -53,6 +54,7 @@ class Memory (Framework):
             self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0]+30, ypos+1.5+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+pos[0], ypos+1.5+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
+        return bar_body
 
             
     def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100):
@@ -200,7 +202,7 @@ class Memory (Framework):
         idler = self.add_dyanmic_circle(xpos+offset/4, ypos+height/4, 30, density=10, filter=filters[0])
         self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
-    def injector(self, xpos, ypos, attachment_body):
+    def injector(self, xpos, ypos, attachment_body, injector_crank_array, columns=8):
         intake_angle = radians(10)
         height = 40
         crank_offset = pitch-10
@@ -212,15 +214,14 @@ class Memory (Framework):
         self.add_static_polygon(intake_vertices)
 
 
-        for c in range(0,8):
+        for c in range(0,columns):
             divider_height = 23
             height2 =        23
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             self.add_static_polygon(divider_vertices)
             
-        self.injector_cranks = []
-        for c in range(0,8):
+        for c in range(0,columns):
             self.add_static_polygon([ (10,-20), (24,-20), (24,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
@@ -229,7 +230,7 @@ class Memory (Framework):
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
             self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=False)
-            self.injector_cranks.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
+            injector_crank_array.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             # All-inject bar
             raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+130, radius=5, density=50.0)
             self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=False)
@@ -238,8 +239,10 @@ class Memory (Framework):
                                       anchorA=((anchorpos[0]+5)*self.scale,(anchorpos[1]-10)*self.scale),
 	                              anchorB=raiser.worldCenter,
 	                                   collideConnected=False)
-        self.horizontal_rotating_bar(xpos,ypos+110, pitch*9, attachment_body, support_sep=pitch*8)
-        for c in range(0,9):
+        raiser_bar = self.horizontal_rotating_bar(xpos,ypos+110, pitch*9, attachment_body, support_sep=pitch*8)
+        raiser_bar.attachment_point = (xpos, ypos+120)
+        
+        for c in range(0,columns+1):
             
             # Backstop for swing arm - stops the swing arm falling back too far
             self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
@@ -253,8 +256,8 @@ class Memory (Framework):
                                 xpos, ypos+height+45)
 
         # End stop on the right
-
-        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ], xpos+8*pitch, ypos+pitch+10)
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ], xpos+columns*pitch, ypos+pitch+10)
+        return raiser_bar
         
     def add_ball_bearing(self, xpos, ypos, plane):
         bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
@@ -449,23 +452,28 @@ class Memory (Framework):
         return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=fixtures)
 
     
-    def revolving_joint(self, bodyA, bodyB, anchor, friction=False, motor=0):
+    def revolving_joint(self, bodyA, bodyB, anchor, friction=False, motor=0, force=1):
         (x,y) = anchor
 
         if motor!=0:
             self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
-                                           maxMotorTorque = 100000.0,
+                                           maxMotorTorque = 100000.0*force,
                                            motorSpeed = motor,
                                            enableMotor = True)
         elif friction:
             self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
-                                           maxMotorTorque = 10000.0,
+                                           maxMotorTorque = 10000.0*force,
                                            motorSpeed = 0.0,
                                            enableMotor = True)
         else:
             self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale))
 
-    
+    def distance_joint(self, bodyA, bodyB, pointA, pointB):
+            self.world.CreateDistanceJoint(bodyA=bodyA, bodyB=bodyB,
+                                           anchorA=(pointA[0]*self.scale, pointA[1]*self.scale),
+                                           anchorB=(pointB[0]*self.scale, pointB[1]*self.scale),
+                                           collideConnected=False)
+        
     # End of interface functions
 
     def connect_memory(self):
@@ -489,14 +497,19 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body):
+    def add_cam(self, xpos, ypos, attachment_body, follower_len):
         """ Very basic function which just adds a motorised circle at the moment """
         radius = 30
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_polygon = self.translate_points([ (-10,-3), (-7,3), (7, 3), (10,-3) ], 0, radius)
         bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
-        self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25)
+        self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
+
+        follower_body = self.add_dynamic_polygon(makeBox(xpos-radius, ypos+radius, follower_len, 5), 0, 0)
+        self.revolving_joint(attachment_body, follower_body, (xpos-radius+2.5,ypos+radius+2.5), friction=False)
+        follower_body.attachment_point=(xpos+follower_len, ypos+radius)
+        return follower_body
 
     def add_instruction_cranks(self, attachment_body, xpos, ypos):
         len1 = 25
@@ -513,7 +526,7 @@ class Memory (Framework):
                                              
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
             
-        
+
     def __init__(self):
         super(Memory, self).__init__()
         self.scale = 0.5
@@ -528,21 +541,27 @@ class Memory (Framework):
                 pass
         groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
-
-        for r in range(0,5):
-            for i in range(0,1):
+        # Initial charge for main injector
+        for r in range(0,8):
+            for i in range(0,2):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
-
-        self.injector(-32,110, groundBody)
+        self.injector_cranks = []
+        self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
         self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-20, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-55, groundBody, discard=True) # Diverter 2. Discards all output.
         self.regenerator(-20,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
-        self.diverter_set(200,-260, groundBody, slope_x=140, slope_y=180)
 
-
+        # PC injector
+        self.pc_injector_cranks = []
+    
+        mem_injector_raiser = self.injector(300,-200, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
+        # Initial charge for PC injector
+        for r in range(0,8):
+            for i in range(0,2):
+                test_data = self.add_ball_bearing(250+7*i,-120+7*r,0)
         self.subtractor(0,-210, groundBody)
         self.lower_regenerators = []
         self.regenerator(-200,-390, groundBody, self.lower_regenerators)
@@ -575,8 +594,9 @@ class Memory (Framework):
 
         # Cams
 
-        self.add_cam(600,-200, groundBody)
-        
+        # Cam 1: Fires memory injector, reading PC into address reg.
+        follower_body = self.add_cam(300,200, groundBody, 100)
+        self.distance_joint(follower_body, mem_injector_raiser, follower_body.attachment_point, mem_injector_raiser.attachment_point)
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
