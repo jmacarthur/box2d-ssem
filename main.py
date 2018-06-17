@@ -28,7 +28,7 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
-initial_memory = [ 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
+initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
 
 bar_gate_raisers = False
 cam_speed = 0.1
@@ -234,20 +234,20 @@ class Memory (Framework):
         self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
     def injector(self, xpos, ypos, attachment_body, injector_crank_array, columns=8):
-        intake_angle = radians(10)
-        height = 40
+        intake_angle = 30
+        height = 8
         crank_offset = pitch-10
         crank_y = 19
 
         intake_vertices = [ (0,0), (100,0), (100,10), (0,10) ]
-        intake_vertices = rotate_polygon(intake_vertices, -180 - 10)
-        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+55)
+        intake_vertices = rotate_polygon(intake_vertices, -180-intake_angle)
+        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+40)
         self.add_static_polygon(intake_vertices)
 
 
         for c in range(0,columns):
-            divider_height = 23
-            height2 =        23
+            divider_height = 8
+            height2 =        8
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
             divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             self.add_static_polygon(divider_vertices)
@@ -256,7 +256,7 @@ class Memory (Framework):
             self.add_static_polygon([ (10,-20), (24,-20), (24,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
-                                fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filters[0]) ]
+                                fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
 
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
@@ -278,15 +278,15 @@ class Memory (Framework):
             self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
 
             # Thing that stops all the ball bearings rolling over the one in the crank
-            self.add_static_polygon([(22,-6), (23,-6), (23,-3), (22,-3)], xpos+c*pitch+1, ypos+pitch+10)
+            self.add_static_polygon([(20,-6), (23,-6), (23,-3), (20,-3)], xpos+c*pitch+1, ypos+pitch+10)
 
         # roof
-        roof_height=-20
-        self.add_static_polygon([ (0,roof_height), (9*pitch,roof_height), (9*pitch,0), (0,0) ],
-                                xpos, ypos+height+45)
+        #        roof_height=-20
+        #        self.add_static_polygon([ (0,roof_height), (9*pitch,roof_height), (9*pitch,0), (0,0) ],
+        #                                xpos, ypos+height+45)
 
         # End stop on the right
-        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height) ], xpos+columns*pitch, ypos+pitch+10)
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height+30), (0,height) ], xpos+columns*pitch, ypos+pitch+10)
         return raiser_bar
         
     def add_ball_bearing(self, xpos, ypos, plane):
@@ -650,7 +650,7 @@ class Memory (Framework):
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
         for r in range(0,8):
-            for i in range(0,2):
+            for i in range(0,8):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
         self.injector_cranks = []
         self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
@@ -666,7 +666,7 @@ class Memory (Framework):
         pc_injector_raiser = self.injector(300,-200, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
         # Initial charge for PC injector
         for r in range(0,8):
-            for i in range(0,2):
+            for i in range(0,8):
                 test_data = self.add_ball_bearing(250+7*i,-120+7*r,0)
         self.subtractor(-13,-170, groundBody)
         self.lower_regenerators = []
@@ -705,20 +705,20 @@ class Memory (Framework):
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.05)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner
-        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1)])
+        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1), (0.60,0.1)])
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05)],axis_offset=-1)
+        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05), (0.61,0.3)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 60, horizontal=True, bumps=[(0.57,0.05)])
+        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.57,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
