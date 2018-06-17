@@ -16,8 +16,9 @@ def radians(degrees):
     return 2*math.pi*float(degrees) / 360
 
 def rotate_polygon(polygon, degrees):
-    new_poly = []
-    r = radians(degrees)
+    return rotate_polygon_radians(polygon, radians(degrees))
+
+def rotate_polygon_radians(polygon, r):
     return [(x*math.cos(r) - y*math.sin(r), y*math.cos(r) + x*math.sin(r)) for (x,y) in polygon]
 
 bb_diameter = 6.35
@@ -114,7 +115,7 @@ class Memory (Framework):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.add_static_polygon(box_polygon(10,10), c*pitch+xpos-11, -12+ypos)
+            self.add_static_polygon(box_polygon(8,10), c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -153,29 +154,37 @@ class Memory (Framework):
 
     def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1):
         output_offset_x = pitch*(lines+1)*output_offset_dir
+        sub_y_pitch = 20
         for c in range(0,lines):
-            input_toggle = self.toggle(xpos+c*pitch, ypos-150+20*c, attachment_body)
-            output_toggle = self.subtractor_output_toggle(xpos+c*pitch+output_offset_x, ypos-150+20*c, attachment_body)
+            input_toggle = self.toggle(xpos+c*pitch, ypos-150+sub_y_pitch*c, attachment_body)
+            output_toggle = self.subtractor_output_toggle(xpos+c*pitch+output_offset_x, ypos-150+sub_y_pitch*c, attachment_body)
             self.world.CreateDistanceJoint(bodyA=input_toggle,
 	                                   bodyB=output_toggle,
 	                                   anchorA=(xpos, ypos+5),
 	                                   anchorB=(xpos+output_offset_x,ypos+5),
 	                                   collideConnected=False)
             # Large static bits that form input channels
-            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ],
+            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5, ypos+pitch+9)
 
             # More top-side channels, but for the output
-            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-20*(8-c)), (0,-20*(8-c)-20) ],
+            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
             # Bottom-side channels, for the output
-            self.add_static_polygon([ (-1,0), (1,0), (1,20*c+10), (-1,20*c+10) ],
+            self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
                                     xpos+c*pitch+output_offset_x, ypos+pitch-185)
 
-            self.add_static_polygon([ (-1,0), (1,0), (1,20*c+50), (-1,20*c+50) ],
+            self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
                                     xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
 
-            
+        # A reset bar
+        reset_angle = math.atan2(sub_y_pitch, pitch)
+        reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
+        reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
+        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180)
+        self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
+        return reset_lever
+        
     def ball_bearing_lift(self,xpos,ypos,attachment_body):
         plane = 0
         radius = 30
@@ -654,7 +663,7 @@ class Memory (Framework):
         for r in range(0,8):
             for i in range(0,2):
                 test_data = self.add_ball_bearing(250+7*i,-120+7*r,0)
-        self.subtractor(0,-210, groundBody)
+        self.subtractor(-13,-170, groundBody)
         self.lower_regenerators = []
         self.regenerator(-200,-390, groundBody, self.lower_regenerators)
         #Program counter
