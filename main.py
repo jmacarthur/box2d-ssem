@@ -660,7 +660,7 @@ class Memory (Framework):
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
         upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=350, slope_y=350) # Diverter 3; splits to instruction reg/PC
+        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=354, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []    
@@ -706,16 +706,16 @@ class Memory (Framework):
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04), (0.65, 0.04)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04), (0.72, 0.1)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner
-        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1), (0.60,0.1)])
+        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1), (0.70,0.1)])
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05), (0.61,0.3)],axis_offset=-1)
+        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05), (0.71,0.3)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
@@ -727,14 +727,15 @@ class Memory (Framework):
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.25,0.04),(0.65,0.04)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.25,0.04),(0.72,0.1)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
-        # Cam 8: Sender eject Note timing hazard. We cannot raise
-        # selector and eject until regenerated data is written back,
-        # so we delay for a few seconds here.  If gravity or timing
-        # changes, expect this to break.
-        follower_body = self.add_cam(600, -450, groundBody, 60, bumps=[(0.67,0.04)], horizontal=True)
+        # Cam 8: Sender eject.
+        # Note timing hazard. We cannot raise selector and eject until
+        # regenerated data is written back, so we delay for a few
+        # seconds here.  If gravity or timing changes, expect this to
+        # break.
+        follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.70,0.06)], horizontal=True)
         self.distance_joint(follower_body, sender_eject)
 
         self.set_initial_memory()
