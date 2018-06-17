@@ -563,14 +563,18 @@ class Memory (Framework):
         if horizontal:
             axle_y = ypos+radius
             if reverse_direction:
-                axle_x = xpos-radius-2.5-axis_offset
+                axle_x = xpos-radius-axis_offset-5
             else:
-                axle_x = xpos+radius+2.5+axis_offset
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x-2.5, axle_y-follower_len, 5, follower_len), 0, 0)
+                axle_x = xpos+radius+axis_offset+2.5
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0)
+            follower_wheel = self.add_dynamic_circle(axle_x+2.5, axle_y-radius, 5)
+            self.revolving_joint(follower_wheel, follower_body, (axle_x+2.5,axle_y-radius), friction=False)
         else:
-            axle_y = ypos+radius+axis_offset
+            axle_y = ypos+radius+axis_offset+2.5
             axle_x = xpos-radius
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y+2.5, follower_len, 5), 0, 0)
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0)
+            follower_wheel = self.add_dynamic_circle(axle_x+radius, axle_y+2.5, 5)
+            self.revolving_joint(follower_wheel, follower_body, (axle_x+radius,axle_y+2.5), friction=False)
         print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
 
         if horizontal:
