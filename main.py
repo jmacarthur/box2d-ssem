@@ -2,7 +2,7 @@
 
 import math
 
-from framework import (Framework, main)
+from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 from Box2D import b2CircleShape
 
@@ -28,12 +28,12 @@ pitch = 22
 follower_spacing = 14
 
 bar_gate_raisers = False
-
+cam_speed = 0.1
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
            filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
 class Memory (Framework):
-    name = ""
+    name = "SSEM"
 
 
     def vertical_rotating_bar(self, xpos, ypos, height, attachment_body, support_sep=50):
@@ -503,17 +503,18 @@ class Memory (Framework):
         (x,y) = anchor
 
         if motor!=0:
-            self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
+            j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
                                            maxMotorTorque = 100000.0*force,
                                            motorSpeed = motor,
                                            enableMotor = True)
         elif friction:
-            self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
+            j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
                                            maxMotorTorque = 10000.0*force,
                                            motorSpeed = 0.0,
                                            enableMotor = True)
         else:
-            self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale))
+            j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale))
+        return j
 
     # End of interface functions
 
@@ -548,7 +549,9 @@ class Memory (Framework):
         bump_polygon = rotate_polygon(bump_polygon, phase*360)
         bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])        
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
-        self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
+        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
+        cam_driver.motorSpeed = 0
+
         axle_y = ypos+radius
         if horizontal:
             axle_x = xpos+radius
@@ -564,6 +567,7 @@ class Memory (Framework):
             follower_body.attachment_point=(axle_x+follower_len, axle_y)
         print("Setting attachment point: (x,y)={}".format(follower_body.attachment_point))
         self.revolving_joint(attachment_body, follower_body, (axle_x+2.5,axle_y+2.5), friction=False)
+        self.all_cam_drives.append(cam_driver)
         return follower_body
 
     def add_instruction_cranks(self, attachment_body, xpos, ypos):
@@ -584,6 +588,8 @@ class Memory (Framework):
 
     def __init__(self):
         super(Memory, self).__init__()
+        self.camSpeed =0 
+        self.all_cam_drives = []
         self.scale = 0.5
         self.transfer_bands = []
         self.ball_bearings = []
@@ -685,6 +691,17 @@ class Memory (Framework):
                                     filter=filters[plane])]
                                 
                             ),plane)
+
+
+    def Keyboard(self, key):
+        print("Processing key: {}".format(key))
+        if key == Keys.K_r:
+            self.camSpeed = 0 if self.camSpeed == cam_speed else cam_speed
+            
+            for d in self.all_cam_drives:
+                
+                d.motorSpeed = self.camSpeed
+
 if __name__ == "__main__":
     main(Memory)
 
