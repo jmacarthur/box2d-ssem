@@ -115,7 +115,7 @@ class Memory (Framework):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.add_static_polygon(box_polygon(8,10), c*pitch+xpos-11, -12+ypos)
+            self.add_static_polygon(box_polygon(7,10), c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -333,6 +333,7 @@ class Memory (Framework):
         
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col+10,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         self.memory_col0_x = 7
@@ -553,30 +554,34 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len, start=0.5, length=0.1, horizontal=False, reverse_direction=False, axis_offset=0):
+    def add_cam(self, xpos, ypos, attachment_body, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. 
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
         reverse_direction puts the cam on the other side and only makes sense for horizontal cams.
         """
-        if not horizontal: start -= 0.25
+        if not horizontal:
+            for b in range(0,len(bumps)):
+                bumps[b] = (bumps[b][0] - 0.25, bumps[b][1])
         radius = 30
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
-        ang = start
-        bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
-        bump_height = radius+3
-        points = 1
-        # Max points in a polygon is 15 at the moment.
-        while ang < (start+length) and points < 15:
-            ang += 0.02
-            bump_points.append( ( bump_height*math.cos(-ang*math.pi*2), bump_height*math.sin(-ang*math.pi*2)) )
-            points += 1
-            if points == 15:
-                print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
+        bump_fixtures = []
+        for (start, length) in bumps:
+            ang = start
+            bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
+            bump_height = radius+3
+            points = 1
+            # Max points in a polygon is 15 at the moment.
+            while ang < (start+length) and points < 15:
+                ang += 0.02
+                bump_points.append( ( bump_height*math.cos(-ang*math.pi*2), bump_height*math.sin(-ang*math.pi*2)) )
+                points += 1
+                if points == 15:
+                    print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
 
-        bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
-        bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_points),density=1.0,filter=filters[0])        
-        cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
+            bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
+            bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=1.0,filter=filters[0]))
+        cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos)
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
         cam_driver.motorSpeed = 0
 
@@ -654,7 +659,7 @@ class Memory (Framework):
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
         upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-10,-125, groundBody, slope_x=347, slope_y=350) # Diverter 3; splits to instruction reg/PC
+        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=350, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []    
@@ -696,32 +701,32 @@ class Memory (Framework):
         # Cams
 
         # Cam 1: Fires memory injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, groundBody, 100, start=0.05)
+        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.05,0.1)])
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, start=0.25)
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.05)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner
-        follower_body = self.add_cam(600,300, groundBody, 60, horizontal=True)
+        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1)])
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, start=0.1, length=0.3,axis_offset=-1)
+        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 60, horizontal=True)
+        follower_body = self.add_cam(800, 100, groundBody, 60, horizontal=True, bumps=[(0.57,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3, bumps=[(0.55, 0.1)])
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320,300, groundBody, 150, start=0.25, axis_offset=-1)
+        follower_body = self.add_cam(320,300, groundBody, 150, bumps=[(0.25,0.1)], axis_offset=-1)
         self.distance_joint(follower_body, instruction_selector_holdoff)
         
 
