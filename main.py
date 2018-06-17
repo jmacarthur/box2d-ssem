@@ -163,10 +163,10 @@ class Memory (Framework):
 	                                   anchorA=(xpos, ypos+5),
 	                                   anchorB=(xpos+output_offset_x,ypos+5),
 	                                   collideConnected=False)
+        for c in range(0,lines+1):
             # Large static bits that form input channels
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5, ypos+pitch+9)
-
             # More top-side channels, but for the output
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
@@ -425,10 +425,11 @@ class Memory (Framework):
             blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=self.translate_points(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
-
+        
         crank = self.crank_left_up(xpos-30, ypos-20, attachment_body)
         self.distance_joint(crank, blocker_set, crank.attachment_point, (xpos+10,ypos))
-
+        blocker_set.attachment_point=(xpos+c*pitch,ypos+7)
+        return blocker_set
     # Interface functions to PyBox2D
 
     def distance_joint(self, bodyA, bodyB, posA=None, posB=None):
@@ -694,7 +695,7 @@ class Memory (Framework):
         self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
-        self.memory_sender(325+17,-500, groundBody)
+        sender_eject = self.memory_sender(325+17,-500, groundBody)
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
@@ -705,7 +706,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04), (0.65, 0.04)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
@@ -726,10 +727,15 @@ class Memory (Framework):
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320,300, groundBody, 150, bumps=[(0.25,0.1)], axis_offset=-1)
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.25,0.04),(0.65,0.04)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
-        
 
+        # Cam 8: Sender eject Note timing hazard. We cannot raise
+        # selector and eject until regenerated data is written back,
+        # so we delay for a few seconds here.  If gravity or timing
+        # changes, expect this to break.
+        follower_body = self.add_cam(600, -450, groundBody, 60, bumps=[(0.67,0.04)], horizontal=True)
+        self.distance_joint(follower_body, sender_eject)
 
         self.set_initial_memory()
         
