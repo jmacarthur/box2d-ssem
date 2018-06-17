@@ -27,6 +27,8 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
+bar_gate_raisers = False
+
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
            filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
@@ -35,27 +37,41 @@ class Memory (Framework):
 
 
     def vertical_rotating_bar(self, xpos, ypos, height, attachment_body, support_sep=50):
-        bar_body = self.add_dynamic_polygon(box_polygon(3,height), xpos+3, ypos, filters[0])
-        bar_body_2 = self.add_dynamic_polygon(box_polygon(3,height), xpos, ypos-15, filters[0])
-        for i in range(0,2):
-            pos = (0,support_sep*i)
-            support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], ypos+pos[1], filters[0])
-            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
-        bar_body.attachment_point=(xpos+4.5, ypos+height/2)
-        return bar_body
+        if bar_gate_raisers:
+            bar_body = self.add_dynamic_polygon(box_polygon(3,height), xpos+3, ypos, filters[0])
+            bar_body_2 = self.add_dynamic_polygon(box_polygon(3,height), xpos, ypos-15, filters[0])
+            for i in range(0,2):
+                pos = (0,support_sep*i)
+                support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], ypos+pos[1], filters[0])
+                self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
+                self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
+                self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
+            bar_body.attachment_point=(xpos+4.5, ypos+height/3)
+            return bar_body
+        else:
+            body = self.add_dynamic_polygon(box_polygon(3,height), xpos,ypos, filters[0])
+            body.attachment_point = (xpos+1.5,ypos+height/2)
+            self.slide_joint(attachment_body, body, (1,0), 0, 20, friction=False)
+            return body
 
-    def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=50):
-        bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
-        bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos+15, ypos, filters[0])
-        for i in range(0,2):
-            pos = (support_sep*i,0)
-            support = self.add_dynamic_polygon(box_polygon(30,3), xpos+pos[0], ypos+pos[1], filters[0])
-            self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0]+30, ypos+1.5+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+pos[0], ypos+1.5+pos[1]))
-            self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
-        return bar_body
+    def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=0):
+        if bar_gate_raisers:
+            if support_sep == 0: support_sep = height/2
+            bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
+            bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos+15, ypos, filters[0])
+            for i in range(0,2):
+                pos = (support_sep*i,0)
+                support = self.add_dynamic_polygon(box_polygon(30,3), xpos+pos[0], ypos+pos[1], filters[0])
+                self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0]+30, ypos+1.5+pos[1]))
+                self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+pos[0], ypos+1.5+pos[1]))
+                self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
+            bar_body.attachment_point=(xpos+height/2, ypos+4.5)
+            return bar_body
+        else:
+            body = self.add_dynamic_polygon(box_polygon(height,3), xpos,ypos, filters[0])
+            body.attachment_point = (xpos+height/2,ypos+1.5)
+            self.slide_joint(attachment_body, body, (0,-1), -20, 0, friction=False)
+            return body
 
             
     def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100):
@@ -241,7 +257,6 @@ class Memory (Framework):
 	                              anchorB=raiser.worldCenter,
 	                                   collideConnected=False)
         raiser_bar = self.horizontal_rotating_bar(xpos,ypos+110, pitch*9, attachment_body, support_sep=pitch*8)
-        raiser_bar.attachment_point = (xpos, ypos+120)
         
         for c in range(0,columns+1):
             
@@ -283,8 +298,8 @@ class Memory (Framework):
             selector_array.append(row_selector)
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
 
-        holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+120, 100, groundBody, 50)
-        holdoff_bar.attachment_point = (xpos+200,ypos+120)
+        holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
+        holdoff_bar.attachment_point = (xpos+220,ypos+130)
         # Row followers
         for row in range(0,8):
             row_follower_fixtures = []
@@ -294,7 +309,9 @@ class Memory (Framework):
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=False)
 
+        # Holdoff bar for all output rods
         self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
+        
         return holdoff_bar
         
     def memory_module(self, xpos, ypos, groundBody):
@@ -344,7 +361,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
         # Gate returner to push all the memory rows back in
-        self.memory_returning_gate = self.vertical_rotating_bar(xpos-30,20,14*memory_rows-20, groundBody)
+        self.memory_returning_gate = self.vertical_rotating_bar(xpos-30,0,14*memory_rows, groundBody)
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
@@ -522,7 +539,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0):
+    def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0, horizontal=False):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. """
         
@@ -530,13 +547,24 @@ class Memory (Framework):
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_polygon = self.translate_points([ (-10,-3), (-7,3), (7, 3), (10,-3) ], 0, radius)
         bump_polygon = rotate_polygon(bump_polygon, phase*360)
-        bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])
+        bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])        
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
         self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
+        axle_y = ypos+radius
+        if horizontal:
+            axle_x = xpos+radius
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0)
+        else:
+            axle_x = xpos-radius
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0)
+        print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
 
-        follower_body = self.add_dynamic_polygon(makeBox(xpos-radius, ypos+radius, follower_len, 5), 0, 0)
-        self.revolving_joint(attachment_body, follower_body, (xpos-radius+2.5,ypos+radius+2.5), friction=False)
-        follower_body.attachment_point=(xpos+follower_len, ypos+radius)
+        if horizontal:
+            follower_body.attachment_point=(axle_x, axle_y-follower_len)
+        else:
+            follower_body.attachment_point=(axle_x+follower_len, axle_y)
+        print("Setting attachment point: (x,y)={}".format(follower_body.attachment_point))
+        self.revolving_joint(attachment_body, follower_body, (axle_x+2.5,axle_y+2.5), friction=False)
         return follower_body
 
     def add_instruction_cranks(self, attachment_body, xpos, ypos):
@@ -627,11 +655,12 @@ class Memory (Framework):
         self.distance_joint(follower_body, mem_injector_raiser, follower_body.attachment_point, mem_injector_raiser.attachment_point)
 
         # Cam 2: Main memory lifter
-        follower_body = self.add_cam(200,300, groundBody, 100)
-        self.distance_joint(follower_body, main_memory_holdoff, follower_body.attachment_point, main_memory_holdoff.attachment_point)
+        follower_body = self.add_cam(150,300, groundBody, 150, phase=0.25)
+        print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
+        self.distance_joint(follower_body, main_memory_holdoff, (200,300+50), main_memory_holdoff.attachment_point)
 
         # Cam 2: Memory returner
-        follower_body = self.add_cam(600,300, groundBody, 100)
+        follower_body = self.add_cam(600,300, groundBody, 100, horizontal=True)
         self.distance_joint(follower_body, self.memory_returning_gate, follower_body.attachment_point)
 
         
