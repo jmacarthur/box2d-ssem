@@ -27,6 +27,8 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
+initial_memory = [ 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
+
 bar_gate_raisers = False
 cam_speed = 0.1
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
@@ -318,13 +320,14 @@ class Memory (Framework):
         return (selector_holdoff_bar, follower_holdoff_bar)
         
     def memory_module(self, xpos, ypos, groundBody):
-        row_injector_fixtures = []
-        lift = 13
+        row_injector_fixtures = []        
+        
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        
+        self.memory_col0_x = 7
+        self.memory_row0_y = -30
         injectors=[]
         for col in range(0,8):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
@@ -594,7 +597,12 @@ class Memory (Framework):
                                              
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
             
-
+    def set_initial_memory(self):
+        for x in range(0,8):
+            for y in range(0,8):
+                if (initial_memory[y] & 1<<x):
+                    self.add_ball_bearing(self.memory_col0_x + pitch*x+2, self.memory_row0_y + 14*y+41, 0)
+        
     def __init__(self):
         super(Memory, self).__init__()
         self.camSpeed =0 
@@ -694,6 +702,9 @@ class Memory (Framework):
         self.distance_joint(follower_body, instruction_selector_holdoff)
         
 
+
+        self.set_initial_memory()
+        
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
