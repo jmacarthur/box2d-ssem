@@ -104,14 +104,15 @@ class Memory (Framework):
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
-        self.add_static_polygon(makeBox(xpos-10, ypos, 3,20))
+        self.add_static_polygon(makeBox(xpos-10, ypos-10, 3,30))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
-
+        conrod.attachment_point = (xpos+pitch*8, ypos+15) 
+        return conrod
     def regenerator(self, xpos, ypos, attachment_body, crank_list):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.add_static_polygon(box_polygon(11,10), c*pitch+xpos-11, -12+ypos)
+            self.add_static_polygon(box_polygon(10,10), c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -126,7 +127,9 @@ class Memory (Framework):
             crank_list.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             
         pusher_body = self.add_multifixture(pusher_parts)
+        pusher_body.attachment_point = (xpos+8*pitch,ypos+10)
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0)
+        return pusher_body
 
     def toggle(self, xpos, ypos, attachment_body):
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
@@ -316,6 +319,7 @@ class Memory (Framework):
         
     def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
+        lift = 13
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
@@ -326,15 +330,13 @@ class Memory (Framework):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
             injectors.append(injector)
             self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=0.1)
-                             
+            
         row_ejector_fixtures = []
         for col in range(0,8):
-            ejector = fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
+            # Blocks which stop the ball bearing falling past
+            ejector = fixtureDef(shape=makeBox(22*col+1,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
             row_ejector_fixtures.append(ejector)
         row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-
-        for col in range(0,8):
-            row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
         ejectors = []
         for col in range(0,8):
@@ -539,7 +541,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0, horizontal=False):
+    def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0, horizontal=False, reverse_direction=False, axis_offset=0):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. """
         
@@ -554,11 +556,14 @@ class Memory (Framework):
 
         axle_y = ypos+radius
         if horizontal:
-            axle_x = xpos+radius
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0)
+            if reverse_direction:
+                axle_x = xpos-radius-2.5-axis_offset
+            else:
+                axle_x = xpos+radius+2.5+axis_offset
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x-2.5, axle_y-follower_len, 5, follower_len), 0, 0)
         else:
             axle_x = xpos-radius
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0)
+            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y+2.5, follower_len, 5), 0, 0)
         print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
 
         if horizontal:
@@ -611,9 +616,9 @@ class Memory (Framework):
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
-        self.diverter_set(-15,-55, groundBody, discard=True) # Diverter 2. Discards all output.
-        self.regenerator(-20,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
+        self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
+        upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        diverter_3 = self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []
@@ -669,10 +674,17 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 60, horizontal=True)
+        follower_body = self.add_cam(600,200, groundBody, 90, horizontal=True)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
-        
+        # Cam 5: Regenerator 1
+        follower_body = self.add_cam(800, 100, groundBody, 60, horizontal=True)
+        self.distance_joint(follower_body, upper_regen_control)
+
+        # Cam 5: Split to instruction counter/reg
+        follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3)
+        self.distance_joint(follower_body, diverter_3)
+
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
