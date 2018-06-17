@@ -543,7 +543,10 @@ class Memory (Framework):
             
     def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0, horizontal=False, reverse_direction=False, axis_offset=0):
         """ Very basic function which just adds a motorised circle with a bump.
-        phase is between 0 and 1 and adjusts initial rotation. """
+        phase is between 0 and 1 and adjusts initial rotation. 
+        horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
+        reverse_direction puts the cam on the other side and only makes sense for horizontal cams.
+        """
         
         radius = 30
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
