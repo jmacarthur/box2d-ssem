@@ -51,7 +51,7 @@ class Memory (Framework):
         else:
             body = self.add_dynamic_polygon(box_polygon(3,height), xpos,ypos, filters[0])
             body.attachment_point = (xpos+1.5,ypos+height/2)
-            self.slide_joint(attachment_body, body, (1,0), 0, 20, friction=False)
+            self.slide_joint(attachment_body, body, (1,0), 0, 20, friction=0)
             return body
 
     def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=0):
@@ -70,7 +70,7 @@ class Memory (Framework):
         else:
             body = self.add_dynamic_polygon(box_polygon(height,3), xpos,ypos, filters[0])
             body.attachment_point = (xpos+height/2,ypos+1.5)
-            self.slide_joint(attachment_body, body, (0,-1), -20, 0, friction=False)
+            self.slide_joint(attachment_body, body, (0,-1), -20, 0, friction=0)
             return body
 
             
@@ -132,7 +132,7 @@ class Memory (Framework):
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
                             fixtureDef(shape=makeBox(xpos-1.5, ypos, 3, 10), density=1.0) ]
         toggle = self.add_multifixture(toggle_shape)
-        self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=True)
+        self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
 
         # Bit that goes under the toggle to stop it moving too far
         self.add_static_polygon(box_polygon(6,2), xpos-3, ypos-3)
@@ -246,11 +246,11 @@ class Memory (Framework):
 
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
-            self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=False)
+            self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=0)
             injector_crank_array.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             # All-inject bar
             raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+130, radius=5, density=50.0)
-            self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=False)
+            self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=0)
             self.world.CreateDistanceJoint(bodyA=bellcrank,
 	                              bodyB=raiser,
                                       anchorA=((anchorpos[0]+5)*self.scale,(anchorpos[1]-10)*self.scale),
@@ -285,7 +285,7 @@ class Memory (Framework):
             for row in range(0,8):
                 enabled = (row >> selector_no) & 1
                 row_selector_fixtures.append(
-                    fixtureDef(shape=makeBox(14+25*selector_no,follower_spacing*row+7*enabled,14,7),             density=1.0,
+                    fixtureDef(shape=makeBox(14+25*selector_no,follower_spacing*row+7*enabled,14,5), density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
                 )
             #Pegs which are used to raise the selector rods all at once
@@ -296,7 +296,7 @@ class Memory (Framework):
             
             row_selector = self.add_multifixture(row_selector_fixtures, xpos+200, 0)
             selector_array.append(row_selector)
-            self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=False)
+            self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=0)
 
         holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
         holdoff_bar.attachment_point = (xpos+220,ypos+130)
@@ -304,10 +304,10 @@ class Memory (Framework):
         for row in range(0,8):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
-                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
             follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
             follower_array.append(follower)
-            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=False)
+            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
 
         # Holdoff bar for all output rods
         self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
@@ -319,18 +319,19 @@ class Memory (Framework):
         for col in range(0,8):
             row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_injector_fixtures.append(fixtureDef(shape=makeBox(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
         injectors=[]
         for col in range(0,8):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
             injectors.append(injector)
-            self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=False)
+            self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=0)
                              
         row_ejector_fixtures = []
         for col in range(0,8):
             ejector = fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
             row_ejector_fixtures.append(ejector)
-        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,0,3,13), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
 
         for col in range(0,8):
             row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
@@ -340,11 +341,11 @@ class Memory (Framework):
             ejector = self.add_multifixture(row_ejector_fixtures, 0, 14*col)
             ejector.attachment_point = (22*col, 0)
             ejectors.append(ejector)
-            self.slide_joint(ejector, groundBody, (1,0), 0, 14, friction=True)
+            self.slide_joint(ejector, groundBody, (1,0), 0, 14, friction=0)
 
         # Add weights which bias the rows
         for col in range(0,8):
-            crank = self.crank_left_up(xpos-250+30*col, ypos+14*col-10, groundBody)
+            crank = self.crank_left_up(xpos-250+30*col, ypos+14*col-30, groundBody, output_length=40, weight=50)
             self.distance_joint(ejectors[col], crank, ejectors[col].attachment_point, crank.attachment_point)
                               
 
@@ -354,11 +355,7 @@ class Memory (Framework):
         
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
-            self.world.CreateDistanceJoint(bodyA=ejectors[r],
-	                              bodyB=self.memory_followers[r],
-                                      anchorA=(200, 14*r+10),
-	                              anchorB=(200+35,14*r+10),
-	                                   collideConnected=False)
+            self.distance_joint(ejectors[r], self.memory_followers[r], (200,14*r+10), (200+35, 14*r+10))
 
         # Gate returner to push all the memory rows back in
         self.memory_returning_gate = self.vertical_rotating_bar(xpos-30,0,14*memory_rows, groundBody)
@@ -386,13 +383,13 @@ class Memory (Framework):
 
             self.injector_cranks[i]
 
-    def crank_left_up(self, xpos, ypos, attachment_body):
+    def crank_left_up(self, xpos, ypos, attachment_body, output_length=20, weight=10):
         crank_fixture_1 = fixtureDef(shape=makeBox(-20,0,20,3), density=1.0, filter=filters[0])
-        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,20), density=1.0, filter=filters[0])
-        crank_fixture_3 = fixtureDef(shape=makeBox(-20,-5,10,10), density=10.0, filter=filters[0]) # Heavy weight
+        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,output_length), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=makeBox(-20,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
         crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
-        crank.attachment_point=(xpos,ypos+20)
+        crank.attachment_point=(xpos,ypos+output_length)
         return crank
             
     def memory_sender(self, xpos, ypos, attachment_body):
@@ -449,12 +446,14 @@ class Memory (Framework):
         fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
         return self.world.CreateDynamicBody(fixtures=fixture)
 
-    def slide_joint(self, body1, body2, axis, limit1, limit2,friction=True):
-        if friction:
+    def slide_joint(self, body1, body2, axis, limit1, limit2,friction=1.0):
+        if friction==False: friction = 0
+        
+        if friction> 0:
             return self.world.CreatePrismaticJoint(
                 bodyA=body1, bodyB=body2,
                 anchor=body2.worldCenter,
-                axis=axis, maxMotorForce=10000.0,
+                axis=axis, maxMotorForce=10000.0*friction,
                 enableMotor=True, lowerTranslation=limit1*self.scale,
                 upperTranslation=limit2*self.scale, enableLimit=True)
         else:
