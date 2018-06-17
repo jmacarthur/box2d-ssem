@@ -563,10 +563,9 @@ class Memory (Framework):
             bump_points.append( ( bump_height*math.cos(-ang*math.pi*2), bump_height*math.sin(-ang*math.pi*2)) )
             points += 1
             if points == 15:
-                print("WARNING: Max points reached in cam bump")
+                print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
 
         bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
-        print("Adding bump points: {}".format(bump_points))
         bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_points),density=1.0,filter=filters[0])        
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
