@@ -310,15 +310,33 @@ class Memory (Framework):
                              
         row_ejector_fixtures = []
         for col in range(0,8):
-            row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            ejector = fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
+            row_ejector_fixtures.append(ejector)
         row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,0,3,13), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+
+        for col in range(0,8):
+            row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*col,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
         ejectors = []
         for col in range(0,8):
             ejector = self.add_multifixture(row_ejector_fixtures, 0, 14*col)
+            ejector.attachment_point = (22*col, 0)
             ejectors.append(ejector)
             self.slide_joint(ejector, groundBody, (1,0), 0, 14)
 
+        # Add weights which bias the rows
+        for col in range(0,8):
+            circleX = xpos-120+10*col
+            circleY = ypos+14*col+5
+            self.add_static_circle(circleX, circleY, 5)
+            weight = self.add_dynamic_circle(circleX-5, circleY-20, 6, density=50.0)
+            self.pulley_joint(ejectors[col],
+                              weight,
+                              ejectors[col].attachment_point,
+                              weight.attachment_point,
+                              (circleX,circleY+5),
+                              (circleX-5,circleY))
+                              
 
         self.memory_followers = []
         self.memory_selectors = []
@@ -404,7 +422,9 @@ class Memory (Framework):
         return self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale, ypos*self.scale)), filter=filter))
 
     def add_dynamic_circle(self, xpos, ypos, radius, density=1.0, filter=filters[0]):
-        return self.world.CreateDynamicBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale,ypos*self.scale)), density=density, filter=filter))
+        circle = self.world.CreateDynamicBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale,ypos*self.scale)), density=density, filter=filter))
+        circle.attachment_point = (xpos*self.scale, ypos*self.scale)
+        return circle
         
     def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0]):
         translated_vertices = self.translate_points(vertices, xpos, ypos)
@@ -427,6 +447,16 @@ class Memory (Framework):
                 axis=axis, lowerTranslation=limit1*self.scale,
                 upperTranslation=limit2*self.scale, enableLimit=True)
 
+    def pulley_joint(self, bodyA, bodyB, attachmentA, attachmentB, groundA, groundB):        
+        self.world.CreatePulleyJoint(
+            bodyA=bodyA, 
+            bodyB=bodyB, 
+            anchorA = (attachmentA[0]*self.scale, attachmentA[1]*self.scale),
+            anchorB = (attachmentB[0]*self.scale, attachmentB[1]*self.scale),
+            groundAnchorA = (groundA[0]*self.scale, groundA[1]*self.scale),
+            groundAnchorB = (groundB[0]*self.scale, groundB[1]*self.scale),
+            ratio=1.0)
+        
     def add_multifixture(self, fixtures, xpos=0, ypos=0):
         # Multifixtures are a bit tricky - we have to go inside the shape data to scale it.
         new_fixtures = []
@@ -498,11 +528,14 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len):
-        """ Very basic function which just adds a motorised circle at the moment """
+    def add_cam(self, xpos, ypos, attachment_body, follower_len, phase=0):
+        """ Very basic function which just adds a motorised circle with a bump.
+        phase is between 0 and 1 and adjusts initial rotation. """
+        
         radius = 30
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_polygon = self.translate_points([ (-10,-3), (-7,3), (7, 3), (10,-3) ], 0, radius)
+        bump_polygon = rotate_polygon(bump_polygon, phase*360)
         bump_fixture = fixtureDef(shape=polygonShape(vertices=bump_polygon),density=1.0,filter=filters[0])
         cam_body = self.add_multifixture([disc_fixture, bump_fixture], xpos, ypos)
         self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
@@ -596,7 +629,7 @@ class Memory (Framework):
         # Cams
 
         # Cam 1: Fires memory injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, groundBody, 100)
+        follower_body = self.add_cam(300,200, groundBody, 100, phase=0.45)
         self.distance_joint(follower_body, mem_injector_raiser, follower_body.attachment_point, mem_injector_raiser.attachment_point)
 
         # Cam 2: Main memory lifter
