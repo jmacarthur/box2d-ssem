@@ -554,14 +554,15 @@ class Memory (Framework):
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
         cam_driver.motorSpeed = 0
 
-        axle_y = ypos+radius
         if horizontal:
+            axle_y = ypos+radius
             if reverse_direction:
                 axle_x = xpos-radius-2.5-axis_offset
             else:
                 axle_x = xpos+radius+2.5+axis_offset
             follower_body = self.add_dynamic_polygon(makeBox(axle_x-2.5, axle_y-follower_len, 5, follower_len), 0, 0)
         else:
+            axle_y = ypos+radius+axis_offset
             axle_x = xpos-radius
             follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y+2.5, follower_len, 5), 0, 0)
         print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
@@ -618,7 +619,7 @@ class Memory (Framework):
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
         upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
+        diverter_3 = self.diverter_set(-10,-125, groundBody, slope_x=347, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []
@@ -649,7 +650,7 @@ class Memory (Framework):
         # Instruction decoder ROM
         self.rom_followers = []
         self.rom_selectors = []
-        self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
+        (instruction_selector_holdoff, instruction_follower_holdoff) = self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
 
         self.add_instruction_cranks(groundBody, 550, 140)
        
@@ -674,7 +675,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 90, horizontal=True)
+        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
@@ -684,6 +685,11 @@ class Memory (Framework):
         # Cam 6: Split to instruction counter/reg
         follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, diverter_3)
+
+        # Cam 7: Instruction selector holdoff
+        follower_body = self.add_cam(320,300, groundBody, 150, phase=0.25, axis_offset=-1)
+        self.distance_joint(follower_body, instruction_selector_holdoff)
+        
 
     def Step(self, settings):
         super(Memory, self).Step(settings)
