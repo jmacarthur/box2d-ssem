@@ -298,8 +298,8 @@ class Memory (Framework):
             selector_array.append(row_selector)
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=0)
 
-        holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
-        holdoff_bar.attachment_point = (xpos+220,ypos+130)
+        selector_holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
+        selector_holdoff_bar.attachment_point = (xpos+220,ypos+130)
         # Row followers
         for row in range(0,8):
             row_follower_fixtures = []
@@ -310,9 +310,9 @@ class Memory (Framework):
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
 
         # Holdoff bar for all output rods
-        self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
+        follower_holdoff_bar = self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
         
-        return holdoff_bar
+        return (selector_holdoff_bar, follower_holdoff_bar)
         
     def memory_module(self, xpos, ypos, groundBody):
         row_injector_fixtures = []
@@ -325,7 +325,7 @@ class Memory (Framework):
         for col in range(0,8):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
             injectors.append(injector)
-            self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=0)
+            self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=0.1)
                              
         row_ejector_fixtures = []
         for col in range(0,8):
@@ -351,7 +351,7 @@ class Memory (Framework):
 
         self.memory_followers = []
         self.memory_selectors = []
-        main_memory_holdoff = self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
+        (selector_holdoff, follower_holdoff) = self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
         
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
@@ -362,7 +362,7 @@ class Memory (Framework):
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
-        return main_memory_holdoff
+        return (selector_holdoff, follower_holdoff)
 
     def connect_regenerators(self):
         for i in range(0,8):
@@ -608,9 +608,9 @@ class Memory (Framework):
                 test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
         self.injector_cranks = []
         self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
-        main_memory_holdoff = self.memory_module(0,0, groundBody)
+        (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        self.diverter_set(-5,-20, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
+        self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-55, groundBody, discard=True) # Diverter 2. Discards all output.
         self.regenerator(-20,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         self.diverter_set(-10,-125, groundBody, slope_x=200) # Diverter 3; splits to instruction reg/PC
@@ -659,14 +659,18 @@ class Memory (Framework):
         follower_body = self.add_cam(300,200, groundBody, 100, phase=0.45)
         self.distance_joint(follower_body, mem_injector_raiser, follower_body.attachment_point, mem_injector_raiser.attachment_point)
 
-        # Cam 2: Main memory lifter
+        # Cam 2: Main memory selector lifter
         follower_body = self.add_cam(150,300, groundBody, 150, phase=0.25)
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
-        self.distance_joint(follower_body, main_memory_holdoff, (200,300+50), main_memory_holdoff.attachment_point)
+        self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner
-        follower_body = self.add_cam(600,300, groundBody, 100, horizontal=True)
-        self.distance_joint(follower_body, self.memory_returning_gate, follower_body.attachment_point)
+        follower_body = self.add_cam(600,300, groundBody, 60, horizontal=True)
+        self.distance_joint(follower_body, self.memory_returning_gate)
+
+        # Cam 4: Memory holdoff
+        follower_body = self.add_cam(600,200, groundBody, 60, horizontal=True)
+        self.distance_joint(follower_body, memory_follower_holdoff)
 
         
     def Step(self, settings):
