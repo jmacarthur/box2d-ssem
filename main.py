@@ -681,7 +681,7 @@ class Memory (Framework):
         follower_body = self.add_cam(800, 100, groundBody, 60, horizontal=True)
         self.distance_joint(follower_body, upper_regen_control)
 
-        # Cam 5: Split to instruction counter/reg
+        # Cam 6: Split to instruction counter/reg
         follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, diverter_3)
 
