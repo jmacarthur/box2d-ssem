@@ -292,7 +292,7 @@ class Memory (Framework):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=6.35/2, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
             follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
             follower_array.append(follower)
-            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20)
+            self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=False)
 
         self.vertical_rotating_bar(xpos+200+25*selector_rods+14,0,14*memory_rows+5, groundBody)
         return holdoff_bar
@@ -307,7 +307,7 @@ class Memory (Framework):
         for col in range(0,8):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
             injectors.append(injector)
-            self.slide_joint(injector, groundBody, (1,0), 7, 17)
+            self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=False)
                              
         row_ejector_fixtures = []
         for col in range(0,8):
@@ -323,20 +323,12 @@ class Memory (Framework):
             ejector = self.add_multifixture(row_ejector_fixtures, 0, 14*col)
             ejector.attachment_point = (22*col, 0)
             ejectors.append(ejector)
-            self.slide_joint(ejector, groundBody, (1,0), 0, 14)
+            self.slide_joint(ejector, groundBody, (1,0), 0, 14, friction=True)
 
         # Add weights which bias the rows
         for col in range(0,8):
-            circleX = xpos-120+10*col
-            circleY = ypos+14*col+5
-            self.add_static_circle(circleX, circleY, 5)
-            weight = self.add_dynamic_circle(circleX-5, circleY-20, 6, density=50.0)
-            self.pulley_joint(ejectors[col],
-                              weight,
-                              ejectors[col].attachment_point,
-                              weight.attachment_point,
-                              (circleX,circleY+5),
-                              (circleX-5,circleY))
+            crank = self.crank_left_up(xpos-250+30*col, ypos+14*col-10, groundBody)
+            self.distance_joint(ejectors[col], crank, ejectors[col].attachment_point, crank.attachment_point)
                               
 
         self.memory_followers = []
@@ -352,7 +344,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
         # Gate returner to push all the memory rows back in
-        self.vertical_rotating_bar(xpos-30,20,14*memory_rows-20, groundBody)
+        self.memory_returning_gate = self.vertical_rotating_bar(xpos-30,20,14*memory_rows-20, groundBody)
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
@@ -377,6 +369,15 @@ class Memory (Framework):
 
             self.injector_cranks[i]
 
+    def crank_left_up(self, xpos, ypos, attachment_body):
+        crank_fixture_1 = fixtureDef(shape=makeBox(-20,0,20,3), density=1.0, filter=filters[0])
+        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,20), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=makeBox(-20,-5,10,10), density=10.0, filter=filters[0]) # Heavy weight
+        crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
+        self.revolving_joint(crank, attachment_body, (xpos,ypos))
+        crank.attachment_point=(xpos,ypos+20)
+        return crank
+            
     def memory_sender(self, xpos, ypos, attachment_body):
         v1 = [ (0,0), (7,-4), (7,-17), (0,-13) ]
         entrace_poly = [ (-7,2), (0,0), (0,-5), (-7,0) ]
@@ -396,12 +397,8 @@ class Memory (Framework):
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
 
-        crank_fixture_1 = fixtureDef(shape=makeBox(-50,-20,20,3), density=1.0, filter=filters[0])
-        crank_fixture_2 = fixtureDef(shape=makeBox(-30,-20,3,20), density=1.0, filter=filters[0])
-        crank_fixture_3 = fixtureDef(shape=makeBox(-50,-25,10,10), density=10.0, filter=filters[0]) # Heavy weight
-        crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
-        self.revolving_joint(crank, attachment_body, (xpos-30,ypos-20))
-        self.distance_joint(crank, blocker_set, (xpos-50,ypos), (xpos+10,ypos))
+        crank = self.crank_left_up(xpos-30, ypos-20, attachment_body)
+        self.distance_joint(crank, blocker_set, crank.attachment_point, (xpos+10,ypos))
 
     # Interface functions to PyBox2D
 
@@ -632,6 +629,11 @@ class Memory (Framework):
         # Cam 2: Main memory lifter
         follower_body = self.add_cam(200,300, groundBody, 100)
         self.distance_joint(follower_body, main_memory_holdoff, follower_body.attachment_point, main_memory_holdoff.attachment_point)
+
+        # Cam 2: Memory returner
+        follower_body = self.add_cam(600,300, groundBody, 100)
+        self.distance_joint(follower_body, self.memory_returning_gate, follower_body.attachment_point)
+
         
     def Step(self, settings):
         super(Memory, self).Step(settings)
