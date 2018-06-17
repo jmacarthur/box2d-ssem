@@ -43,6 +43,7 @@ class Memory (Framework):
             self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
             self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
+        bar_body.attachment_point=(xpos+4.5, ypos+height/2)
         return bar_body
 
     def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=50):
@@ -404,7 +405,9 @@ class Memory (Framework):
 
     # Interface functions to PyBox2D
 
-    def distance_joint(self, bodyA, bodyB, posA, posB):
+    def distance_joint(self, bodyA, bodyB, posA=None, posB=None):
+        if posA is None: posA = bodyA.attachment_point
+        if posB is None: posB = bodyB.attachment_point
         self.world.CreateDistanceJoint(bodyA=bodyA,
 	                               bodyB=bodyB,
 	                               anchorA=(posA[0]*self.scale, posA[1]*self.scale),
@@ -499,12 +502,6 @@ class Memory (Framework):
         else:
             self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale))
 
-    def distance_joint(self, bodyA, bodyB, pointA, pointB):
-            self.world.CreateDistanceJoint(bodyA=bodyA, bodyB=bodyB,
-                                           anchorA=(pointA[0]*self.scale, pointA[1]*self.scale),
-                                           anchorB=(pointB[0]*self.scale, pointB[1]*self.scale),
-                                           collideConnected=False)
-        
     # End of interface functions
 
     def connect_memory(self):
