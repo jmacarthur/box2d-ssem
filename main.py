@@ -253,7 +253,8 @@ class Memory (Framework):
             self.add_static_polygon(divider_vertices)
             
         for c in range(0,columns):
-            self.add_static_polygon([ (10,-20), (24,-20), (24,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
+            # The base
+            self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
             bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
                                 fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
@@ -333,8 +334,8 @@ class Memory (Framework):
         row_injector_fixtures = []        
         
         for col in range(0,8):
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col+10,0,3,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,1,1,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col+10,1,3,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=makeBox(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         self.memory_col0_x = 7
@@ -348,7 +349,7 @@ class Memory (Framework):
         row_ejector_fixtures = []
         for col in range(0,8):
             # Blocks which stop the ball bearing falling past
-            ejector = fixtureDef(shape=makeBox(22*col+1,0,14,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
+            ejector = fixtureDef(shape=makeBox(22*col+1,3,14,4), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
             row_ejector_fixtures.append(ejector)
         row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
@@ -374,7 +375,7 @@ class Memory (Framework):
             self.distance_joint(ejectors[r], self.memory_followers[r], (200,14*r+10), (200+35, 14*r+10))
 
         # Gate returner to push all the memory rows back in
-        self.memory_returning_gate = self.vertical_rotating_bar(xpos-30,0,14*memory_rows, groundBody)
+        self.memory_returning_gate = self.vertical_rotating_bar(xpos-32,0,14*memory_rows, groundBody)
 
         # Wall on the left of the memory to create the final channel
         memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
@@ -521,7 +522,7 @@ class Memory (Framework):
 
         if motor!=0:
             j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale),
-                                           maxMotorTorque = 100000.0*force,
+                                           maxMotorTorque = 10000000.0*force,
                                            motorSpeed = motor,
                                            enableMotor = True)
         elif friction:
@@ -704,24 +705,24 @@ class Memory (Framework):
         # Cams
 
         # Cam 1: Fires memory injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.05,0.1)], axis_offset=1)
+        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.0,0.02)], axis_offset=1)
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.25,0.04), (0.72, 0.1)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.72, 0.1)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
-        # Cam 2: Memory returner
-        follower_body = self.add_cam(600,305, groundBody, 100, horizontal=True, bumps=[(0.05, 0.1), (0.70,0.1)])
+        # Cam 2: Memory returner (left side)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
-        # Cam 4: Memory holdoff
-        follower_body = self.add_cam(600,200, groundBody, 100, horizontal=True, bumps=[(0.1,0.3), (0.45,0.05), (0.71,0.3)],axis_offset=-1)
+        # Cam 4: Memory holdoff (right side)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.57,0.05)])
+        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
@@ -729,7 +730,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.25,0.04),(0.72,0.1)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.1,0.02),(0.72,0.1)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
@@ -740,6 +741,10 @@ class Memory (Framework):
         follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.70,0.06)], horizontal=True)
         self.distance_joint(follower_body, sender_eject)
 
+
+        # Notable timing points:
+        # 0.31: Memory at PC has been read and regenerated
+        
         self.set_initial_memory()
         
     def Step(self, settings):
@@ -767,11 +772,11 @@ class Memory (Framework):
 
         if self.cams_on: self.sequence += 1
         angleTarget = (self.sequence*math.pi*2/10000.0)
-        if self.sequence % 1000 == 0:
+        if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees".format(self.sequence, 360*angleTarget/(math.pi*2)))
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
-            gain = 0.1
+            gain = 1.0
             d.motorSpeed = (-gain * angleError)
 
 
