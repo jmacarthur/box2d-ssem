@@ -28,9 +28,16 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
-# At the moment, the instructions are split such that bits 0-2 are instructions
-# and 3-7 are address; this is incompatible with the SSEM which has the address in bits 0-4.
-
+# Instruction format: least significant 5 bits are address; top 3 bits are instruction.
+# Instructions are :
+#    0 - JMP
+#    1 - JRP
+#    2 - LDN
+#    3 - STO
+#    4 - SUB
+#    5 - also SUB
+#    6 - CMP
+#    7 - STOP
 
 initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
 
@@ -189,6 +196,7 @@ class Memory (Framework):
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
         reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180)
+        reset_lever.attachment_point=(xpos,ypos-180)
         self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
         return reset_lever
         
@@ -623,15 +631,25 @@ class Memory (Framework):
         len1 = 25
         len2 = 25
         thickness = 2.5
+        andgate_spacing_y = 30
+        self.instruction_inputs = []
+        self.instruction_outputs = []
         for i in range(0,8):
             crank_polygon1 = [ (-thickness,-thickness), (-thickness,-len1-thickness), (thickness,-len1-thickness), (thickness,-thickness) ]
             crank_polygon2 = [ (-thickness,-thickness), (-thickness,thickness), (len2+thickness,thickness), (len2+thickness,-thickness) ]
             crank = self.add_multipolygon([crank_polygon1, crank_polygon2], xpos+i*30, ypos-i*follower_spacing)
             self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
-            block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*50-50)
-            self.slide_joint(attachment_body, block, (0,1), -8,0)
-                                             
+            block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*andgate_spacing_y-50)
+            block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            self.revolving_joint(block_slider, block, (xpos+i*30, ypos-i*andgate_spacing_y-50))
+            self.slide_joint(attachment_body, block_slider, (1,0), -8,0)
+            block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            self.instruction_outputs.append(block_slider)
+            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+35, ypos-i*andgate_spacing_y-70)
+            pusher_slider.attachment_point = (xpos+i*30+65, ypos-i*andgate_spacing_y-70)
+            self.instruction_inputs.append(pusher_slider)
+            self.slide_joint(attachment_body, pusher_slider, (1,0), -20,0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
             
     def set_initial_memory(self):
@@ -677,7 +695,7 @@ class Memory (Framework):
         for r in range(0,8):
             for i in range(0,5):
                 test_data = self.add_ball_bearing(250+22*i+r%2,-140+7*r,0)
-        self.subtractor(-13,-170, groundBody)
+        accumulator_reset_lever = self.subtractor(-13,-170, groundBody)
         self.lower_regenerators = []
         self.regenerator(-200,-390, groundBody, self.lower_regenerators)
         #Program counter
@@ -731,7 +749,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(800,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3, bumps=[(0.55, 0.1)])
+        follower_body = self.add_cam(900,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3, bumps=[(0.18, 0.1)])
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
@@ -746,6 +764,11 @@ class Memory (Framework):
         follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.30,0.02)], horizontal=True)
         self.distance_joint(follower_body, sender_eject)
 
+        # Cam 9: Resets accumulator on LDN.
+        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(0.50,0.02)], horizontal=True, reverse_direction=True, axis_offset=3)
+        self.distance_joint(follower_body, self.instruction_inputs[2])
+        # Attach LDN instruction output to reset bar
+        self.distance_joint(accumulator_reset_lever, self.instruction_outputs[2])
 
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
