@@ -28,6 +28,9 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
+# Program definition: Bottom 3 bits are instruction and top 5 are memory address.
+
+
 initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
 
 bar_gate_raisers = False
@@ -35,6 +38,7 @@ bar_gate_raisers = False
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
            filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
+
 class Memory (Framework):
     name = "SSEM"
 
@@ -633,7 +637,7 @@ class Memory (Framework):
         for x in range(0,8):
             for y in range(0,8):
                 if (initial_memory[y] & 1<<x):
-                    self.add_ball_bearing(self.memory_col0_x + pitch*x+2, self.memory_row0_y + 14*y+41, 0)
+                    self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
         
     def __init__(self):
         super(Memory, self).__init__()
@@ -709,7 +713,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.72, 0.1)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.30, 0.05)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
@@ -718,7 +722,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1), (0.45,0.04)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
@@ -730,7 +734,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.1,0.02),(0.72,0.1)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.1,0.02),(0.30,0.05)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
@@ -738,7 +742,7 @@ class Memory (Framework):
         # regenerated data is written back, so we delay for a few
         # seconds here.  If gravity or timing changes, expect this to
         # break.
-        follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.70,0.06)], horizontal=True)
+        follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.30,0.02)], horizontal=True)
         self.distance_joint(follower_body, sender_eject)
 
 
