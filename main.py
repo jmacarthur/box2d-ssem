@@ -635,7 +635,7 @@ class Memory (Framework):
         
     def __init__(self):
         super(Memory, self).__init__()
-        self.camSpeed =0 
+        self.cams_on = False
         self.all_cam_drives = []
         self.scale = 0.5
         self.transfer_bands = []
@@ -767,11 +767,10 @@ class Memory (Framework):
     def Keyboard(self, key):
         print("Processing key: {}".format(key))
         if key == Keys.K_r:
-            self.camSpeed = 0 if self.camSpeed == cam_speed else cam_speed
-            
+            self.cams_on = not self.cams_on
+            print("Cam power: {}".format(self.cams_on))
             for d in self.all_cam_drives:
-                
-                d.motorSpeed = self.camSpeed
+                d.motorSpeed = cam_speed if self.cams_on else 0
 
 if __name__ == "__main__":
     main(Memory)
