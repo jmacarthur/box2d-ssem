@@ -584,7 +584,7 @@ class Memory (Framework):
             bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
             bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0]))
         cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos)
-        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0, force=50)
+        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
         cam_driver.motorSpeed = 0
         follower_filter = filters[1]
         if horizontal:
@@ -704,7 +704,7 @@ class Memory (Framework):
         # Cams
 
         # Cam 1: Fires memory injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.05,0.1)])
+        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.05,0.1)], axis_offset=1)
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
