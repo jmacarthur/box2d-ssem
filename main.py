@@ -278,7 +278,8 @@ class Memory (Framework):
             self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
 
             # Thing that stops all the ball bearings rolling over the one in the crank
-            self.add_static_polygon([(20,-6), (23,-6), (23,-3), (20,-3)], xpos+c*pitch+1, ypos+pitch+10)
+            self.add_static_polygon([(20.5,-6), (23,-6), (23,-3), (20.5,-3)], xpos+c*pitch+1, ypos+pitch+10)
+
 
         # roof
         #        roof_height=-20
