@@ -28,7 +28,8 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
-# Program definition: Bottom 3 bits are instruction and top 5 are memory address.
+# At the moment, the instructions are split such that bits 0-2 are instructions
+# and 3-7 are address; this is incompatible with the SSEM which has the address in bits 0-4.
 
 
 initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
@@ -167,6 +168,10 @@ class Memory (Framework):
 	                                   anchorA=(xpos, ypos+5),
 	                                   anchorB=(xpos+output_offset_x,ypos+5),
 	                                   collideConnected=False)
+
+            self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
+                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
+
         for c in range(0,lines+1):
             # Large static bits that form input channels
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
@@ -178,8 +183,6 @@ class Memory (Framework):
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
                                     xpos+c*pitch+output_offset_x, ypos+pitch-185)
 
-            self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
-                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
 
         # A reset bar
         reset_angle = math.atan2(sub_y_pitch, pitch)
@@ -243,12 +246,6 @@ class Memory (Framework):
         crank_offset = pitch-10
         crank_y = 19
 
-        intake_vertices = [ (0,0), (100,0), (100,10), (0,10) ]
-        intake_vertices = rotate_polygon(intake_vertices, -180-intake_angle)
-        intake_vertices = self.translate_points(intake_vertices, xpos, ypos+40)
-        self.add_static_polygon(intake_vertices)
-
-
         for c in range(0,columns):
             divider_height = 8
             height2 =        8
@@ -293,6 +290,10 @@ class Memory (Framework):
 
         # End stop on the right
         self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height+30), (0,height) ], xpos+columns*pitch, ypos+pitch+10)
+
+        # End stop on the left
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height+30) ], xpos, ypos+pitch+10)
+
         return raiser_bar
         
     def add_ball_bearing(self, xpos, ypos, plane):
@@ -544,7 +545,7 @@ class Memory (Framework):
         """ Connects the memory selectors to the memory senders """
         for i in range(0,len(self.memory_selectors)):
             bodyA = self.memory_selectors[i]
-            bodyB = self.memory_sensors[i]
+            bodyB = self.memory_sensors[i+5]
             self.world.CreateDistanceJoint(bodyA=bodyA,
 	                                   bodyB=bodyB,
 	                                   anchorA=bodyA.worldCenter,
@@ -553,7 +554,7 @@ class Memory (Framework):
 
         for i in range(0,len(self.rom_selectors)):
             bodyA = self.rom_selectors[i]
-            bodyB = self.memory_sensors[i+5]
+            bodyB = self.memory_sensors[i]
             self.world.CreateDistanceJoint(bodyA=bodyA,
 	                                   bodyB=bodyB,
 	                                   anchorA=bodyA.worldCenter,
@@ -659,7 +660,7 @@ class Memory (Framework):
         # Initial charge for main injector
         for r in range(0,8):
             for i in range(0,8):
-                test_data = self.add_ball_bearing(-100+7*i,230+7*r,0)
+                test_data = self.add_ball_bearing(22*i+r%2,180+7*r,0)
         self.injector_cranks = []
         self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
@@ -667,20 +668,20 @@ class Memory (Framework):
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
         upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=354, slope_y=350) # Diverter 3; splits to instruction reg/PC
+        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=222, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []    
-        pc_injector_raiser = self.injector(300,-200, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
+        pc_injector_raiser = self.injector(230,-200, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
         # Initial charge for PC injector
         for r in range(0,8):
-            for i in range(0,8):
-                test_data = self.add_ball_bearing(250+7*i,-120+7*r,0)
+            for i in range(0,5):
+                test_data = self.add_ball_bearing(250+22*i+r%2,-140+7*r,0)
         self.subtractor(-13,-170, groundBody)
         self.lower_regenerators = []
         self.regenerator(-200,-390, groundBody, self.lower_regenerators)
         #Program counter
-        self.subtractor(200,-310, groundBody, lines=5, output_offset_dir=1)
+        self.subtractor(400,-310, groundBody, lines=5)
 
         self.connect_regenerators()
         # gutter
@@ -702,7 +703,7 @@ class Memory (Framework):
         self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
-        sender_eject = self.memory_sender(325+17,-500, groundBody)
+        sender_eject = self.memory_sender(213,-500, groundBody)
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
