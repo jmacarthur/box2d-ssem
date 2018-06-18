@@ -31,7 +31,7 @@ follower_spacing = 14
 initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
 
 bar_gate_raisers = False
-cam_speed = 0.1
+
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
            filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
@@ -275,7 +275,7 @@ class Memory (Framework):
         for c in range(0,columns+1):
             
             # Backstop for swing arm - stops the swing arm falling back too far
-            self.add_static_polygon([ (10,-12), (11,-12), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
+            self.add_static_polygon([ (10,-20), (11,-20), (11,-3), (10,-3)], xpos+c*pitch, ypos+pitch+10)
 
             # Thing that stops all the ball bearings rolling over the one in the crank
             self.add_static_polygon([(20.5,-6), (23,-6), (23,-3), (20.5,-3)], xpos+c*pitch+1, ypos+pitch+10)
@@ -582,9 +582,9 @@ class Memory (Framework):
                     print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
 
             bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
-            bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=1.0,filter=filters[0]))
+            bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0]))
         cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos)
-        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0.25, force=50)
+        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=0, force=50)
         cam_driver.motorSpeed = 0
         follower_filter = filters[1]
         if horizontal:
@@ -641,6 +641,7 @@ class Memory (Framework):
         self.scale = 0.5
         self.transfer_bands = []
         self.ball_bearings = []
+        self.sequence = 0 # Like step count but only increments when cams are on
         memory_fixed_shapes = []
         for row in range(0,8):
             for col in range(0,8):
@@ -764,14 +765,20 @@ class Memory (Framework):
                                 
                             ),plane)
 
+        if self.cams_on: self.sequence += 1
+        angleTarget = (self.sequence*math.pi*2/10000.0)
+        if self.sequence % 1000 == 0:
+            print("Sequence {} AngleTarget = {} degrees".format(self.sequence, 360*angleTarget/(math.pi*2)))
+        for d in self.all_cam_drives:
+            angleError = d.angle - angleTarget
+            gain = 0.1
+            d.motorSpeed = (-gain * angleError)
+
 
     def Keyboard(self, key):
         print("Processing key: {}".format(key))
         if key == Keys.K_r:
             self.cams_on = not self.cams_on
-            print("Cam power: {}".format(self.cams_on))
-            for d in self.all_cam_drives:
-                d.motorSpeed = cam_speed if self.cams_on else 0
 
 if __name__ == "__main__":
     main(Memory)
