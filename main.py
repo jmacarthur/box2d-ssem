@@ -30,16 +30,23 @@ follower_spacing = 14
 
 # Instruction format: least significant 5 bits are address; top 3 bits are instruction.
 # Instructions are :
-#    0 - JMP
-#    1 - JRP
-#    2 - LDN
-#    3 - STO
-#    4 - SUB
-#    5 - also SUB
-#    6 - CMP
-#    7 - STOP
+JMP = 0
+JRP = 1
+LDN = 2
+STO = 3
+SUB = 4
+CMP = 6
+STOP = 7
 
-initial_memory = [ 0xFF, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40, 0x80 ]
+# At the moment, PC starts at 0xFF.
+initial_memory = [ 0xFF,
+                   0x02,
+                   0x04,
+                   0x08,
+                   0x10,
+                   0x20,
+                   0x40,
+                   LDN<<5 + 1]
 
 bar_gate_raisers = False
 
@@ -95,7 +102,7 @@ class Memory (Framework):
         if inverted: (filterA, filterB) = (filterB, filterA)
         conrod = self.add_dynamic_polygon(box_polygon(pitch*8,2), xpos, ypos+15, filters[2])
         for c in range(0,8):
-            diverter = self.add_dynamic_polygon(box_polygon(3,20), c*pitch+xpos, ypos, filterA)
+            diverter = self.add_dynamic_polygon(rotate_polygon(box_polygon(3,20),-20), c*pitch+xpos, ypos, filterA)
             self.revolving_joint(bodyA=diverter, bodyB=attachment_body, anchor=(xpos+c*pitch, ypos))
             self.revolving_joint(bodyA=diverter, bodyB=conrod, anchor=(xpos+c*pitch, ypos+15))
 
@@ -121,8 +128,13 @@ class Memory (Framework):
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
         self.add_static_polygon(makeBox(xpos-10, ypos-10, 3,30))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
-        conrod.attachment_point = (xpos+pitch*8, ypos+15) 
+        conrod.attachment_point = (xpos+pitch*8, ypos+15)
+
+        return_crank = self.crank_right_up(xpos+pitch*8+20,ypos, attachment_body)
+        self.distance_joint(return_crank, conrod)
+        
         return conrod
+
     def regenerator(self, xpos, ypos, attachment_body, crank_list):
         regen_parts = []
         pusher_parts = []
@@ -421,7 +433,17 @@ class Memory (Framework):
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
         crank.attachment_point=(xpos,ypos+output_length)
         return crank
-            
+
+    def crank_right_up(self, xpos, ypos, attachment_body, output_length=20, weight=10):
+        crank_fixture_1 = fixtureDef(shape=makeBox(0,0,20,3), density=1.0, filter=filters[0])
+        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,output_length), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=makeBox(10,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
+        crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
+        self.revolving_joint(crank, attachment_body, (xpos,ypos))
+        crank.attachment_point=(xpos,ypos+output_length)
+        return crank
+
+    
     def memory_sender(self, xpos, ypos, attachment_body):
         v1 = [ (0,0), (7,-4), (7,-17), (0,-13) ]
         entrace_poly = [ (-7,2), (0,0), (0,-5), (-7,0) ]
@@ -643,7 +665,7 @@ class Memory (Framework):
             block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*andgate_spacing_y-50)
             block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30, ypos-i*andgate_spacing_y-50))
-            self.slide_joint(attachment_body, block_slider, (1,0), -8,0)
+            self.slide_joint(attachment_body, block_slider, (1,0), -8,0, friction=0)
             block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.instruction_outputs.append(block_slider)
             pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+35, ypos-i*andgate_spacing_y-70)
@@ -684,8 +706,8 @@ class Memory (Framework):
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
-        self.diverter_set(-15,-57.5, groundBody, discard=True) # Diverter 2. Discards all output.
-        upper_regen_control = self.regenerator(-15,-85, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        discard_diverter_lever = self.diverter_set(-15,-59, groundBody, discard=True) # Diverter 2. Discards all output.
+        upper_regen_control = self.regenerator(-15,-87, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=222, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
@@ -764,12 +786,19 @@ class Memory (Framework):
         follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.30,0.02)], horizontal=True)
         self.distance_joint(follower_body, sender_eject)
 
+        instruction_ready_point = 0.50
+        
         # Cam 9: Resets accumulator on LDN.
-        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(0.50,0.02)], horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.02)], horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, self.instruction_inputs[2])
         # Attach LDN instruction output to reset bar
         self.distance_joint(accumulator_reset_lever, self.instruction_outputs[2])
 
+        # Cam 10: Setup discard on STO. We also need another STO nudge to inject to memory.
+        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        self.distance_joint(follower_body, self.instruction_inputs[STO])
+        self.distance_joint(discard_diverter_lever, self.instruction_outputs[STO])
+        
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
         
