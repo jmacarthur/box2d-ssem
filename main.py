@@ -693,7 +693,7 @@ class Memory (Framework):
         super(Memory, self).__init__()
         self.cams_on = False
         self.all_cam_drives = []
-        self.scale = 0.5
+        self.scale = 1.0
         self.transfer_bands = []
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
@@ -768,11 +768,11 @@ class Memory (Framework):
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.59,0.1)], axis_offset=-1)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.60,0.1)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1), (0.45,0.04), (0.60,0.2)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1), (0.45,0.04), (0.61,0.2)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
@@ -784,7 +784,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.30,0.02)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.30,0.04)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
