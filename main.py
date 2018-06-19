@@ -46,7 +46,7 @@ initial_memory = [ 0xFF,
                    0x10,
                    0x20,
                    0x40,
-                   LDN<<5 + 1]
+                   (LDN<<5)+1]
 
 bar_gate_raisers = False
 
@@ -155,7 +155,7 @@ class Memory (Framework):
             
         pusher_body = self.add_multifixture(pusher_parts)
         pusher_body.attachment_point = (xpos+8*pitch,ypos+10)
-        self.slide_joint(pusher_body, attachment_body, (1,0), -8,0)
+        self.slide_joint(pusher_body, attachment_body, (1,0), -8,0, friction=0)
         return pusher_body
 
     def toggle(self, xpos, ypos, attachment_body):
@@ -324,7 +324,7 @@ class Memory (Framework):
         for selector_no in range(0,selector_rods):
             row_selector_fixtures = []
             for row in range(0,8):
-                enabled = (row >> selector_no) & 1
+                enabled = (row >> (selector_rods-selector_no-1)) & 1
                 row_selector_fixtures.append(
                     fixtureDef(shape=makeBox(14+25*selector_no,follower_spacing*row+7*enabled,14,5), density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
@@ -598,9 +598,13 @@ class Memory (Framework):
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
         reverse_direction puts the cam on the other side and only makes sense for horizontal cams.
         """
+        offset = 0
         if not horizontal:
-            for b in range(0,len(bumps)):
-                bumps[b] = (bumps[b][0] - 0.25, bumps[b][1])
+            offset = -0.25
+        if reverse_direction:
+            offset = 0.5
+        for b in range(0,len(bumps)):
+            bumps[b] = (bumps[b][0] + offset, bumps[b][1])
         radius = 30
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_fixtures = []
@@ -673,7 +677,9 @@ class Memory (Framework):
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), -20,0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
-            
+        self.instruction_inputs.reverse()
+        self.instruction_outputs.reverse()
+        
     def set_initial_memory(self):
         for x in range(0,8):
             for y in range(0,8):
@@ -707,7 +713,7 @@ class Memory (Framework):
         self.upper_regenerators = []
         self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         discard_diverter_lever = self.diverter_set(-15,-59, groundBody, discard=True) # Diverter 2. Discards all output.
-        upper_regen_control = self.regenerator(-15,-87, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        upper_regen_control = self.regenerator(-14,-87, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=222, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
@@ -759,23 +765,23 @@ class Memory (Framework):
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1)], axis_offset=-1)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.59,0.1)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1), (0.45,0.04)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.18,0.04), (0.31,0.1), (0.45,0.04), (0.60,0.2)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05)])
+        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.55,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(900,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=3, bumps=[(0.18, 0.1)])
+        follower_body = self.add_cam(900,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=1, bumps=[(0.18, 0.1)])
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.1,0.02),(0.30,0.05)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.30,0.02)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
@@ -790,15 +796,20 @@ class Memory (Framework):
         
         # Cam 9: Resets accumulator on LDN.
         follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.02)], horizontal=True, reverse_direction=True, axis_offset=3)
-        self.distance_joint(follower_body, self.instruction_inputs[2])
+        self.distance_joint(follower_body, self.instruction_inputs[LDN])
         # Attach LDN instruction output to reset bar
-        self.distance_joint(accumulator_reset_lever, self.instruction_outputs[2])
+        self.distance_joint(accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 10: Setup discard on STO. We also need another STO nudge to inject to memory.
-        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(900, 100, groundBody, 80, bumps=[(instruction_ready_point,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(discard_diverter_lever, self.instruction_outputs[STO])
         
+        # Cam 11: Instruction follower holdoff
+        follower_body = self.add_cam(1000, 100, groundBody, 100, bumps=[(0.05,0.35)], horizontal=True, axis_offset=-1)
+        self.distance_joint(follower_body, instruction_follower_holdoff)
+        
+
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
         
