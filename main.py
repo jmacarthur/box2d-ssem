@@ -21,6 +21,9 @@ def rotate_polygon(polygon, degrees):
 def rotate_polygon_radians(polygon, r):
     return [(x*math.cos(r) - y*math.sin(r), y*math.cos(r) + x*math.sin(r)) for (x,y) in polygon]
 
+def translate_polygon(points, xpos, ypos):
+    return [(x+xpos,y+ypos) for (x,y) in points]
+
 bb_diameter = 6.35
 
 selector_rods = 3
@@ -180,13 +183,13 @@ class Memory (Framework):
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
-            input_toggle = self.toggle(xpos+c*pitch, ypos-150+sub_y_pitch*c, attachment_body)
-            output_toggle = self.subtractor_output_toggle(xpos+c*pitch+output_offset_x, ypos-150+sub_y_pitch*c, attachment_body)
-            self.world.CreateDistanceJoint(bodyA=input_toggle,
-	                                   bodyB=output_toggle,
-	                                   anchorA=(xpos, ypos+5),
-	                                   anchorB=(xpos+output_offset_x,ypos+5),
-	                                   collideConnected=False)
+            toggle_centre_x = xpos+c*pitch
+            toggle_centre_y = ypos-150+sub_y_pitch*c
+            input_toggle = self.toggle(toggle_centre_x, toggle_centre_y, attachment_body)
+            input_toggle.attachment_point = (toggle_centre_x, toggle_centre_y+10)
+            output_toggle = self.subtractor_output_toggle(toggle_centre_x+output_offset_x, toggle_centre_y, attachment_body)
+            output_toggle.attachment_point = (toggle_centre_x+output_offset_x, toggle_centre_y+10)
+            self.distance_joint(input_toggle, output_toggle)
 
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
                                     xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
@@ -270,7 +273,7 @@ class Memory (Framework):
             divider_height = 8
             height2 =        8
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
-            divider_vertices = self.translate_points(divider_vertices, xpos+c*pitch, ypos+pitch+10)
+            divider_vertices = translate_polygon(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             self.add_static_polygon(divider_vertices)
             
         for c in range(0,columns):
@@ -459,7 +462,7 @@ class Memory (Framework):
             sensor = self.add_dynamic_polygon(sensor_poly, xpos+c*pitch, ypos+7, filter=filters[0])
             self.memory_sensors.append(sensor)
             self.slide_joint(attachment_body, sensor, (0,1), 0, 15, friction=False)
-            blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=self.translate_points(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
+            blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=translate_polygon(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
         
@@ -480,7 +483,7 @@ class Memory (Framework):
         
     
     def add_static_polygon(self,vertices, xpos=0, ypos=0, filter=filters[0]):
-        translated_vertices = self.translate_points(vertices, xpos, ypos)
+        translated_vertices = translate_polygon(vertices, xpos, ypos)
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
         fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
         return self.world.CreateStaticBody(fixtures=fixture)
@@ -493,10 +496,10 @@ class Memory (Framework):
         circle.attachment_point = (xpos*self.scale, ypos*self.scale)
         return circle
         
-    def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0]):
-        translated_vertices = self.translate_points(vertices, xpos, ypos)
+    def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0], density=1.0):
+        translated_vertices = translate_polygon(vertices, xpos, ypos)
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
-        fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
+        fixture = fixtureDef(shape=shape, density=density, filter=filter)
         return self.world.CreateDynamicBody(fixtures=fixture)
 
     def slide_joint(self, body1, body2, axis, limit1, limit2,friction=1.0):
@@ -732,13 +735,13 @@ class Memory (Framework):
         self.connect_regenerators()
         # gutter
         gutter_vertices = [ (0,0), (pitch*9,10), (pitch*9,-10), (0,-10) ]
-        gutter_vertices = self.translate_points(gutter_vertices, -20, -420)
+        gutter_vertices = translate_polygon(gutter_vertices, -20, -420)
         gutter = self.add_static_polygon(gutter_vertices)
 
         self.add_static_polygon([ (-300,-600),(500,-600), (500,-610), (-300,-610)])
         wall_vertices = [ (0,-500), (0,-430), (10,-430), (10,-500) ]
         self.add_static_polygon(wall_vertices)
-        wall_vertices = self.translate_points(wall_vertices, -300, 0)
+        wall_vertices = translate_polygon(wall_vertices, -300, 0)
         self.add_static_polygon(wall_vertices)
 
         # Instruction decoder ROM
