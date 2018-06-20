@@ -162,8 +162,9 @@ class Memory (Framework):
         return pusher_body
 
     def toggle(self, xpos, ypos, attachment_body):
+        toggle_divider_polygon = [ (xpos-1.5, ypos), (xpos+1.5, ypos), (xpos, ypos+10) ]
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
-                            fixtureDef(shape=makeBox(xpos-1.5, ypos, 3, 10), density=1.0) ]
+                         fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0) ]
         toggle = self.add_multifixture(toggle_shape)
         self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
 
@@ -194,6 +195,9 @@ class Memory (Framework):
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
                                     xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
 
+            # Bits to stop the bearing bouncing out to the right of the toggle
+            self.add_static_polygon([ (0,0), (3,0), (3,10), (0,10) ],
+                                    xpos+c*pitch+15, ypos-sub_y_pitch*(8-c)+15)
         for c in range(0,lines+1):
             # Large static bits that form input channels
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
