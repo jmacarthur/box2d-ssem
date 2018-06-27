@@ -816,7 +816,7 @@ class Memory (Framework):
         instruction_ready_point = 0.50
         
         # Cam 9: Resets accumulator on LDN.
-        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.02)], horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(900, 0, groundBody, 80, bumps=[(instruction_ready_point,0.02)], horizontal=True, reverse_direction=True, axis_offset=1)
         self.distance_joint(follower_body, self.instruction_inputs[LDN])
         # Attach LDN instruction output to reset bar
         self.distance_joint(accumulator_reset_lever, self.instruction_outputs[LDN])
@@ -825,7 +825,7 @@ class Memory (Framework):
         follower_body = self.add_cam(-300, -300, groundBody, 80, bumps=[(0.6,0.2)], horizontal=True, axis_offset=0)
         self.distance_joint(follower_body, discard_lever_1)
 
-        
+       
         # Cam 11: Instruction follower holdoff
         follower_body = self.add_cam(1000, 100, groundBody, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
         self.distance_joint(follower_body, instruction_follower_holdoff)
