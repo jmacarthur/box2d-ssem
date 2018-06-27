@@ -368,6 +368,15 @@ class Memory (Framework):
         return (selector_holdoff_bar, follower_holdoff_bar)
         
     def memory_module(self, xpos, ypos, groundBody):
+        memory_fixed_shapes = []
+        for row in range(0,8):
+            for col in range(0,8):
+                memory_fixed_filter = filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF)
+                large_block = [(0,0), (14,0), (14,7), (0,6)]
+                self.add_static_polygon(large_block, 22*col, 14*row, filter=memory_fixed_filter)
+                self.add_static_polygon(box_polygon(3,8), 22*col+14-3+1, 14*row+6, filter=memory_fixed_filter)
+                pass
+
         row_injector_fixtures = []        
         
         for col in range(0,8):
@@ -705,13 +714,7 @@ class Memory (Framework):
         self.transfer_bands = []
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
-        memory_fixed_shapes = []
-        for row in range(0,8):
-            for col in range(0,8):
-                memory_fixed_filter = filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF)
-                self.add_static_polygon(box_polygon(14,7), 22*col, 14*row, filter=memory_fixed_filter)
-                self.add_static_polygon(box_polygon(3,8), 22*col+14-3+1, 14*row+6, filter=memory_fixed_filter)
-                pass
+
         groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
@@ -721,7 +724,7 @@ class Memory (Framework):
         self.injector_cranks = []
         main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-230, slope_y=200) # Diverter 1. Splits to subtractor reader.
+        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-230, slope_y=180) # Diverter 1. Splits to subtractor reader.
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
@@ -830,14 +833,13 @@ class Memory (Framework):
         self.distance_joint(follower_body, main_injector_raiser)
 
         # Cam 13: Discard everything after main injector fires for all cases.
-        follower_body = self.add_cam(900, 200, groundBody, 80, bumps=[(0.7,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(900, 200, groundBody, 80, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, discard_lever_2)
 
         # Cam 14: Divert to subtractor reader on STO.
         follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
-
 
         
         # Notable timing points:
