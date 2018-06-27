@@ -49,7 +49,7 @@ initial_memory = [ 0xFF,
                    0x10,
                    0x20,
                    0x40,
-                   (STO<<5)+1] # Store acc to memory location 1
+                   (LDN<<5)+1] # Store acc to memory location 1
 
 bar_gate_raisers = False
 
@@ -104,7 +104,8 @@ class Memory (Framework):
         if inverted: (filterA, filterB) = (filterB, filterA)
         conrod = self.add_dynamic_polygon(box_polygon(pitch*8,2), xpos, ypos+15, filters[2])
         for c in range(0,8):
-            diverter = self.add_dynamic_polygon(rotate_polygon(box_polygon(3,20),-20), c*pitch+xpos, ypos, filterA)
+            diverter_poly = [(0,0), (3,0), (3,17), (0,20)]
+            diverter = self.add_dynamic_polygon(rotate_polygon(diverter_poly,-20), c*pitch+xpos, ypos, filterA)
             self.revolving_joint(bodyA=diverter, bodyB=attachment_body, anchor=(xpos+c*pitch, ypos))
             self.revolving_joint(bodyA=diverter, bodyB=conrod, anchor=(xpos+c*pitch, ypos+15))
 
@@ -119,10 +120,15 @@ class Memory (Framework):
         if discard:
             self.add_static_polygon([(0,0), (170,-10), (170,-13), (0,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
+            if slope_x < 0:
+                offset = pitch
+            else:
+                offset = 0
+        
             exit_transfer_band_x = []
             for c in range(0,8):
                 exit_slope = polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ])
-                self.add_static_polygon(exit_slope, c*pitch+xpos, ypos-10, filter=filterB)
+                self.add_static_polygon(exit_slope, c*pitch+xpos+offset, ypos-10, filter=filterB)
                 exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch))
             self.transfer_bands.append((ypos-10-slope_y+10, ypos-10-slope_y, exit_transfer_band_x, 1))
 
@@ -396,7 +402,6 @@ class Memory (Framework):
             crank = self.crank_left_up(xpos-250+30*col, ypos+14*col-30, groundBody, output_length=40, weight=50)
             self.distance_joint(ejectors[col], crank, ejectors[col].attachment_point, crank.attachment_point)
                               
-
         self.memory_followers = []
         self.memory_selectors = []
         (selector_holdoff, follower_holdoff) = self.add_row_decoder(xpos+50, ypos, groundBody, self.memory_followers, self.memory_selectors)
@@ -712,18 +717,18 @@ class Memory (Framework):
         # Initial charge for main injector
         for r in range(0,8):
             for i in range(0,8):
-                test_data = self.add_ball_bearing(22*i+r%2,180+7*r,0)
+                test_data = self.add_ball_bearing(7*i+r%2,190+7*r,0)
         self.injector_cranks = []
         main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        accumulator_diverter_lever = self.diverter_set(-5,130, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
+        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-230, slope_y=200) # Diverter 1. Splits to subtractor reader.
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        discard_lever_2 = self.diverter_set(-15,-59, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
-        discard_lever_1 = self.diverter_set(-200,-359, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
-        upper_regen_control = self.regenerator(-14,-87, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-13,-125, groundBody, slope_x=222, slope_y=350) # Diverter 3; splits to instruction reg/PC
+        discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
+        discard_lever_1 = self.diverter_set(-190,-359, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
+        upper_regen_control = self.regenerator(-5,-70, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        diverter_3 = self.diverter_set(0,-120, groundBody, slope_x=209, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
         # PC injector
         self.pc_injector_cranks = []    
@@ -732,7 +737,7 @@ class Memory (Framework):
         for r in range(0,8):
             for i in range(0,5):
                 test_data = self.add_ball_bearing(250+22*i+r%2,-140+7*r,0)
-        accumulator_reset_lever = self.subtractor(-13,-170, groundBody)
+        accumulator_reset_lever = self.subtractor(0,-170, groundBody)
         self.lower_regenerators = []
         self.regenerator(-200,-390, groundBody, self.lower_regenerators)
         #Program counter
