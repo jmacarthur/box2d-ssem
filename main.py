@@ -167,7 +167,7 @@ class Memory (Framework):
         return pusher_body
 
     def toggle(self, xpos, ypos, attachment_body):
-        toggle_divider_polygon = [ (xpos-1.5, ypos), (xpos+1.5, ypos), (xpos, ypos+10) ]
+        toggle_divider_polygon = [ (xpos-3, ypos), (xpos+3, ypos), (xpos, ypos+10) ]
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
                          fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0) ]
         toggle = self.add_multifixture(toggle_shape)
@@ -200,13 +200,15 @@ class Memory (Framework):
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
                                     xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
 
-            # Bits to stop the bearing bouncing out to the right of the toggle
-            self.add_static_polygon([ (0,0), (3,0), (3,10), (0,10) ],
-                                    xpos+c*pitch+15, ypos-sub_y_pitch*(8-c)+15)
+            # Small triangular divider
+            self.add_static_polygon([ (20,-6), (27,-3), (27,0) ],
+                                    xpos+c*pitch-pitch+5, ypos+pitch+6-sub_y_pitch*(8-c))
+
         for c in range(0,lines+1):
             # Large static bits that form input channels
-            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
+            self.add_static_polygon([ (0,0), (pitch-7,-3), (pitch-7,-sub_y_pitch*(8-c)-5), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5, ypos+pitch+9)
+
             # More top-side channels, but for the output
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
@@ -219,7 +221,7 @@ class Memory (Framework):
         reset_angle = math.atan2(sub_y_pitch, pitch)
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
-        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180)
+        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180, filters[0])
         reset_lever.attachment_point=(xpos,ypos-180)
         self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
         return reset_lever
@@ -692,8 +694,8 @@ class Memory (Framework):
             self.slide_joint(attachment_body, block_slider, (1,0), -8,0, friction=0)
             block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.instruction_outputs.append(block_slider)
-            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+35, ypos-i*andgate_spacing_y-70)
-            pusher_slider.attachment_point = (xpos+i*30+65, ypos-i*andgate_spacing_y-70)
+            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+30, ypos-i*andgate_spacing_y-70)
+            pusher_slider.attachment_point = (xpos+i*30+60, ypos-i*andgate_spacing_y-70)
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), -20,0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
@@ -828,7 +830,8 @@ class Memory (Framework):
         follower_body = self.add_cam(1000, 100, groundBody, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
         self.distance_joint(follower_body, instruction_follower_holdoff)
         
-        # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to 
+        # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
+        # will fall through the memory and be discarded.
         follower_body = self.add_cam(0,300, groundBody, 100, bumps=[(0.6,0.02)], axis_offset=1)
         self.distance_joint(follower_body, main_injector_raiser)
 
