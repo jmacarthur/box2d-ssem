@@ -31,8 +31,8 @@ memory_rows = 1<<selector_rods
 pitch = 22
 follower_spacing = 14
 
-# Instruction format: least significant 5 bits are address; top 3 bits are instruction.
-# Instructions are :
+# Instruction format for the 8-bit machine: least significant 5 bits are address; top 3 bits are instruction.
+# Instructions are:
 JMP = 0
 JRP = 1
 LDN = 2
@@ -59,7 +59,6 @@ filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
 
 class Memory (Framework):
     name = "SSEM"
-
 
     def vertical_rotating_bar(self, xpos, ypos, height, attachment_body, support_sep=50):
         if bar_gate_raisers:
@@ -272,7 +271,7 @@ class Memory (Framework):
         height = 8
         crank_offset = pitch-10
         crank_y = 19
-
+        injector_bar_height = 90
         for c in range(0,columns):
             divider_height = 8
             height2 =        8
@@ -292,14 +291,14 @@ class Memory (Framework):
             self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=0)
             injector_crank_array.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             # All-inject bar
-            raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+130, radius=5, density=50.0)
+            raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+injector_bar_height+10, radius=5, density=50.0)
             self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=0)
             self.world.CreateDistanceJoint(bodyA=bellcrank,
 	                              bodyB=raiser,
                                       anchorA=((anchorpos[0]+5)*self.scale,(anchorpos[1]-10)*self.scale),
 	                              anchorB=raiser.worldCenter,
 	                                   collideConnected=False)
-        raiser_bar = self.horizontal_rotating_bar(xpos,ypos+120, pitch*9, attachment_body, support_sep=pitch*8)
+        raiser_bar = self.horizontal_rotating_bar(xpos,ypos+injector_bar_height, pitch*9, attachment_body, support_sep=pitch*8)
         
         for c in range(0,columns+1):
             
@@ -400,7 +399,7 @@ class Memory (Framework):
 
         self.memory_followers = []
         self.memory_selectors = []
-        (selector_holdoff, follower_holdoff) = self.add_row_decoder(xpos, ypos, groundBody, self.memory_followers, self.memory_selectors)
+        (selector_holdoff, follower_holdoff) = self.add_row_decoder(xpos+50, ypos, groundBody, self.memory_followers, self.memory_selectors)
         
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
@@ -715,10 +714,12 @@ class Memory (Framework):
             for i in range(0,8):
                 test_data = self.add_ball_bearing(22*i+r%2,180+7*r,0)
         self.injector_cranks = []
-        main_injector_raiser = self.injector(-32,110, groundBody, injector_crank_array=self.injector_cranks)
+        main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
+
+        accumulator_diverter_lever = self.diverter_set(-5,130, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
+
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        accumulator_diverter_lever = self.diverter_set(-5,-25, groundBody, slope_x=-200) # Diverter 1. Splits to subtractor reader.
         discard_lever_2 = self.diverter_set(-15,-59, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
         discard_lever_1 = self.diverter_set(-200,-359, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
         upper_regen_control = self.regenerator(-14,-87, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
@@ -743,7 +744,9 @@ class Memory (Framework):
         gutter_vertices = translate_polygon(gutter_vertices, -20, -420)
         gutter = self.add_static_polygon(gutter_vertices)
 
-        self.add_static_polygon([ (-300,-600),(500,-600), (500,-610), (-300,-610)])
+        self.add_static_polygon([ (-300,-600),(500,-550), (500,-610), (-300,-610)])
+        self.add_static_polygon([ (-400,-550),(-310,-600), (-310,-610), (-400,-610)])
+
         wall_vertices = [ (0,-500), (0,-430), (10,-430), (10,-500) ]
         self.add_static_polygon(wall_vertices)
         wall_vertices = translate_polygon(wall_vertices, -300, 0)
