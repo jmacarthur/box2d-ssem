@@ -49,7 +49,7 @@ initial_memory = [ 0xFF,
                    0x10,
                    0x20,
                    0x40,
-                   (LDN<<5)+1] # Store acc to memory location 1
+                   (JMP<<5)+1] # Store acc to memory location 1
 
 bar_gate_raisers = False
 
@@ -185,7 +185,7 @@ class Memory (Framework):
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1):
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False):
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
@@ -224,6 +224,12 @@ class Memory (Framework):
         reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180, filters[0])
         reset_lever.attachment_point=(xpos,ypos-180)
         self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
+
+        # Transfer bands in negative reader channels (discards)
+        if discard_bands:
+            transfer_band_x = [ (xpos+output_offset_x-12+pitch*x,xpos+output_offset_x+pitch*x) for x in range(0,lines) ]
+            self.transfer_bands.append((ypos-150, ypos-150-10, transfer_band_x, 0))
+
         return reset_lever
         
     def ball_bearing_lift(self,xpos,ypos,attachment_body):
@@ -731,7 +737,7 @@ class Memory (Framework):
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
-        discard_lever_1 = self.diverter_set(-190,-359, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
+        discard_lever_1 = self.diverter_set(-190,-370, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
         upper_regen_control = self.regenerator(-5,-70, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         diverter_3 = self.diverter_set(0,-120, groundBody, slope_x=209, slope_y=350) # Diverter 3; splits to instruction reg/PC
 
@@ -742,9 +748,9 @@ class Memory (Framework):
         for r in range(0,8):
             for i in range(0,5):
                 test_data = self.add_ball_bearing(250+22*i+r%2,-140+7*r,0)
-        accumulator_reset_lever = self.subtractor(0,-170, groundBody)
+        accumulator_reset_lever = self.subtractor(0,-170, groundBody, discard_bands=True)
         self.lower_regenerators = []
-        self.regenerator(-200,-390, groundBody, self.lower_regenerators)
+        lower_regen_control = self.regenerator(-190,-410, groundBody, self.lower_regenerators)
         #Program counter
         self.subtractor(400,-310, groundBody, lines=5)
 
@@ -844,6 +850,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
 
+        # Cam 16: Divert to instruction pointer, on JRP and JMP.
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
