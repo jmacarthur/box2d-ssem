@@ -719,6 +719,11 @@ class Memory (Framework):
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
         self.instruction_inputs.reverse()
         self.instruction_outputs.reverse()
+
+    def ball_bearing_block(self, xpos, ypos,cols):
+        for r in range(0,5):
+            for col in range(0,cols):
+                test_data = self.add_ball_bearing(xpos+7*col+r%2,ypos+7*r,0)
         
     def set_initial_memory(self):
         for x in range(0,8):
@@ -738,33 +743,32 @@ class Memory (Framework):
         groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
-        for r in range(0,8):
-            for i in range(0,8):
-                test_data = self.add_ball_bearing(7*i+r%2,190+7*r,0)
+        self.ball_bearing_block(0,190,cols=16)
         self.injector_cranks = []
         main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-230, slope_y=180) # Diverter 1. Splits to subtractor reader.
+        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-235, slope_y=180) # Diverter 1. Splits to subtractor reader.
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
-        discard_lever_1 = self.diverter_set(-190,-370, groundBody, discard=True) # Diverter 2b. Discard main data from accumulator.
-        upper_regen_control = self.regenerator(-5,-70, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(0,-120, groundBody, slope_x=209, slope_y=350) # Diverter 3; splits to instruction reg/PC
+        upper_regen_control = self.regenerator(-15,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        diverter_3 = self.diverter_set(-15,-145, groundBody, slope_x=226, slope_y=310) # Diverter 3; splits to instruction reg/PC
 
+        ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3) # Diverter 1. Splits to instruction counter.
+        
         # PC injector
         self.pc_injector_cranks = []    
-        pc_injector_raiser = self.injector(230,-200, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
+        pc_injector_raiser = self.injector(230,-290, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
         # Initial charge for PC injector
-        for r in range(0,8):
-            for i in range(0,5):
-                test_data = self.add_ball_bearing(250+22*i+r%2,-140+7*r,0)
-        accumulator_reset_lever = self.subtractor(0,-170, groundBody, discard_bands=True)
+        self.ball_bearing_block(250,-240,cols=8)
+
+
+        accumulator_reset_lever = self.subtractor(-15,-200, groundBody, discard_bands=True)
         self.lower_regenerators = []
-        lower_regen_control = self.regenerator(-190,-410, groundBody, self.lower_regenerators)
+        lower_regen_control = self.regenerator(-190,-380, groundBody, self.lower_regenerators)
         #Program counter
-        self.subtractor(400,-310, groundBody, lines=5)
+        self.subtractor(400,-320, groundBody, lines=5)
 
         self.connect_regenerators()
         # gutter
@@ -808,15 +812,15 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.5,0.05), (0.61,0.2)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.5,0.05), (0.63,0.2)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.55,0.05)])
+        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.57,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(900,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=1, bumps=[(0.18, 0.1)])
+        follower_body = self.add_cam(900,-100, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.1)])
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
@@ -839,11 +843,6 @@ class Memory (Framework):
         # Attach LDN instruction output to reset bar
         self.distance_joint(accumulator_reset_lever, self.instruction_outputs[LDN])
 
-        # Cam 10: Always discard the first set of data through the accumulator.
-        follower_body = self.add_cam(-300, -300, groundBody, 80, bumps=[(0.6,0.2)], horizontal=True, axis_offset=0)
-        self.distance_joint(follower_body, discard_lever_1)
-
-       
         # Cam 11: Instruction follower holdoff
         follower_body = self.add_cam(1000, 100, groundBody, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
         self.distance_joint(follower_body, instruction_follower_holdoff)
@@ -862,7 +861,10 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
 
-        # Cam 16: Divert to instruction pointer, on JRP and JMP.
+        # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
+        follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
+        self.distance_joint(follower_body, self.instruction_inputs[STO])
+        self.distance_joint(ip_diverter_lever, self.instruction_outputs[STO])
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
@@ -895,7 +897,11 @@ class Memory (Framework):
         if self.cams_on: self.sequence += 1
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
-            print("Sequence {} AngleTarget = {} degrees".format(self.sequence, 360*angleTarget/(math.pi*2)))
+            print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
+        if angleTarget >= (math.pi*2) and self.cams_on:
+            angleTarget = math.pi*2
+            self.cams_on = False
+            print("Sequence complete; cams off")
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
             gain = 1.0
