@@ -49,7 +49,7 @@ initial_memory = [ 0xFF,
                    0x10,
                    0x20,
                    0x40,
-                   (JMP<<5)+1] # Store acc to memory location 1
+                   (LDN<<5)+1] # Store acc to memory location 1
 
 bar_gate_raisers = False
 
@@ -742,7 +742,7 @@ class Memory (Framework):
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
 
-        groundBox = makeBox(-20,-500,1,1)
+        groundBox = makeBox(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
         self.ball_bearing_block(0,190,cols=16)
@@ -773,18 +773,9 @@ class Memory (Framework):
         self.subtractor(400,-320, groundBody, lines=5)
 
         self.connect_regenerators()
-        # gutter
-        gutter_vertices = [ (0,0), (pitch*9,10), (pitch*9,-10), (0,-10) ]
-        gutter_vertices = translate_polygon(gutter_vertices, -20, -420)
-        gutter = self.add_static_polygon(gutter_vertices)
 
         self.add_static_polygon([ (-300,-600),(500,-550), (500,-610), (-300,-610)])
         self.add_static_polygon([ (-400,-550),(-310,-600), (-310,-610), (-400,-610)])
-
-        wall_vertices = [ (0,-500), (0,-430), (10,-430), (10,-500) ]
-        self.add_static_polygon(wall_vertices)
-        wall_vertices = translate_polygon(wall_vertices, -300, 0)
-        self.add_static_polygon(wall_vertices)
 
         # Instruction decoder ROM
         self.rom_followers = []
