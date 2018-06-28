@@ -754,8 +754,8 @@ class Memory (Framework):
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
-        upper_regen_control = self.regenerator(-15,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-15,-145, groundBody, slope_x=226, slope_y=310) # Diverter 3; splits to instruction reg/PC
+        upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        diverter_3 = self.diverter_set(-10,-145, groundBody, slope_x=221, slope_y=310) # Diverter 3; splits to instruction reg/PC
 
         ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3) # Diverter 1. Splits to instruction counter.
         
@@ -810,15 +810,15 @@ class Memory (Framework):
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.60,0.1)], axis_offset=-1)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.63,0.1)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.5,0.05), (0.63,0.2)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.2)],axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.57,0.05)])
+        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)])
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
@@ -851,11 +851,11 @@ class Memory (Framework):
         
         # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
         # will fall through the memory and be discarded.
-        follower_body = self.add_cam(0,300, groundBody, 100, bumps=[(0.6,0.02)], axis_offset=1)
+        follower_body = self.add_cam(0,300, groundBody, 100, bumps=[(0.62,0.02)], axis_offset=1)
         self.distance_joint(follower_body, main_injector_raiser)
 
         # Cam 13: Discard everything after main injector fires for all cases.
-        follower_body = self.add_cam(900, 200, groundBody, 80, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        follower_body = self.add_cam(900, 200, groundBody, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
         self.distance_joint(follower_body, discard_lever_2)
 
         # Cam 14: Divert to subtractor reader on STO.
