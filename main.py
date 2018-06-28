@@ -118,7 +118,7 @@ class Memory (Framework):
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
         if discard:
-            self.add_static_polygon([(0,0), (170,-10), (170,-13), (0,-3) ], xpos, ypos-11, filterB)
+            self.add_static_polygon([(0,0), (540,-30), (540,-33), (0,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
             if slope_x < 0:
                 offset = pitch
