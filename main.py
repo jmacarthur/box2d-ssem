@@ -98,7 +98,7 @@ class Memory (Framework):
             return body
 
             
-    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100):
+    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100, start_at=0):
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
@@ -126,7 +126,7 @@ class Memory (Framework):
                 offset = 0
         
             exit_transfer_band_x = []
-            for c in range(0,8):
+            for c in range(start_at,8):
                 exit_slope = polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ])
                 self.add_static_polygon(exit_slope, c*pitch+xpos+offset, ypos-10, filter=filterB)
                 exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch))
@@ -190,45 +190,47 @@ class Memory (Framework):
         sub_y_pitch = 20
         for c in range(0,lines):
             toggle_centre_x = xpos+c*pitch
-            toggle_centre_y = ypos-150+sub_y_pitch*c
+            toggle_centre_y = ypos-(sub_y_pitch*lines)+10+sub_y_pitch*c
             input_toggle = self.toggle(toggle_centre_x, toggle_centre_y, attachment_body)
             input_toggle.attachment_point = (toggle_centre_x, toggle_centre_y+10)
             output_toggle = self.subtractor_output_toggle(toggle_centre_x+output_offset_x, toggle_centre_y, attachment_body)
             output_toggle.attachment_point = (toggle_centre_x+output_offset_x, toggle_centre_y+10)
             self.distance_joint(input_toggle, output_toggle)
 
+            # Dividers of output channels
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
-                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-185)
+                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*lines)
 
             # Small triangular divider
             self.add_static_polygon([ (20,-6), (27,-3), (27,0) ],
-                                    xpos+c*pitch-pitch+5, ypos+pitch+6-sub_y_pitch*(8-c))
+                                    xpos+c*pitch-pitch+5, ypos+pitch+6-sub_y_pitch*(lines-c))
 
         for c in range(0,lines+1):
             # Large static bits that form input channels
-            self.add_static_polygon([ (0,0), (pitch-7,-3), (pitch-7,-sub_y_pitch*(8-c)-5), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
+            self.add_static_polygon([ (0,0), (pitch-7,-3), (pitch-7,-sub_y_pitch*(lines-c)-5), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5, ypos+pitch+9)
 
             # More top-side channels, but for the output
-            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(8-c)), (0,-sub_y_pitch*(8-c)-sub_y_pitch) ],
+            self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(lines-c)), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
-            # Bottom-side channels, for the output
+            # Bottom-side channels, for the output            
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
-                                    xpos+c*pitch+output_offset_x, ypos+pitch-185)
+                                    xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines))
 
 
         # A reset bar
         reset_angle = math.atan2(sub_y_pitch, pitch)
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
-        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-180, filters[0])
+        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-sub_y_pitch*lines-20, filters[0])
         reset_lever.attachment_point=(xpos,ypos-180)
         self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
             transfer_band_x = [ (xpos+output_offset_x-12+pitch*x,xpos+output_offset_x+pitch*x) for x in range(0,lines) ]
-            self.transfer_bands.append((ypos-150, ypos-150-10, transfer_band_x, 0))
+            band_base_y = ypos-sub_y_pitch*lines
+            self.transfer_bands.append((band_base_y+10, band_base_y, transfer_band_x, 0))
 
         return reset_lever
         
