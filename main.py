@@ -171,8 +171,8 @@ class Memory (Framework):
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
                          fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0) ]
         toggle = self.add_multifixture(toggle_shape)
-        self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
-
+        toggle_drive = self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
+        self.all_toggle_drives.append(toggle_drive)
         # Bit that goes under the toggle to stop it moving too far
         self.add_static_polygon(box_polygon(6,2), xpos-3, ypos-3)
         return toggle
@@ -596,7 +596,7 @@ class Memory (Framework):
                                            motorSpeed = 0.0,
                                            enableMotor = True)
         else:
-            j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale))
+            j = self.world.CreateRevoluteJoint(bodyA=bodyA, bodyB=bodyB, anchor=(x*self.scale, y*self.scale), enableMotor = True)
         return j
 
     # End of interface functions
@@ -735,10 +735,12 @@ class Memory (Framework):
         super(Memory, self).__init__()
         self.cams_on = False
         self.all_cam_drives = []
+        self.all_toggle_drives = []
         self.scale = 1.0
         self.transfer_bands = []
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
+        self.init_pulse = 0 # A small counter for use at startup to reset the toggles
 
         groundBox = makeBox(-20,-500,1,1)
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
@@ -893,7 +895,16 @@ class Memory (Framework):
                                     filter=filters[plane])]
                                 
                             ),plane)
-
+        if self.init_pulse < 25:
+            for d in self.all_toggle_drives:
+                d.motorSpeed = -10
+        elif self.init_pulse < 50:
+            for d in self.all_toggle_drives:
+                d.motorSpeed = 0
+        if self.init_pulse == 100:
+            print("Initialization complete")
+        self.init_pulse += 1
+        
         if self.cams_on: self.sequence += 1
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
