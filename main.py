@@ -697,7 +697,17 @@ class Memory (Framework):
             self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
             block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*andgate_spacing_y-50)
-            block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
+            if i==7:
+                block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(5,0,5,20), filter=filters[0])
+                block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            elif i==6:
+                block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(30,-20,5,20), filter=filters[0])
+                block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            else:
+                block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30, ypos-i*andgate_spacing_y-50))
             self.slide_joint(attachment_body, block_slider, (1,0), -8,0, friction=0)
             block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
