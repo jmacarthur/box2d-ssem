@@ -6,6 +6,10 @@ from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 from Box2D import b2CircleShape
 
+from constants import *
+from test_sets import test_set
+
+
 def box_polygon(width,height):
     return [(0,0), (width,0), (width,height), (0,height)]
 
@@ -23,39 +27,6 @@ def rotate_polygon_radians(polygon, r):
 
 def translate_polygon(points, xpos, ypos):
     return [(x+xpos,y+ypos) for (x,y) in points]
-
-bb_diameter = 6.35
-
-selector_rods = 3
-memory_rows = 1<<selector_rods
-pitch = 22
-follower_spacing = 14
-
-# Instruction format for the 8-bit machine: least significant 5 bits are address; top 3 bits are instruction.
-# Instructions are:
-JMP = 0
-JRP = 1
-LDN = 2
-STO = 3
-SUB = 4
-CMP = 6
-STOP = 7
-
-# At the moment, PC starts at 0xFF.
-initial_memory = [ 0xFF,
-                   0x02,
-                   0x04,
-                   0x08,
-                   0x10,
-                   0x20,
-                   0x40,
-                   (LDN<<5)+1] # Store acc to memory location 1
-
-bar_gate_raisers = False
-
-filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
-           filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
-           filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
 
 class Memory (Framework):
     name = "SSEM"
@@ -727,13 +698,13 @@ class Memory (Framework):
             for col in range(0,cols):
                 test_data = self.add_ball_bearing(xpos+7*col+r%2,ypos+7*r,0)
         
-    def set_initial_memory(self):
+    def set_initial_memory(self, memory_array):
         for x in range(0,8):
             for y in range(0,8):
-                if (initial_memory[y] & 1<<x):
+                if (memory_array[y] & 1<<x):
                     self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
         
-    def __init__(self):
+    def __init__(self, test_set):
         super(Memory, self).__init__()
         self.accumulator_toggles = []
         self.ip_toggles = []
@@ -866,7 +837,7 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
         
-        self.set_initial_memory()
+        self.set_initial_memory(test_set["initial_memory"])
         
     def Step(self, settings):
         super(Memory, self).Step(settings)
@@ -921,6 +892,6 @@ class Memory (Framework):
             self.cams_on = not self.cams_on
 
 if __name__ == "__main__":
-    main(Memory)
+    main(Memory(test_set[0]))
 
     
