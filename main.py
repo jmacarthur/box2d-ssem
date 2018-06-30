@@ -86,7 +86,7 @@ class Memory (Framework):
 
         for c in range(0,8):
             self.add_static_polygon(box_polygon(2,10),  c*pitch+xpos,    -12+ypos, filterA)
-            self.add_static_polygon(box_polygon(2,25),  c*pitch+xpos+11, -12+ypos, filterA)
+            self.add_static_polygon(box_polygon(2,35),  c*pitch+xpos+11, -12+ypos, filterA)
             self.add_static_polygon(box_polygon(11,3), c*pitch+xpos+2,  -12+ypos, filterA)
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
@@ -107,7 +107,7 @@ class Memory (Framework):
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
-        self.add_static_polygon(makeBox(xpos-10, ypos-10, 3,30))
+        self.add_static_polygon(makeBox(xpos-10, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
         conrod.attachment_point = (xpos+pitch*8, ypos+15)
 
@@ -841,14 +841,14 @@ class Memory (Framework):
         self.distance_joint(follower_body, discard_lever_2)
 
         # Cam 14: Divert to subtractor reader on STO.
-        follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
+        follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
 
         # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
         follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
-        self.distance_joint(follower_body, self.instruction_inputs[STO])
-        self.distance_joint(ip_diverter_lever, self.instruction_outputs[STO])
+        self.distance_joint(follower_body, self.instruction_inputs[JRP])
+        self.distance_joint(ip_diverter_lever, self.instruction_outputs[JRP])
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
