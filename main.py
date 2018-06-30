@@ -3,6 +3,7 @@
 import argparse
 import copy
 import math
+import random
 
 from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
@@ -712,11 +713,15 @@ class Memory (Framework):
             self.test_mode = True
             self.test_set = test_set[testmode]
             print("Running test {}".format(testmode))
+            settle_delay = 400
+            self.start_point = random.randint(settle_delay,settle_delay+100)
+            print("Running test {} starting at tick {}".format(testmode, self.start_point))
         else:
             # Use the test data from the first test, but don't go into testmode.
             self.test_mode = False
             self.test_set = test_set[0]
             print("Starting in interactive mode")
+            self.start_point = 0
 
         self.accumulator_toggles = []
         self.ip_toggles = []
@@ -903,8 +908,10 @@ class Memory (Framework):
         elif self.init_pulse < 50:
             for d in self.all_toggle_drives:
                 d.motorSpeed = 0
-        if self.init_pulse == 100:
+        elif self.init_pulse == 100:
             print("Initialization complete")
+        elif self.init_pulse == self.start_point:
+            self.cams_on = True
         self.init_pulse += 1
         
         if self.cams_on: self.sequence += 1
@@ -917,7 +924,8 @@ class Memory (Framework):
             self.cams_on = False
             print("Sequence complete; cams off")
             self.verify_results()
-            self.stopFlag = True
+            if self.test_mode:
+                self.stopFlag = True
             
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
