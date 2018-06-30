@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import copy
 import math
 
@@ -704,8 +705,19 @@ class Memory (Framework):
                 if (memory_array[y] & 1<<x):
                     self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
         
-    def __init__(self, test_set):
+    def __init__(self, testmode):
         super(Memory, self).__init__()
+
+        if testmode is not None:
+            self.test_mode = True
+            self.test_set = test_set[testmode]
+            print("Running test {}".format(testmode))
+        else:
+            # Use the test data from the first test, but don't go into testmode.
+            self.test_mode = False
+            self.test_set = test_set[0]
+            print("Starting in interactive mode")
+
         self.accumulator_toggles = []
         self.ip_toggles = []
         self.cams_on = False
@@ -716,7 +728,6 @@ class Memory (Framework):
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
-        self.test_set = test_set
         groundBox = makeBox(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
@@ -837,7 +848,7 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
         
-        self.set_initial_memory(test_set["initial_memory"])
+        self.set_initial_memory(self.test_set["initial_memory"])
 
     def read_accumulator_array(self):
         return [1 if i.angle>0 else 0 for i in self.accumulator_toggles]
@@ -906,11 +917,12 @@ class Memory (Framework):
             self.cams_on = False
             print("Sequence complete; cams off")
             self.verify_results()
+            self.stopFlag = True
+            
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
             gain = 1.0
             d.motorSpeed = (-gain * angleError)
-
 
     def Keyboard(self, key):
         print("Processing key: {}".format(key))
@@ -918,6 +930,9 @@ class Memory (Framework):
             self.cams_on = not self.cams_on
 
 if __name__ == "__main__":
-    main(Memory(test_set[0]))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test', dest='testmode', type=int)
+    args = parser.parse_args()
+    main(Memory(args.testmode))
 
     

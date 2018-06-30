@@ -123,6 +123,8 @@ class FrameworkBase(b2ContactListener):
     def __init__(self):
         super(FrameworkBase, self).__init__()
 
+        self.stopFlag = False
+
         self.__reset()
 
         # Box2D Initialization

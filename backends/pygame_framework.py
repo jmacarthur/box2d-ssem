@@ -359,7 +359,7 @@ class PygameFramework(FrameworkBase):
 
         running = True
         clock = pygame.time.Clock()
-        while running:
+        while running and not self.stopFlag:
             running = self.checkEvents()
             self.screen.fill((0, 0, 0))
 
