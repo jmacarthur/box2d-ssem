@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
+import copy
 import math
 
 from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 from Box2D import b2CircleShape
-
 from constants import *
 from test_sets import test_set
 
@@ -716,7 +716,7 @@ class Memory (Framework):
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
-
+        self.test_set = test_set
         groundBox = makeBox(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
         # Initial charge for main injector
@@ -838,7 +838,32 @@ class Memory (Framework):
         # 0.31: Memory at PC has been read and regenerated
         
         self.set_initial_memory(test_set["initial_memory"])
+
+    def read_accumulator_array(self):
+        return [1 if i.angle>0 else 0 for i in self.accumulator_toggles]
         
+    def read_accumulator_value(self):
+        bits = reversed(self.read_accumulator_array())
+        total = 0
+        val = 1
+        for b in bits:
+            total += b * val
+            val <<= 1
+        return total
+
+    def verify_results(self):
+        expected_accumulator = self.test_set["expected_accumulator"]
+        accumulator = self.read_accumulator_value()
+        if expected_accumulator != accumulator:
+            print("FAIL: Expected accumulator {}, actual result {}".format(expected_accumulator, accumulator))
+        else:
+            print("PASS")
+        expected_memory = copy.copy(self.test_set["initial_memory"])
+        if "memory_update" in self.test_set:
+            (address, value) = self.test_set["memory_update"]
+            expected_memory[address] = value
+        # TODO: Check memory values.
+
     def Step(self, settings):
         super(Memory, self).Step(settings)
         for i in range(0,len(self.ball_bearings)):
@@ -875,11 +900,12 @@ class Memory (Framework):
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
-            print("Accumulator = {}".format(",".join(map(str,[1 if i.angle>0 else 0 for i in self.accumulator_toggles]))))
+            print("Accumulator = {}".format(",".join(map(str,self.read_accumulator_array()))))
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
             print("Sequence complete; cams off")
+            self.verify_results()
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
             gain = 1.0
