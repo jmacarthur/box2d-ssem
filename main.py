@@ -166,13 +166,15 @@ class Memory (Framework):
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0, friction=0)
         return pusher_body
 
-    def toggle(self, xpos, ypos, attachment_body):
+    def toggle(self, xpos, ypos, attachment_body, toggle_joint_array=None):
         toggle_divider_polygon = [ (xpos-3, ypos), (xpos+3, ypos), (xpos, ypos+10) ]
         toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
                          fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0) ]
         toggle = self.add_multifixture(toggle_shape)
         toggle_drive = self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
         self.all_toggle_drives.append(toggle_drive)
+        if toggle_joint_array is not None:
+            toggle_joint_array.append(toggle_drive)
         # Bit that goes under the toggle to stop it moving too far
         self.add_static_polygon(box_polygon(6,2), xpos-3, ypos-3)
         return toggle
@@ -185,13 +187,13 @@ class Memory (Framework):
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False):
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None):
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
             toggle_centre_x = xpos+c*pitch
             toggle_centre_y = ypos-(sub_y_pitch*lines)+10+sub_y_pitch*c
-            input_toggle = self.toggle(toggle_centre_x, toggle_centre_y, attachment_body)
+            input_toggle = self.toggle(toggle_centre_x, toggle_centre_y, attachment_body, toggle_joint_array)
             input_toggle.attachment_point = (toggle_centre_x, toggle_centre_y+10)
             output_toggle = self.subtractor_output_toggle(toggle_centre_x+output_offset_x, toggle_centre_y, attachment_body)
             output_toggle.attachment_point = (toggle_centre_x+output_offset_x, toggle_centre_y+10)
@@ -733,6 +735,8 @@ class Memory (Framework):
         
     def __init__(self):
         super(Memory, self).__init__()
+        self.accumulator_toggles = []
+        self.ip_toggles = []
         self.cams_on = False
         self.all_cam_drives = []
         self.all_toggle_drives = []
@@ -766,11 +770,11 @@ class Memory (Framework):
         self.ball_bearing_block(250,-240,cols=8)
 
 
-        accumulator_reset_lever = self.subtractor(-15,-200, groundBody, discard_bands=True)
+        accumulator_reset_lever = self.subtractor(-15,-200, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles)
         self.lower_regenerators = []
         lower_regen_control = self.regenerator(-190,-380, groundBody, self.lower_regenerators)
         #Program counter
-        self.subtractor(400,-320, groundBody, lines=5)
+        self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles)
 
         self.connect_regenerators()
 
@@ -900,6 +904,7 @@ class Memory (Framework):
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
+            print("Accumulator = {}".format(",".join(map(str,[1 if i.angle>0 else 0 for i in self.accumulator_toggles]))))
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
