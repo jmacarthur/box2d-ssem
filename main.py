@@ -71,7 +71,14 @@ class Memory (Framework):
             return body
 
             
-    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100, start_at=0):
+    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100, start_at=0, mirror=False):
+        """
+        discard: used to indicate the right-side output form this is always discarded, so we can combine outputs
+        inverted: Normal behaviour is to input data in plane 0 and output it in 0 going through 1 temporarily. inverted means 1 to 1 via 0.
+        slope_x, slope_y: How far the diverted output is offset in both directions. (slope_x can be negative; slope_y must be positive)
+        start_at: Reduces the number of lanes e.g. for diversion only to the instruction register.
+        mirror: Only affects discarders - if set, discards to the left instead of the usual right.
+        """
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
@@ -91,7 +98,10 @@ class Memory (Framework):
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
         if discard:
-            self.add_static_polygon([(0,0), (540,-30), (540,-33), (0,-3) ], xpos, ypos-11, filterB)
+            if mirror:
+                self.add_static_polygon([(8*pitch,0), (-500,-30), (-500,-33), (8*pitch,-3) ], xpos, ypos-11, filterB)
+            else:
+                self.add_static_polygon([(0,0), (540,-30), (540,-33), (0,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
             if slope_x < 0:
                 offset = pitch
@@ -111,7 +121,10 @@ class Memory (Framework):
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
         conrod.attachment_point = (xpos+pitch*8, ypos+15)
 
-        return_crank = self.crank_right_up(xpos+pitch*8+20,ypos, attachment_body)
+        crank_xpos = xpos+pitch*8+20
+        if mirror:
+            crank_xpos = xpos-50
+        return_crank = self.crank_right_up(crank_xpos,ypos, attachment_body)
         self.distance_joint(return_crank, conrod)
         
         return conrod
@@ -780,6 +793,9 @@ class Memory (Framework):
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
+        store_discard = self.diverter_set(-200,-130, groundBody, discard=True, mirror=True) # Diverter 4. Discards the extra data from the regenerator during a store.
+
+        
         # Cams
 
         # Cam 1: Fires PC injector, reading PC into address reg.
@@ -841,6 +857,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, discard_lever_2)
 
         # Cam 14: Divert to subtractor reader on STO.
+        # Also diverts the regenerator output on STO; we must separately discard that.
         follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
