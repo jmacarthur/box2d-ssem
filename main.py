@@ -71,7 +71,7 @@ class Memory (Framework):
             return body
 
             
-    def diverter_set(self, xpos, ypos, attachment_body, discard = 0, inverted = False, slope_x=200, slope_y=100, start_at=0, mirror=False):
+    def diverter_set(self, xpos, ypos, attachment_body, discard = 0, inverted = False, slope_x=200, slope_y=100, start_at=0, mirror=False, return_weight=50):
         """discard: nonzero used to indicate the right-side output form this
         is always discarded, so we can combine outputs. Value
         indicates the distance the discard plane runs for. Negative
@@ -136,7 +136,7 @@ class Memory (Framework):
         crank_xpos = xpos+pitch*8+20
         if mirror:
             crank_xpos = xpos-50
-        return_crank = self.crank_right_up(crank_xpos,ypos, attachment_body)
+        return_crank = self.crank_right_up(crank_xpos,ypos, attachment_body, weight=return_weight)
         self.distance_joint(return_crank, conrod)
         
         return conrod
@@ -228,7 +228,7 @@ class Memory (Framework):
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
-            transfer_band_x = [ (xpos+output_offset_x-12+pitch*x,xpos+output_offset_x+pitch*x) for x in range(0,lines) ]
+            transfer_band_x = [ (xpos+output_offset_x+pitch*x,xpos+12+output_offset_x+pitch*x) for x in range(0,lines) ]
             band_base_y = ypos-sub_y_pitch*lines
             self.transfer_bands.append((band_base_y+10, band_base_y, transfer_band_x, 0))
 
@@ -715,7 +715,7 @@ class Memory (Framework):
             pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+30, ypos-i*andgate_spacing_y-70)
             pusher_slider.attachment_point = (xpos+i*30+60, ypos-i*andgate_spacing_y-70)
             self.instruction_inputs.append(pusher_slider)
-            self.slide_joint(attachment_body, pusher_slider, (1,0), -20,0)
+            self.slide_joint(attachment_body, pusher_slider, (1,0), -20,0, friction=0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
         self.instruction_inputs.reverse()
         self.instruction_outputs.reverse()
@@ -764,7 +764,7 @@ class Memory (Framework):
         self.injector_cranks = []
         main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-235, slope_y=180) # Diverter 1. Splits to subtractor reader.
+        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
@@ -783,7 +783,7 @@ class Memory (Framework):
 
         accumulator_reset_lever = self.subtractor(-15,-200, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles)
         self.lower_regenerators = []
-        lower_regen_control = self.regenerator(-190,-380, groundBody, self.lower_regenerators)
+        lower_regen_control = self.regenerator(-213,-380, groundBody, self.lower_regenerators)
         #Program counter
         self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles)
 
@@ -804,9 +804,6 @@ class Memory (Framework):
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
-        store_discard = self.diverter_set(-200,-130, groundBody, discard=-100, mirror=True) # Diverter 4. Discards the extra data from the regenerator during a store.
-
-        
         # Cams
 
         # Cam 1: Fires PC injector, reading PC into address reg.
@@ -819,11 +816,11 @@ class Memory (Framework):
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.63,0.1)], axis_offset=-1)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.2)],axis_offset=-1)
+        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
         self.distance_joint(follower_body, memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
@@ -864,23 +861,28 @@ class Memory (Framework):
         self.distance_joint(follower_body, main_injector_raiser)
 
         # Cam 13: Discard everything after main injector fires for all cases.
-        follower_body = self.add_cam(900, 200, groundBody, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
-        self.distance_joint(follower_body, discard_lever_2)
+        #follower_body = self.add_cam(900, 200, groundBody, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        #self.distance_joint(follower_body, discard_lever_2)
 
         # Cam 14: Divert to subtractor reader on STO.
         # Also diverts the regenerator output on STO; we must separately discard that.
         follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
+        self.distance_joint(discard_lever_2, self.instruction_outputs[STO])
 
         # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
         follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
         self.distance_joint(follower_body, self.instruction_inputs[JRP])
         self.distance_joint(ip_diverter_lever, self.instruction_outputs[JRP])
 
-        # Cam 16: Discard  before subtractor.
-        follower_body = self.add_cam(-500,-150, groundBody, 80, bumps=[(0.7,0.2)], reverse_direction=True, horizontal=True, axis_offset=2)
-        self.distance_joint(follower_body, store_discard)
+        # Cam 16: Secondary discard, of any data falling through the memory just after main inject
+        follower_body = self.add_cam(-500,-150, groundBody, 80, bumps=[(0.67,0.07)], reverse_direction=True, horizontal=True, axis_offset=2)
+        self.distance_joint(follower_body, discard_lever_2)
+
+        # Cam 17 Fires bottom regenerator (usually empty, unless STO is on)
+        follower_body = self.add_cam(-500,-300, groundBody, 80, bumps=[(0.87,0.02)], horizontal=True, axis_offset=0)
+        self.distance_joint(follower_body, lower_regen_control)
 
         
         # Notable timing points:
