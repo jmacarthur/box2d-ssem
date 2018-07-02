@@ -178,14 +178,14 @@ class Memory (Framework):
         return toggle
         
     def subtractor_output_toggle(self, xpos, ypos, attachment_body):
-        toggle = self.add_dynamic_polygon([(xpos-1.5,ypos), (xpos+1.5,ypos), (xpos, ypos+10)], 0,0)
+        toggle = self.add_dynamic_polygon([(xpos-1.5,ypos), (xpos+1.5,ypos), (xpos, ypos+10)], 0,0, filter=filters[5])
         self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos))
         return toggle
 
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None):
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None, is_actually_adder=False):
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
@@ -199,7 +199,7 @@ class Memory (Framework):
 
             # Dividers of output channels
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+50), (-1,sub_y_pitch*c+50) ],
-                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*lines)
+                                    xpos+(c+0.5)*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*lines, filter=filters[4])
 
             # Small triangular divider
             self.add_static_polygon([ (20,-6), (27,-3), (27,0) ],
@@ -208,23 +208,26 @@ class Memory (Framework):
         for c in range(0,lines+1):
             # Large static bits that form input channels
             self.add_static_polygon([ (0,0), (pitch-7,-3), (pitch-7,-sub_y_pitch*(lines-c)-5), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
-                                    xpos+c*pitch-pitch+3.5, ypos+pitch+9)
+                                    xpos+c*pitch-pitch+3.5, ypos+pitch+9, filter=filters[4])
 
             # More top-side channels, but for the output
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(lines-c)), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
-                                    xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9)
+                                    xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9, filter=filters[4])
             # Bottom-side channels, for the output            
             self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
-                                    xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines))
+                                    xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
 
 
         # A reset bar
         reset_angle = math.atan2(sub_y_pitch, pitch)
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
-        reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-sub_y_pitch*lines-20, filters[0])
+        if is_actually_adder:
+            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-sub_y_pitch*lines, filters[0])
+        else:
+            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-210, ypos-sub_y_pitch*lines+10, filters[3])
         reset_lever.attachment_point=(xpos,ypos-180)
-        self.slide_joint(attachment_body, reset_lever, (-1,1), 0,15, friction=0.1)
+        self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=1)
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
@@ -785,7 +788,7 @@ class Memory (Framework):
         self.lower_regenerators = []
         lower_regen_control = self.regenerator(-213,-380, groundBody, self.lower_regenerators)
         #Program counter
-        self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles)
+        self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
 
         self.connect_regenerators()
 
