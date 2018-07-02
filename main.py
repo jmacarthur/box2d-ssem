@@ -877,6 +877,11 @@ class Memory (Framework):
         follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
         self.distance_joint(follower_body, self.instruction_inputs[JRP])
         self.distance_joint(ip_diverter_lever, self.instruction_outputs[JRP])
+
+        # Cam 16: Discard  before subtractor.
+        follower_body = self.add_cam(-500,-150, groundBody, 80, bumps=[(0.7,0.2)], reverse_direction=True, horizontal=True, axis_offset=2)
+        self.distance_joint(follower_body, store_discard)
+
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
