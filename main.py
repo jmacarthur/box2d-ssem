@@ -109,11 +109,11 @@ class Memory (Framework):
             self.add_static_polygon(box_polygon(11,3), c*pitch+xpos+2,  -12+ypos, filterA)
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
-        if discard:
-            if mirror:
-                self.add_static_polygon([(8*pitch,0), (-500,-30), (-500,-33), (8*pitch,-3) ], xpos, ypos-11, filterB)
+        if discard != 0:
+            if discard>0:
+                self.add_static_polygon([(0,0), (discard,-30), (discard,-33), (0,-3) ], xpos, ypos-11, filterB)
             else:
-                self.add_static_polygon([(0,0), (540,-30), (540,-33), (0,-3) ], xpos, ypos-11, filterB)
+                self.add_static_polygon([(8*pitch,0), (discard,-30), (discard,-33), (8*pitch,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
             if slope_x < 0:
                 offset = pitch
@@ -769,7 +769,7 @@ class Memory (Framework):
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
-        discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=True) # Diverter 2a. Discard reader-pulse data.
+        discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
         upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         diverter_3 = self.diverter_set(-10,-145, groundBody, slope_x=221, slope_y=310) # Diverter 3; splits to instruction reg/PC
 
@@ -805,7 +805,7 @@ class Memory (Framework):
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
-        store_discard = self.diverter_set(-200,-130, groundBody, discard=True, mirror=True) # Diverter 4. Discards the extra data from the regenerator during a store.
+        store_discard = self.diverter_set(-200,-130, groundBody, discard=-100, mirror=True) # Diverter 4. Discards the extra data from the regenerator during a store.
 
         
         # Cams
