@@ -21,5 +21,9 @@ bar_gate_raisers = False
 
 filters = [filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF),
            filter(groupIndex=2, categoryBits=0x0002, maskBits=0x0000),
-           filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000)]
+           filter(groupIndex=3, categoryBits=0x0004, maskBits=0x0000),
+           filter(groupIndex=4, categoryBits=0x0004, maskBits=6), # Explicitly for subtractor reset bars
+           filter(groupIndex=5, categoryBits=0x0005, maskBits=0x0001), # Subtractor static bits
+           filter(groupIndex=6, categoryBits=0x0006, maskBits=0xFFFF), # Subtractor output toggles
+]
 
