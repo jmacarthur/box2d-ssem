@@ -71,13 +71,25 @@ class Memory (Framework):
             return body
 
             
-    def diverter_set(self, xpos, ypos, attachment_body, discard = False, inverted = False, slope_x=200, slope_y=100, start_at=0, mirror=False):
-        """
-        discard: used to indicate the right-side output form this is always discarded, so we can combine outputs
-        inverted: Normal behaviour is to input data in plane 0 and output it in 0 going through 1 temporarily. inverted means 1 to 1 via 0.
-        slope_x, slope_y: How far the diverted output is offset in both directions. (slope_x can be negative; slope_y must be positive)
-        start_at: Reduces the number of lanes e.g. for diversion only to the instruction register.
-        mirror: Only affects discarders - if set, discards to the left instead of the usual right.
+    def diverter_set(self, xpos, ypos, attachment_body, discard = 0, inverted = False, slope_x=200, slope_y=100, start_at=0, mirror=False):
+        """discard: nonzero used to indicate the right-side output form this
+        is always discarded, so we can combine outputs. Value
+        indicates the distance the discard plane runs for. Negative
+        values means it discards to the left.
+        
+        inverted: Normal behaviour is to input data in plane 0 and output it in
+        0 going through 1 temporarily. inverted means 1 to 1 via 0.
+        
+        slope_x, slope_y: How far the diverted output is offset in
+        both directions. (slope_x can be negative; slope_y must be
+        positive)
+        
+        start_at: Reduces the number of lanes e.g. for diversion only
+        to the instruction register.
+
+        mirror: Only affects discarders - if set, discards to the left
+        instead of the usual right.
+
         """
         filterA = filters[0]
         filterB = filters[1]
