@@ -731,20 +731,19 @@ class Memory (Framework):
                 if (memory_array[y] & 1<<x):
                     self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
         
-    def __init__(self, testmode):
+    def __init__(self, testmode, test_set_no):
         super(Memory, self).__init__()
-
+        self.test_set_no = test_set_no
+        self.test_set = test_set[self.test_set_no]
         if testmode is not None:
             self.test_mode = True
-            self.test_set = test_set[testmode]
             print("Running test {}".format(testmode))
             settle_delay = 400
             self.start_point = random.randint(settle_delay,settle_delay+100)
             print("Running test {} starting at tick {}".format(testmode, self.start_point))
         else:
-            # Use the test data from the first test, but don't go into testmode.
+            # Use the test data from the specified test, but don't go into testmode.
             self.test_mode = False
-            self.test_set = test_set[0]
             print("Starting in interactive mode")
             self.start_point = 0
 
@@ -968,8 +967,9 @@ class Memory (Framework):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test', dest='testmode', type=int)
+    parser.add_argument('--test', dest='testmode', type=bool)
+    parser.add_argument('testset', type=int)
     args = parser.parse_args()
-    main(Memory(args.testmode))
+    main(Memory(args.testmode, args.testset))
 
     
