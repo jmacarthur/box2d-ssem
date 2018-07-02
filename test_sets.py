@@ -24,6 +24,17 @@ test_set = [  {
                             (STO<<5)+1], # Store to  location 1
         "expected_accumulator": 0x00,
         "memory_update": (1, 0)
+    },
+    {
+        "initial_memory": [ 0xFF,
+                            0x02,
+                            0x04,
+                            0x08,
+                            0x10,
+                            0x20,
+                            0x40,
+                            (SUB<<5)+4], # Subtract location 4
+        "expected_accumulator": 0xF0
     }
     
  ]
