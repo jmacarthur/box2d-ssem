@@ -775,9 +775,9 @@ class Memory (Framework):
         self.upper_regenerators = []
 
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
-        upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-8,-145, groundBody, slope_x=206, slope_y=310) # Diverter 3; splits to instruction reg/PC
-        ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
+        upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        ip_diverter_lever = self.diverter_set(-5,-100, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
+        diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
         
         # PC injector
         self.pc_injector_cranks = []    
