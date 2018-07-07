@@ -205,11 +205,20 @@ class Memory (Framework):
             self.add_static_polygon([ (20,-6), (27,-3), (27,0) ],
                                     xpos+c*pitch-pitch+5, ypos+pitch+6-sub_y_pitch*(lines-c))
 
+            # Baffles which slow down every even channel
+            if c%2 == 0:
+                self.add_static_polygon([ (pitch-10,-3), (pitch-7,-3), (pitch-7,-6), (pitch-10,-6) ],
+                                        xpos+c*pitch-pitch+3.5, ypos+pitch+5, filter=filters[4])
+                self.add_static_polygon([ (pitch-1,0), (pitch,0), (pitch,3), (pitch-1,3) ],
+                                        xpos+c*pitch-pitch+3.5, ypos+pitch-10, filter=filters[4])
+
         for c in range(0,lines+1):
             # Large static bits that form input channels
-            self.add_static_polygon([ (0,0), (pitch-7,-3), (pitch-7,-sub_y_pitch*(lines-c)-5), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
+            self.add_static_polygon([ (0,0), (pitch-7-2,-3), (pitch-7,-sub_y_pitch*(lines-c)-5), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5, ypos+pitch+9, filter=filters[4])
 
+
+            
             # More top-side channels, but for the output
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(lines-c)), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9, filter=filters[4])
