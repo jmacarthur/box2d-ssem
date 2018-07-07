@@ -1,6 +1,7 @@
 from constants import *
 
-test_set = [  {
+test_set = [  {        "name": "LDN Test",
+
     "initial_memory": [ (LDN<<5)+1,  # Load negative from location 1
                       0x02,
                       0x04,
@@ -12,6 +13,7 @@ test_set = [  {
     "expected_accumulator": 0xFE
     },
     {
+        "name": "STO Test",
         "initial_memory": [ (STO<<5)+1, # Store to location 1
                             0x02,
                             0x04,
@@ -25,6 +27,7 @@ test_set = [  {
         "expected_pc": 0x01
     },
     {
+        "name": "SUB Test",
         "initial_accumulator": 76,
         "initial_memory": [ (SUB<<5)+4, # Subtract location 4
                             0x02,
@@ -63,6 +66,7 @@ test_set = [  {
         "expected_pc": 0x01
     },
     {
+        "name": "CMP Test",
         "initial_accumulator": 0xF0,
         "initial_memory": [ (CMP<<5)+6, # Skip next instruction if accumulator is negative. At the moment, CMP also acts as a sub so we must point it at a zero memory location.
                             0x02,

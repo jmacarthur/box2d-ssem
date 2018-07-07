@@ -817,12 +817,13 @@ class Memory (Framework):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
-        if testmode is not None:
+        if testmode:
             self.test_mode = True
-            print("Running test {}".format(testmode))
+            print("Running test {}".format(test_set_no))
             settle_delay = 400
             self.start_point = random.randint(settle_delay,settle_delay+100)
             print("Running test {} starting at tick {}".format(testmode, self.start_point))
+            self.name="SSEM - {}".format(self.test_set.get("name", "Automated test"))
         else:
             # Use the test data from the specified test, but don't go into testmode.
             self.test_mode = False
@@ -1146,10 +1147,10 @@ class Memory (Framework):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test', dest='testmode', type=bool)
+    parser.add_argument('--test', action='store_true')
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
-    main(Memory(args.testmode, args.testset))
+    main(Memory(args.test, args.testset))
 
 
     
