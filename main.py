@@ -786,7 +786,7 @@ class Memory (Framework):
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             elif i==6:
                 block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(15,-20,10,20), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(15,-20,6,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             else:
                 block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
