@@ -1005,7 +1005,7 @@ class Memory (Framework):
         self.distance_joint(cmp_injector, self.instruction_outputs[CMP])
 
         # Cam 20: Inc PC.
-        follower_body = self.add_cam(-95,-450, groundBody, 60, bumps=[(0.1,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
+        follower_body = self.add_cam(-95,-450, groundBody, 60, bumps=[(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
 
         
         # Notable timing points:

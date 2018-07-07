@@ -37,7 +37,8 @@ test_set = [  {
         "expected_accumulator": 54
     },
     {
-        "initial_memory": [ (JMP<<5)+2, # Jump to the address in location 2 (0x4)
+        "name": "JMP Test",
+        "initial_memory": [ (JMP<<5)+2, # Jump to the address in location 2 (0x4) which is 0x5 after the auto-increment.
                             0x02,
                             0x04,
                             0x08,
@@ -46,10 +47,11 @@ test_set = [  {
                             0x40,
                             0xFF], 
         "expected_accumulator": 0x00,
-        "expected_pc": 0x01
+        "expected_pc": 0x05
     },
     {
-        "initial_memory": [ (JRP<<5)+2, # Jump relative by the address in location 2 (0x4)
+        "name": "JRP Test",
+        "initial_memory": [ (JRP<<5)+2, # Jump relative by the address in location 2 (0x4) which is 0x5 after the auto-increment.
                             0x02,
                             0x04,
                             0x08,
