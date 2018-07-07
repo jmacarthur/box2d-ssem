@@ -55,6 +55,19 @@ test_set = [  {
                             0x40,
                             0xFF], 
         "expected_accumulator": 0x00
+    },
+    {
+        "initial_accumulator": 0xF0,
+        "initial_memory": [ (CMP<<5)+6, # Skip next instruction if accumulator is negative. At the moment, CMP also acts as a sub so we must point it at a zero memory location.
+                            0x02,
+                            0x04,
+                            0x08,
+                            0x10,
+                            0x20,
+                            0x00,
+                            0xFF], 
+        "expected_accumulator": 0x00,
+        "expected_pc": 0x02
     }
     
  ]

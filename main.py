@@ -295,6 +295,19 @@ class Memory (Framework):
         idler = self.add_dyanmic_circle(xpos+offset/4, ypos+height/4, 30, density=10, filter=filters[0])
         self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
+    def horizontal_injector(self, xpos, ypos, attachment_body):
+        left = fixtureDef(shape=makeBox(0,0.5,10,6), density=1.0, filter=filters[0])
+        right = fixtureDef(shape=makeBox(17,0.5,10,6), density=1.0, filter=filters[0])
+        drive_rect = self.add_multifixture([left,right], xpos, ypos)
+        drive_rect.attachment_point=(xpos+5, ypos+3.5)
+        self.slide_joint(attachment_body, drive_rect, (1,0), 0, 10, friction=0)
+        self.add_static_polygon(makeBox(0,-7,17,7), xpos, ypos)
+        self.add_static_polygon(makeBox(0,7,10,20), xpos, ypos)# Blocks left
+        self.add_static_polygon(makeBox(10+7,7,10,20), xpos, ypos)
+        self.add_static_polygon(polygonShape(vertices=[(0,27), (10,27), (0,37)]), xpos, ypos)
+        self.add_static_polygon(polygonShape(vertices=[(17,27), (27,27), (27,37)]), xpos, ypos)
+        return drive_rect
+
     def single_injector(self, xpos, ypos, attachment_body, horizontal_drive=False):
         intake_angle = 30
         height = 8
@@ -538,7 +551,7 @@ class Memory (Framework):
     def memory_sender(self, xpos, ypos, attachment_body):
         v1 = [ (0,0), (7,-4), (7,-17), (0,-13) ]
         entrace_poly = [ (-7,2), (0,0), (0,-5), (-7,0) ]
-        sensor_poly = [ (0,0), (7,-4), (7,-11), (0,-7) ]
+        sensor_poly = [ (3,0), (7,-4), (7,-11), (0,-7) ]
         blocker_poly = [ (7,0), (10,-4), (10,-8), (7,-4) ]
         self.memory_sensors = []
         blocker_fixtures = []
@@ -810,7 +823,8 @@ class Memory (Framework):
             self.test_mode = False
             print("Starting in interactive mode")
             self.start_point = 0
-
+        self.initial_accumulator =  self.test_set["initial_accumulator"] if "initial_accumulator" in self.test_set else 0
+        print("Setting initial accumulator to {}".format(self.initial_accumulator))
         self.accumulator_toggles = []
         self.ip_toggles = []
         self.cams_on = False
@@ -835,7 +849,7 @@ class Memory (Framework):
 
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
         upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        ip_diverter_lever = self.diverter_set(-5,-100, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
+        ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
         diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
         
         # PC injector
@@ -850,16 +864,19 @@ class Memory (Framework):
         accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
         skip_lever_x = sub_pos_x - 200
         skip_lever_y = sub_pos_y - 200
-        a = fixtureDef(shape=makeBox(-30,-30,30,5), filter=filters[0], density=1.0)
+        a = fixtureDef(shape=polygonShape(vertices=[(-50,-32), (0,-30), (0,-25), (-50,-30)]), filter=filters[0], density=1.0)
         b = fixtureDef(shape=makeBox(0,-30,5,30), filter=filters[0], density=1.0)
-        c = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
-        d = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.0)
-        skip_lever=self.add_multifixture([a,b,c,d], skip_lever_x, skip_lever_y)
-        skip_lever.attachment_point = (300,5)
+        c = fixtureDef(shape=makeBox(-30,-30,5,30), filter=filters[0], density=1.0)
+        d = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
+        e = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.10)
+        f = fixtureDef(shape=makeBox(150,-50,5,50), filter=filters[2], density=1.0)
+        skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
+        skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
         #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_polygon(300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
-        self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5))
-        self.add_static_polygon(polygonShape(vertices=box_polygon(10,10)), skip_lever_x+270, skip_lever_y-10, filter=filters[2])
-        cmp_injector = self.single_injector(skip_lever_x-50,skip_lever_y+250, groundBody, horizontal_drive=True)
+        self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
+        self.add_static_polygon(polygonShape(vertices=box_polygon(10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
+        cmp_injector = self.horizontal_injector(skip_lever_x-48,skip_lever_y+257, groundBody)
+        self.ball_bearing_block(skip_lever_x-30,skip_lever_y+280,cols=1)
         self.add_static_polygon(polygonShape(vertices=[(0,0), (20,0), (0,20)]), skip_lever_x-30,skip_lever_y+230)
                             
         self.lower_regenerators = []
@@ -867,7 +884,8 @@ class Memory (Framework):
         #Program counter
         pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
         # Thing that adds one ball bearing to the PC
-        pc_incrementer = self.single_injector(457,-250, groundBody)
+        pc_incrementer = self.horizontal_injector(457,-250, groundBody)
+        self.ball_bearing_block(457+20,-250+30,cols=1)
         self.distance_joint(skip_lever, pc_incrementer)
 
         self.connect_regenerators()
@@ -896,7 +914,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, pc_injector_raiser)
 
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.30, 0.05)])
+        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.32, 0.06)])
         print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
         self.distance_joint(follower_body, memory_selector_holdoff)
 
@@ -913,11 +931,11 @@ class Memory (Framework):
         self.distance_joint(follower_body, upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(400,-120, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.1)])
+        follower_body = self.add_cam(400,-120, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)])
         self.distance_joint(follower_body, diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.30,0.05)])
+        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.32,0.06)])
         self.distance_joint(follower_body, instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
@@ -1034,8 +1052,10 @@ class Memory (Framework):
                                 
                             ),plane)
         if self.init_pulse < 25:
+            bit = 0
             for d in self.accumulator_toggles:
-                d.motorSpeed = 10
+                d.motorSpeed = -10 if (self.initial_accumulator & 1<<bit)==0 else 10
+                bit += 1
             for d in self.ip_toggles:
                 d.motorSpeed = -10
         elif self.init_pulse < 50:
