@@ -1013,9 +1013,21 @@ class Memory (Framework):
         
         self.set_initial_memory(self.test_set["initial_memory"])
 
+    def read_pc_array(self):
+        return [1 if i.angle>0 else 0 for i in self.ip_toggles]
+
     def read_accumulator_array(self):
         return [0 if i.angle>0 else 1 for i in self.accumulator_toggles]
         
+    def read_pc_value(self):
+        bits = reversed(self.read_pc_array())
+        total = 0
+        val = 1
+        for b in bits:
+            total += b * val
+            val <<= 1
+        return total
+    
     def read_accumulator_value(self):
         bits = reversed(self.read_accumulator_array())
         total = 0
@@ -1027,16 +1039,24 @@ class Memory (Framework):
 
     def verify_results(self):
         expected_accumulator = self.test_set["expected_accumulator"]
+        expected_pc = self.test_set["expected_pc"] if "expected_pc" in self.test_set else 1
+        
         accumulator = self.read_accumulator_value()
         if expected_accumulator != accumulator:
             print("FAIL: Expected accumulator {}, actual result {}".format(expected_accumulator, accumulator))
-        else:
-            print("PASS")
+            return
         expected_memory = copy.copy(self.test_set["initial_memory"])
         if "memory_update" in self.test_set:
             (address, value) = self.test_set["memory_update"]
             expected_memory[address] = value
+
         # TODO: Check memory values.
+        pc = self.read_pc_value()
+        if expected_pc != pc:
+            print("FAIL: Expected PC {}, actual result {}".format(expected_pc, pc))
+            return
+
+        print("PASS")
 
     def Step(self, settings):
         super(Memory, self).Step(settings)
@@ -1080,7 +1100,7 @@ class Memory (Framework):
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
-            print("Accumulator = {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value()))
+            print("Accumulator = {} ({}) PC= {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value(), self.read_pc_array(), self.read_pc_value()))
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
