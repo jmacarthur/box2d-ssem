@@ -185,7 +185,7 @@ class Memory (Framework):
     def translate_points(self, points, xpos, ypos):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
-    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None, is_actually_adder=False):
+    def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None, is_actually_adder=False, comparison_output=False):
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
@@ -214,10 +214,18 @@ class Memory (Framework):
             self.add_static_polygon([ (0,0), (pitch-7,-5), (pitch-7,-sub_y_pitch*(lines-c)), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9, filter=filters[4])
             # Bottom-side channels, for the output            
-            self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
-                                    xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
+            if c != 0 or not comparison_output:
+                self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
+                                        xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
 
-
+        # The leftmost output channel can be diverted to support 'negative detect' for the CMP operation.
+        if comparison_output:
+            leftmost_toggle = self.add_dynamic_polygon([ (-1,0), (1,0), (1,10), (-1,12) ],
+                                                       xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
+            self.revolving_joint(attachment_body, leftmost_toggle, (xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines)))
+            self.add_static_polygon([ (-40,-20), (2,0), (2,2), (0,2) ],
+                                    xpos+output_offset_x-3, ypos+pitch-30-sub_y_pitch*(lines)+10,filter=filters[4])
+                
         # A reset bar
         reset_angle = math.atan2(sub_y_pitch, pitch)
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
@@ -231,7 +239,7 @@ class Memory (Framework):
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
-            transfer_band_x = [ (xpos+output_offset_x+pitch*x,xpos+12+output_offset_x+pitch*x) for x in range(0,lines) ]
+            transfer_band_x = [ (xpos+output_offset_x+pitch*x-12,xpos+output_offset_x+pitch*x) for x in range(1,lines) ]
             band_base_y = ypos-sub_y_pitch*lines
             self.transfer_bands.append((band_base_y+10, band_base_y, transfer_band_x, 0))
 
@@ -786,9 +794,22 @@ class Memory (Framework):
         self.ball_bearing_block(250,-240,cols=8)
 
 
-        accumulator_reset_lever = self.subtractor(-15,-200, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles)
+        sub_pos_x = -15
+        sub_pos_y = -200
+        accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
+        skip_lever_x = sub_pos_x - 200
+        skip_lever_y = sub_pos_y - 200
+        a = fixtureDef(shape=makeBox(-30,-30,30,5), filter=filters[0], density=1.0)
+        b = fixtureDef(shape=makeBox(0,-30,5,30), filter=filters[0], density=1.0)
+        c = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
+        d = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.0)
+        skip_lever=self.add_multifixture([a,b,c,d], skip_lever_x, skip_lever_y)
+        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_polygon(300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
+        self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5))
+        self.add_static_polygon(polygonShape(vertices=box_polygon(10,10)), skip_lever_x+270, skip_lever_y-10, filter=filters[2])
+
         self.lower_regenerators = []
-        lower_regen_control = self.regenerator(-213,-380, groundBody, self.lower_regenerators)
+        lower_regen_control = self.regenerator(-203,-380, groundBody, self.lower_regenerators)
         #Program counter
         pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
 
@@ -809,6 +830,8 @@ class Memory (Framework):
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
+
+        
         # Cams
 
         # Cam 1: Fires PC injector, reading PC into address reg.
