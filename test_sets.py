@@ -21,18 +21,20 @@ test_set = [  {
                             0x40,
                             0xFF], 
         "expected_accumulator": 0x00,
-        "memory_update": (1, 0)
+        "memory_update": (1, 0),
+        "expected_pc": 0x01
     },
     {
+        "initial_accumulator": 76,
         "initial_memory": [ (SUB<<5)+4, # Subtract location 4
                             0x02,
                             0x04,
                             0x08,
-                            0x10,
+                            22,
                             0x20,
                             0x40,
                             0xFF], 
-        "expected_accumulator": 0xF0
+        "expected_accumulator": 54
     },
     {
         "initial_memory": [ (JMP<<5)+2, # Jump to the address in location 2 (0x4)
@@ -43,7 +45,8 @@ test_set = [  {
                             0x20,
                             0x40,
                             0xFF], 
-        "expected_accumulator": 0x00
+        "expected_accumulator": 0x00,
+        "expected_pc": 0x01
     },
     {
         "initial_memory": [ (JRP<<5)+2, # Jump relative by the address in location 2 (0x4)
@@ -54,7 +57,8 @@ test_set = [  {
                             0x20,
                             0x40,
                             0xFF], 
-        "expected_accumulator": 0x00
+        "expected_accumulator": 0x00,
+        "expected_pc": 0x01
     },
     {
         "initial_accumulator": 0xF0,
@@ -66,7 +70,6 @@ test_set = [  {
                             0x20,
                             0x00,
                             0xFF], 
-        "expected_accumulator": 0x00,
         "expected_pc": 0x02
     }
     

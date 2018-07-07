@@ -794,7 +794,7 @@ class Memory (Framework):
             self.slide_joint(attachment_body, block_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
             block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.instruction_outputs.append(block_slider)
-            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-70)
+            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
             pusher_slider.attachment_point = (xpos+i*30+60, ypos-i*andgate_spacing_y-70)
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
@@ -1107,7 +1107,7 @@ class Memory (Framework):
         if self.init_pulse < 25:
             bit = 0
             for d in self.accumulator_toggles:
-                d.motorSpeed = -10 if (self.initial_accumulator & 1<<bit)==0 else 10
+                d.motorSpeed = 10 if (self.initial_accumulator & 1<<(7-bit))==0 else -10
                 bit += 1
             for d in self.ip_toggles:
                 d.motorSpeed = -10
