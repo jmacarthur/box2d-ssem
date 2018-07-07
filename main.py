@@ -166,8 +166,8 @@ class Memory (Framework):
 
     def toggle(self, xpos, ypos, attachment_body, toggle_joint_array=None):
         toggle_divider_polygon = [ (xpos-3, ypos), (xpos+3, ypos), (xpos, ypos+10) ]
-        toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0),
-                         fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0) ]
+        toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0, filter=filters[5]),
+                         fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0, filter=filters[5]) ]
         toggle = self.add_multifixture(toggle_shape)
         toggle_drive = self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
         self.all_toggle_drives.append(toggle_drive)
@@ -223,7 +223,7 @@ class Memory (Framework):
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
         if is_actually_adder:
-            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+5, ypos-sub_y_pitch*lines, filters[0])
+            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+10, ypos-sub_y_pitch*lines, filters[3])
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
         reset_lever.attachment_point=(xpos,ypos-180)
@@ -408,7 +408,7 @@ class Memory (Framework):
         row_ejector_fixtures = []
         for col in range(0,8):
             # Blocks which stop the ball bearing falling past
-            ejector = fixtureDef(shape=makeBox(22*col+1,3,14,4), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
+            ejector = fixtureDef(shape=polygonShape(vertices=[(22*col+1,3),(22*col+15,3),(22*col+15,7), (22*col+2,7), (22*col+1,6)]), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
             row_ejector_fixtures.append(ejector)
         row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
@@ -700,16 +700,16 @@ class Memory (Framework):
             crank = self.add_multipolygon([crank_polygon1, crank_polygon2], xpos+i*30, ypos-i*follower_spacing)
             self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
-            block = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30, ypos-i*andgate_spacing_y-50)
+            block = self.add_dynamic_polygon([ (0,0), (30,0), (28,5), (2,5) ], xpos+i*30, ypos-i*andgate_spacing_y-50)
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
             if i==7:
                 block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(5,0,5,20), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(0,0,10,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             elif i==6:
                 block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(30,-20,5,20), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(20,-20,10,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             else:
                 block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
@@ -777,7 +777,7 @@ class Memory (Framework):
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
         upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         diverter_3 = self.diverter_set(-8,-145, groundBody, slope_x=206, slope_y=310) # Diverter 3; splits to instruction reg/PC
-        ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3) # Diverter 1. Splits to instruction counter.
+        ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
         
         # PC injector
         self.pc_injector_cranks = []    
@@ -821,7 +821,7 @@ class Memory (Framework):
         self.distance_joint(follower_body, memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.3,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
+        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
         self.distance_joint(follower_body, self.memory_returning_gate)
 
         # Cam 4: Memory holdoff (right side)
@@ -891,7 +891,7 @@ class Memory (Framework):
 
 
         # Cam 18: Reset PC on JMP
-        follower_body = self.add_cam(1100, -200, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
+        follower_body = self.add_cam(1230, 0, groundBody, 140, bumps=[(0.5,0.1)], horizontal=True, reverse_direction=True, axis_offset=2)
         self.distance_joint(follower_body, self.instruction_inputs[JMP])
         self.distance_joint(pc_reset_lever, self.instruction_outputs[JMP])
 
