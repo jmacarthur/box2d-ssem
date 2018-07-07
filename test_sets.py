@@ -63,7 +63,7 @@ test_set = [  {        "name": "LDN Test",
                             0x40,
                             0xFF], 
         "expected_accumulator": 0x00,
-        "expected_pc": 0x01
+        "expected_pc": 0x05
     },
     {
         "name": "CMP Test",
