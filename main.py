@@ -949,8 +949,10 @@ class Memory (Framework):
                                 
                             ),plane)
         if self.init_pulse < 25:
-            for d in self.all_toggle_drives:
+            for d in self.accumulator_toggles:
                 d.motorSpeed = 10
+            for d in self.ip_toggles:
+                d.motorSpeed = -10
         elif self.init_pulse < 50:
             for d in self.all_toggle_drives:
                 d.motorSpeed = 0
