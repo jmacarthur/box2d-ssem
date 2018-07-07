@@ -223,6 +223,8 @@ class Memory (Framework):
             leftmost_toggle = self.add_dynamic_polygon([ (-1,0), (1,0), (1,10), (-1,12) ],
                                                        xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
             self.revolving_joint(attachment_body, leftmost_toggle, (xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines)))
+            leftmost_toggle.attachment_point=(xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines)+10)
+            self.comparison_diverter = leftmost_toggle
             self.add_static_polygon([ (-40,-20), (2,0), (2,2), (0,2) ],
                                     xpos+output_offset_x-3, ypos+pitch-30-sub_y_pitch*(lines)+10,filter=filters[4])
                 
@@ -292,6 +294,54 @@ class Memory (Framework):
 
         idler = self.add_dyanmic_circle(xpos+offset/4, ypos+height/4, 30, density=10, filter=filters[0])
         self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
+
+    def single_injector(self, xpos, ypos, attachment_body, horizontal_drive=False):
+        intake_angle = 30
+        height = 8
+        crank_offset = pitch-10
+        crank_y = 19
+        injector_bar_height = 90
+        divider_height = 8
+        height2 =        8
+        divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
+        divider_vertices = translate_polygon(divider_vertices, xpos, ypos+pitch+10)
+        self.add_static_polygon(divider_vertices)
+            
+        # The base
+        self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos, ypos+pitch+10)
+            
+        bellcrank_shape = [ fixtureDef(shape=makeBox(xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
+                            fixtureDef(shape=makeBox(xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
+        
+        bellcrank = self.add_multifixture(bellcrank_shape)
+        anchorpos = (xpos+crank_offset, ypos+crank_y+10)
+        if horizontal_drive:
+            bellcrank.attachment_point=(xpos+crank_offset, ypos+crank_y)
+        else:
+            bellcrank.attachment_point=(xpos+crank_offset+10, ypos+crank_y+10)
+        self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=0)
+
+        # Backstop for swing arm - stops the swing arm falling back too far
+        self.add_static_polygon([ (10,-20), (11,-20), (11,-3), (10,-3)], xpos, ypos+pitch+10)
+        
+        # Thing that stops all the ball bearings rolling over the one in the crank
+        self.add_static_polygon([(20.5,-6), (23,-6), (23,-3), (20.5,-3)], xpos+1, ypos+pitch+10)
+        
+        # roof
+        #        roof_height=-20
+        #        self.add_static_polygon([ (0,roof_height), (9*pitch,roof_height), (9*pitch,0), (0,0) ],
+        #                                xpos, ypos+height+45)
+
+        # End stop on the right
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height+30), (0,height) ], xpos+pitch, ypos+pitch+10)
+
+        # End stop on the left
+        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height+30) ], xpos, ypos+pitch+10)
+
+        # Final channel guard on the right
+        self.add_static_polygon([ (0,0), (3,0), (3,20), (0,20) ], xpos+pitch+10, ypos+pitch-10)
+        
+        return bellcrank
 
     def injector(self, xpos, ypos, attachment_body, injector_crank_array, columns=8):
         intake_angle = 30
@@ -701,7 +751,8 @@ class Memory (Framework):
         andgate_spacing_y = 30
         self.instruction_inputs = []
         self.instruction_outputs = []
-        reversed_outputs = [ False, False, False, False, False, True, False, False ]
+        # Reverse output for LDN and CMP
+        reversed_outputs = [ False, True, False, False, False, True, False, False ]
         for i in range(0,8):
             crank_polygon1 = [ (-thickness,-thickness), (-thickness,-len1-thickness), (thickness,-len1-thickness), (thickness,-thickness) ]
             crank_polygon2 = [ (-thickness,-thickness), (-thickness,thickness), (len2+thickness,thickness), (len2+thickness,-thickness) ]
@@ -804,14 +855,20 @@ class Memory (Framework):
         c = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
         d = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.0)
         skip_lever=self.add_multifixture([a,b,c,d], skip_lever_x, skip_lever_y)
+        skip_lever.attachment_point = (300,5)
         #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_polygon(300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
         self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5))
         self.add_static_polygon(polygonShape(vertices=box_polygon(10,10)), skip_lever_x+270, skip_lever_y-10, filter=filters[2])
-
+        cmp_injector = self.single_injector(skip_lever_x-50,skip_lever_y+250, groundBody, horizontal_drive=True)
+        self.add_static_polygon(polygonShape(vertices=[(0,0), (20,0), (0,20)]), skip_lever_x-30,skip_lever_y+230)
+                            
         self.lower_regenerators = []
         lower_regen_control = self.regenerator(-203,-380, groundBody, self.lower_regenerators)
         #Program counter
         pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
+        # Thing that adds one ball bearing to the PC
+        pc_incrementer = self.single_injector(457,-250, groundBody)
+        self.distance_joint(skip_lever, pc_incrementer)
 
         self.connect_regenerators()
 
@@ -918,6 +975,11 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.instruction_inputs[JMP])
         self.distance_joint(pc_reset_lever, self.instruction_outputs[JMP])
 
+        # Cam 19: Runs CMP.
+        follower_body = self.add_cam(900,200, groundBody, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
+        self.distance_joint(follower_body, self.instruction_inputs[CMP])
+        self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
+        self.distance_joint(cmp_injector, self.instruction_outputs[CMP])
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
@@ -1014,5 +1076,6 @@ if __name__ == "__main__":
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
     main(Memory(args.testmode, args.testset))
+
 
     
