@@ -223,7 +223,7 @@ class Memory (Framework):
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
         reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
         if is_actually_adder:
-            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-sub_y_pitch*lines, filters[0])
+            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+5, ypos-sub_y_pitch*lines, filters[0])
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
         reset_lever.attachment_point=(xpos,ypos-180)
@@ -773,10 +773,10 @@ class Memory (Framework):
 
         (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
+
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
         upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-8,-145, groundBody, slope_x=219, slope_y=310) # Diverter 3; splits to instruction reg/PC
-
+        diverter_3 = self.diverter_set(-8,-145, groundBody, slope_x=206, slope_y=310) # Diverter 3; splits to instruction reg/PC
         ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3) # Diverter 1. Splits to instruction counter.
         
         # PC injector
@@ -790,7 +790,7 @@ class Memory (Framework):
         self.lower_regenerators = []
         lower_regen_control = self.regenerator(-213,-380, groundBody, self.lower_regenerators)
         #Program counter
-        self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
+        pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
 
         self.connect_regenerators()
 
@@ -805,7 +805,7 @@ class Memory (Framework):
         self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
-        sender_eject = self.memory_sender(213,-500, groundBody)
+        sender_eject = self.memory_sender(200,-500, groundBody)
         self.connect_memory()
         print("Scale is {}".format(self.scale))
 
@@ -885,9 +885,15 @@ class Memory (Framework):
         follower_body = self.add_cam(-500,-150, groundBody, 80, bumps=[(0.67,0.07)], reverse_direction=True, horizontal=True, axis_offset=2)
         self.distance_joint(follower_body, discard_lever_2)
 
-        # Cam 17 Fires bottom regenerator (usually empty, unless STO is on)
+        # Cam 17: Fires bottom regenerator (usually empty, unless STO is on)
         follower_body = self.add_cam(-500,-300, groundBody, 80, bumps=[(0.87,0.02)], horizontal=True, axis_offset=0)
         self.distance_joint(follower_body, lower_regen_control)
+
+
+        # Cam 18: Reset PC on JMP
+        follower_body = self.add_cam(1100, -200, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
+        self.distance_joint(follower_body, self.instruction_inputs[JMP])
+        self.distance_joint(pc_reset_lever, self.instruction_outputs[JMP])
 
         
         # Notable timing points:
