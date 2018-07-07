@@ -1,40 +1,49 @@
 from constants import *
 
 test_set = [  {
-    # At the moment, PC starts at 0xFF.
-    "initial_memory": [ 0xFF,
+    "initial_memory": [ (LDN<<5)+1,  # Load negative from location 1
                       0x02,
                       0x04,
                       0x08,
                       0x10,
                       0x20,
                       0x40,
-                        (LDN<<5)+1], # Load from location 1
-    "expected_accumulator": 0x02
+                        0xFF],
+    "expected_accumulator": 0xFE
     },
     {
-    # At the moment, PC starts at 0xFF.
-        "initial_memory": [ 0xFF,
+        "initial_memory": [ (STO<<5)+1, # Store to location 1
                             0x02,
                             0x04,
                             0x08,
                             0x10,
                             0x20,
                             0x40,
-                            (STO<<5)+1], # Store to  location 1
+                            0xFF], 
         "expected_accumulator": 0x00,
         "memory_update": (1, 0)
     },
     {
-        "initial_memory": [ 0xFF,
+        "initial_memory": [ (SUB<<5)+4, # Subtract location 4
                             0x02,
                             0x04,
                             0x08,
                             0x10,
                             0x20,
                             0x40,
-                            (SUB<<5)+4], # Subtract location 4
+                            0xFF], 
         "expected_accumulator": 0xF0
+    },
+    {
+        "initial_memory": [ (JMP<<5)+4, # Jump to the address in location 2 (0x4)
+                            0x02,
+                            0x04,
+                            0x08,
+                            0x10,
+                            0x20,
+                            0x40,
+                            0xFF], 
+        "expected_accumulator": 0x00
     }
     
  ]
