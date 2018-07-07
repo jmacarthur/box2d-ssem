@@ -710,12 +710,12 @@ class Memory (Framework):
         for b in range(0,len(bumps)):
             bumps[b] = (bumps[b][0] + offset, bumps[b][1])
         radius = 30
+        bump_height = radius+bump_height
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_fixtures = []
         for (start, length) in bumps:
             ang = start
             bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
-            bump_height = radius+bump_height
             points = 1
             # Max points in a polygon is 15 at the moment.
             while ang < (start+length) and points < 15:
