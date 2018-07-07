@@ -225,9 +225,9 @@ class Memory (Framework):
         if is_actually_adder:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos, ypos-sub_y_pitch*lines, filters[0])
         else:
-            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-220, ypos-sub_y_pitch*lines+10, filters[3])
+            reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
         reset_lever.attachment_point=(xpos,ypos-180)
-        self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=1)
+        self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=0)
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
@@ -775,7 +775,7 @@ class Memory (Framework):
         self.upper_regenerators = []
         discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
         upper_regen_control = self.regenerator(-10,-105, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        diverter_3 = self.diverter_set(-10,-145, groundBody, slope_x=221, slope_y=310) # Diverter 3; splits to instruction reg/PC
+        diverter_3 = self.diverter_set(-8,-145, groundBody, slope_x=219, slope_y=310) # Diverter 3; splits to instruction reg/PC
 
         ip_diverter_lever = self.diverter_set(-10,-70, groundBody, slope_x=352, slope_y=200, start_at=3) # Diverter 1. Splits to instruction counter.
         
@@ -851,7 +851,7 @@ class Memory (Framework):
         instruction_ready_point = 0.50
         
         # Cam 9: Resets accumulator on LDN.
-        follower_body = self.add_cam(850, 0, groundBody, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=1)
+        follower_body = self.add_cam(850, 0, groundBody, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
         self.distance_joint(follower_body, self.instruction_inputs[LDN])
         # Attach LDN instruction output to reset bar
         self.distance_joint(accumulator_reset_lever, self.instruction_outputs[LDN])
