@@ -896,7 +896,7 @@ class Memory (Framework):
         self.set_initial_memory(self.test_set["initial_memory"])
 
     def read_accumulator_array(self):
-        return [1 if i.angle>0 else 0 for i in self.accumulator_toggles]
+        return [0 if i.angle>0 else 1 for i in self.accumulator_toggles]
         
     def read_accumulator_value(self):
         bits = reversed(self.read_accumulator_array())
@@ -944,7 +944,7 @@ class Memory (Framework):
                             ),plane)
         if self.init_pulse < 25:
             for d in self.all_toggle_drives:
-                d.motorSpeed = -10
+                d.motorSpeed = 10
         elif self.init_pulse < 50:
             for d in self.all_toggle_drives:
                 d.motorSpeed = 0
@@ -958,7 +958,7 @@ class Memory (Framework):
         angleTarget = (self.sequence*math.pi*2/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
-            print("Accumulator = {}".format(",".join(map(str,self.read_accumulator_array()))))
+            print("Accumulator = {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value()))
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
