@@ -974,7 +974,7 @@ class Memory (Framework):
 
         # Cam 14: Divert to subtractor reader on STO.
         # Also diverts the regenerator output on STO; we must separately discard that.
-        follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
+        follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.49,0.2)], horizontal=True, reverse_direction=True, axis_offset=2, bump_height=3.5)
         self.distance_joint(follower_body, self.instruction_inputs[STO])
         self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
         self.distance_joint(discard_lever_2, self.instruction_outputs[STO])
@@ -1037,9 +1037,29 @@ class Memory (Framework):
             val <<= 1
         return total
 
+    def read_memory_array(self):
+        memory = []
+        for row in range(0,8):
+            row_val = 0
+            for col in range(0,8):
+                for i in range(0,len(self.ball_bearings)):
+                    (b, plane) = self.ball_bearings[i]
+                    (x,y) = b.worldCenter
+                    x /= self.scale
+                    y /= self.scale
+                    
+                    expected_pos_x = self.memory_col0_x + pitch*(7-col)+2
+                    expected_pos_y = self.memory_row0_y + 14*row+41
+                    dx = expected_pos_x - x
+                    dy = expected_pos_y - y
+                    if abs(dx)<5 and abs(dy)<5:
+                        row_val += 1<<col
+            memory.append(row_val)
+        return memory
+    
     def verify_results(self):
-        expected_accumulator = self.test_set["expected_accumulator"]
-        expected_pc = self.test_set["expected_pc"] if "expected_pc" in self.test_set else 1
+        expected_accumulator = self.test_set.get("expected_accumulator", self.initial_accumulator)
+        expected_pc = self.test_set.get("expected_pc", 1)
         
         accumulator = self.read_accumulator_value()
         if expected_accumulator != accumulator:
@@ -1050,12 +1070,16 @@ class Memory (Framework):
             (address, value) = self.test_set["memory_update"]
             expected_memory[address] = value
 
-        # TODO: Check memory values.
         pc = self.read_pc_value()
         if expected_pc != pc:
             print("FAIL: Expected PC {}, actual result {}".format(expected_pc, pc))
             return
 
+        memory = self.read_memory_array()
+        for a in range(0,8):
+            if expected_memory[a] != memory[a]:
+                print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
+        
         print("PASS")
 
     def Step(self, settings):
@@ -1101,6 +1125,7 @@ class Memory (Framework):
         if self.sequence % 100 == 0 and self.cams_on:
             print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
             print("Accumulator = {} ({}) PC= {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value(), self.read_pc_array(), self.read_pc_value()))
+            print("Memory = {}".format(",".join(map(str, self.read_memory_array()))))
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
