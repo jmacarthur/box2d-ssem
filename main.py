@@ -696,7 +696,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0):
+    def add_cam(self, xpos, ypos, attachment_body, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. 
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
@@ -715,7 +715,7 @@ class Memory (Framework):
         for (start, length) in bumps:
             ang = start
             bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
-            bump_height = radius+3
+            bump_height = radius+bump_height
             points = 1
             # Max points in a polygon is 15 at the moment.
             while ang < (start+length) and points < 15:
@@ -731,31 +731,36 @@ class Memory (Framework):
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
         cam_driver.motorSpeed = 0
         follower_filter = filters[1]
-        if horizontal:
-            axle_y = ypos+radius
-            if reverse_direction:
-                axle_x = xpos-radius-axis_offset-5
+        if axis:
+            if horizontal:
+                axle_y = ypos+radius
+                if reverse_direction:
+                    axle_x = xpos-radius-axis_offset-5
+                else:
+                    axle_x = xpos+radius+axis_offset+2.5
+                follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0, filter=follower_filter)
+                follower_wheel = self.add_dynamic_circle(axle_x+2.5, axle_y-radius, 5)
+                self.revolving_joint(follower_wheel, follower_body, (axle_x+2.5,axle_y-radius), friction=False)
             else:
-                axle_x = xpos+radius+axis_offset+2.5
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0, filter=follower_filter)
-            follower_wheel = self.add_dynamic_circle(axle_x+2.5, axle_y-radius, 5)
-            self.revolving_joint(follower_wheel, follower_body, (axle_x+2.5,axle_y-radius), friction=False)
-        else:
-            axle_y = ypos+radius+axis_offset+2.5
-            axle_x = xpos-radius
-            follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0, filter=follower_filter)
-            follower_wheel = self.add_dynamic_circle(axle_x+radius, axle_y+2.5, 5)
-            self.revolving_joint(follower_wheel, follower_body, (axle_x+radius,axle_y+2.5), friction=False)
-        print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
+                axle_y = ypos+radius+axis_offset+2.5
+                axle_x = xpos-radius
+                follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0, filter=follower_filter)
+                follower_wheel = self.add_dynamic_circle(axle_x+radius, axle_y+2.5, 5)
+                self.revolving_joint(follower_wheel, follower_body, (axle_x+radius,axle_y+2.5), friction=False)
 
-        if horizontal:
-            follower_body.attachment_point=(axle_x, axle_y-follower_len)
-        else:
-            follower_body.attachment_point=(axle_x+follower_len, axle_y)
-        print("Setting attachment point: (x,y)={}".format(follower_body.attachment_point))
-        self.revolving_joint(attachment_body, follower_body, (axle_x+2.5,axle_y+2.5), friction=False)
+            if horizontal:
+                follower_body.attachment_point=(axle_x, axle_y-follower_len)
+            else:
+                follower_body.attachment_point=(axle_x+follower_len, axle_y)
+            print("Setting attachment point: (x,y)={}".format(follower_body.attachment_point))
+            self.revolving_joint(attachment_body, follower_body, (axle_x+2.5,axle_y+2.5), friction=False)
+            print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
+
         self.all_cam_drives.append(cam_driver)
-        return follower_body
+        if axis:
+            return follower_body
+        else:
+            return None
 
     def add_instruction_cranks(self, attachment_body, xpos, ypos):
         len1 = 25
@@ -869,7 +874,7 @@ class Memory (Framework):
         c = fixtureDef(shape=makeBox(-30,-30,5,30), filter=filters[0], density=1.0)
         d = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
         e = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.10)
-        f = fixtureDef(shape=makeBox(150,-50,5,50), filter=filters[2], density=1.0)
+        f = fixtureDef(shape=makeBox(150,-50,5,50), filter=filters[0], density=1.0)
         skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
         skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
         #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_polygon(300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
@@ -998,6 +1003,10 @@ class Memory (Framework):
         self.distance_joint(follower_body, self.instruction_inputs[CMP])
         self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
         self.distance_joint(cmp_injector, self.instruction_outputs[CMP])
+
+        # Cam 20: Inc PC.
+        follower_body = self.add_cam(-95,-450, groundBody, 60, bumps=[(0.1,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
+
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
