@@ -705,11 +705,11 @@ class Memory (Framework):
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
             if i==7:
                 block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(0,0,10,20), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(-5,0,10,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             elif i==6:
                 block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(20,-20,10,20), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=makeBox(15,-20,10,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             else:
                 block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
@@ -877,7 +877,7 @@ class Memory (Framework):
         self.distance_joint(discard_lever_2, self.instruction_outputs[STO])
 
         # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
-        follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=0)
+        follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
         self.distance_joint(follower_body, self.instruction_inputs[JRP])
         self.distance_joint(ip_diverter_lever, self.instruction_outputs[JRP])
 
