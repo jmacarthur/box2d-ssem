@@ -42,7 +42,7 @@ class Parts():
         self.lower_regen_control = None
         self.pc_reset_lever = None
         self.cmd_injector = None
-
+        self.memory_follower_holdoff = None
 class Memory (Framework):
     name = "SSEM"
 
@@ -929,7 +929,7 @@ class Memory (Framework):
         self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1, attachment_part=self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
+        self.basic_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1, attachment_part=self.parts.memory_follower_holdoff)
 
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)], attachment_part=self.parts.upper_regen_control)
