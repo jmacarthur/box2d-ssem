@@ -15,7 +15,7 @@ from test_sets import test_set
 def box_vertices(x, y, width,height):
     return [(0,0), (width,0), (width,height), (0,height)]
 
-def makeBox(x, y, width, height):
+def box_polygon_shape(x, y, width, height):
     return polygonShape(box=(width/2, height/2, (x+width/2, y+height/2), 0))
 
 def radians(degrees):
@@ -29,6 +29,19 @@ def rotate_polygon_radians(polygon, r):
 
 def translate_polygon(points, xpos, ypos):
     return [(x+xpos,y+ypos) for (x,y) in points]
+
+class Parts():
+    """ This is a container class for parts within the SSEM. Parts are filled in gradually during setup. """
+    def __init__(self):
+        self.pc_injector_raiser = None
+        self.memory_selector_holdoff = None
+        self.instruction_selector_holdoff = None
+        self.sender_eject = None
+        self.main_injector_raiser = None
+        self.accumulator_diverter_lever = None
+        self.lower_regen_control = None
+        self.pc_reset_lever = None
+        self.cmd_injector = None
 
 class Memory (Framework):
     name = "SSEM"
@@ -129,7 +142,7 @@ class Memory (Framework):
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
-        self.add_static_polygon(makeBox(xpos-10, ypos-10, 3, 20))
+        self.add_static_polygon(box_polygon_shape(xpos-10, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
         conrod.attachment_point = (xpos+pitch*8, ypos+15)
 
@@ -147,12 +160,12 @@ class Memory (Framework):
         for c in range(0,8):
             self.add_static_polygon(box_vertices(0, 0, 7,10), c*pitch+xpos-11, -12+ypos)
 
-            pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
+            pusher = fixtureDef(shape=box_polygon_shape(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
             pusher_parts.append(pusher)
 
-            bellcrank_fixtures = [ fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+20, 10, 3), density=1.0, filter=filters[2]),
-                                fixtureDef(shape=makeBox(c*pitch+xpos, -12+ypos+8, 3, 12), density=1.0) ]
+            bellcrank_fixtures = [ fixtureDef(shape=box_polygon_shape(c*pitch+xpos, -12+ypos+20, 10, 3), density=1.0, filter=filters[2]),
+                                fixtureDef(shape=box_polygon_shape(c*pitch+xpos, -12+ypos+8, 3, 12), density=1.0) ]
             bellcrank = self.add_multifixture(bellcrank_fixtures)
 
             anchorpos = (xpos+c*pitch, -12+ypos+20)
@@ -166,7 +179,7 @@ class Memory (Framework):
 
     def toggle(self, xpos, ypos, attachment_body, toggle_joint_array=None):
         toggle_divider_polygon = [ (xpos-3, ypos), (xpos+3, ypos), (xpos, ypos+10) ]
-        toggle_shape = [ fixtureDef(shape=makeBox(xpos-10, ypos, 20, 3), density=1.0, filter=filters[5]),
+        toggle_shape = [ fixtureDef(shape=box_polygon_shape(xpos-10, ypos, 20, 3), density=1.0, filter=filters[5]),
                          fixtureDef(shape=polygonShape(vertices=toggle_divider_polygon), density=1.0, filter=filters[5]) ]
         toggle = self.add_multifixture(toggle_shape)
         toggle_drive = self.revolving_joint(bodyA=toggle, bodyB=attachment_body, anchor=(xpos,ypos), friction=1.0)
@@ -305,14 +318,14 @@ class Memory (Framework):
         self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
     def horizontal_injector(self, xpos, ypos, attachment_body):
-        left = fixtureDef(shape=makeBox(0,0.5,10,6), density=1.0, filter=filters[0])
-        right = fixtureDef(shape=makeBox(17,0.5,10,6), density=1.0, filter=filters[0])
+        left = fixtureDef(shape=box_polygon_shape(0,0.5,10,6), density=1.0, filter=filters[0])
+        right = fixtureDef(shape=box_polygon_shape(17,0.5,10,6), density=1.0, filter=filters[0])
         drive_rect = self.add_multifixture([left,right], xpos, ypos)
         drive_rect.attachment_point=(xpos+5, ypos+3.5)
         self.slide_joint(attachment_body, drive_rect, (1,0), 0, 10, friction=0)
-        self.add_static_polygon(makeBox(0,-7,17,7), xpos, ypos)
-        self.add_static_polygon(makeBox(0,7,10,20), xpos, ypos)# Blocks left
-        self.add_static_polygon(makeBox(10+7,7,10,20), xpos, ypos)
+        self.add_static_polygon(box_polygon_shape(0,-7,17,7), xpos, ypos)
+        self.add_static_polygon(box_polygon_shape(0,7,10,20), xpos, ypos)# Blocks left
+        self.add_static_polygon(box_polygon_shape(10+7,7,10,20), xpos, ypos)
         self.add_static_polygon(polygonShape(vertices=[(0,27), (10,27), (0,37)]), xpos, ypos)
         self.add_static_polygon(polygonShape(vertices=[(17,27), (27,27), (27,37)]), xpos, ypos)
         return drive_rect
@@ -332,8 +345,8 @@ class Memory (Framework):
         # The base
         self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos, ypos+pitch+10)
             
-        bellcrank_shape = [ fixtureDef(shape=makeBox(xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
-                            fixtureDef(shape=makeBox(xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
+        bellcrank_shape = [ fixtureDef(shape=box_polygon_shape(xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
+                            fixtureDef(shape=box_polygon_shape(xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
         
         bellcrank = self.add_multifixture(bellcrank_shape)
         anchorpos = (xpos+crank_offset, ypos+crank_y+10)
@@ -382,8 +395,8 @@ class Memory (Framework):
             # The base
             self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
-            bellcrank_shape = [ fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
-                                fixtureDef(shape=makeBox(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
+            bellcrank_shape = [ fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
+                                fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
 
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
@@ -431,7 +444,7 @@ class Memory (Framework):
             for row in range(0,8):
                 enabled = (row >> (selector_rods-selector_no-1)) & 1
                 row_selector_fixtures.append(
-                    fixtureDef(shape=makeBox(14+25*selector_no,follower_spacing*row+7*enabled,14,5), density=1.0,
+                    fixtureDef(shape=box_polygon_shape(14+25*selector_no,follower_spacing*row+7*enabled,14,5), density=1.0,
                                filter=filter(groupIndex=1, categoryBits=0x0001, maskBits=0xFFFF))
                 )
             #Pegs which are used to raise the selector rods all at once
@@ -473,10 +486,10 @@ class Memory (Framework):
         row_injector_fixtures = []        
         
         for col in range(0,8):
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col,1,1,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            row_injector_fixtures.append(fixtureDef(shape=makeBox(7+22*col+10,1,3,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        row_injector_fixtures.append(fixtureDef(shape=makeBox(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        row_injector_fixtures.append(fixtureDef(shape=makeBox(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(7+22*col,1,1,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(7+22*col+10,1,3,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         self.memory_col0_x = 7
         self.memory_row0_y = -30
         injectors=[]
@@ -490,7 +503,7 @@ class Memory (Framework):
             # Blocks which stop the ball bearing falling past
             ejector = fixtureDef(shape=polygonShape(vertices=[(22*col+1,3),(22*col+15,3),(22*col+15,7), (22*col+2,7), (22*col+1,6)]), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE))
             row_ejector_fixtures.append(ejector)
-        row_ejector_fixtures.append(fixtureDef(shape=makeBox(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+        row_ejector_fixtures.append(fixtureDef(shape=box_polygon_shape(22*8+14,1,3,11), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         
         ejectors = []
         for col in range(0,8):
@@ -539,18 +552,18 @@ class Memory (Framework):
             self.injector_cranks[i]
 
     def crank_left_up(self, xpos, ypos, attachment_body, output_length=20, weight=10):
-        crank_fixture_1 = fixtureDef(shape=makeBox(-20,0,20,3), density=1.0, filter=filters[0])
-        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,output_length), density=1.0, filter=filters[0])
-        crank_fixture_3 = fixtureDef(shape=makeBox(-20,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
+        crank_fixture_1 = fixtureDef(shape=box_polygon_shape(-20,0,20,3), density=1.0, filter=filters[0])
+        crank_fixture_2 = fixtureDef(shape=box_polygon_shape(0,0,3,output_length), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=box_polygon_shape(-20,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
         crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
         crank.attachment_point=(xpos,ypos+output_length)
         return crank
 
     def crank_right_up(self, xpos, ypos, attachment_body, output_length=20, weight=10):
-        crank_fixture_1 = fixtureDef(shape=makeBox(0,0,20,3), density=1.0, filter=filters[0])
-        crank_fixture_2 = fixtureDef(shape=makeBox(0,0,3,output_length), density=1.0, filter=filters[0])
-        crank_fixture_3 = fixtureDef(shape=makeBox(10,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
+        crank_fixture_1 = fixtureDef(shape=box_polygon_shape(0,0,20,3), density=1.0, filter=filters[0])
+        crank_fixture_2 = fixtureDef(shape=box_polygon_shape(0,0,3,output_length), density=1.0, filter=filters[0])
+        crank_fixture_3 = fixtureDef(shape=box_polygon_shape(10,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
         crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
         crank.attachment_point=(xpos,ypos+output_length)
@@ -705,12 +718,13 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, attachment_body, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3):
+    def add_cam(self, xpos, ypos, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. 
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
         reverse_direction puts the cam on the other side and only makes sense for horizontal cams.
         """
+        attachment_body = self.groundBody
         offset = 0
         if not horizontal:
             offset = -0.25
@@ -747,13 +761,13 @@ class Memory (Framework):
                     axle_x = xpos-radius-axis_offset-5
                 else:
                     axle_x = xpos+radius+axis_offset+2.5
-                follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y-follower_len, 5, follower_len), 0, 0, filter=follower_filter)
+                follower_body = self.add_dynamic_polygon(box_polygon_shape(axle_x, axle_y-follower_len, 5, follower_len), 0, 0, filter=follower_filter)
                 follower_wheel = self.add_dynamic_circle(axle_x+2.5, axle_y-radius, 5)
                 self.revolving_joint(follower_wheel, follower_body, (axle_x+2.5,axle_y-radius), friction=False)
             else:
                 axle_y = ypos+radius+axis_offset+2.5
                 axle_x = xpos-radius
-                follower_body = self.add_dynamic_polygon(makeBox(axle_x, axle_y, follower_len, 5), 0, 0, filter=follower_filter)
+                follower_body = self.add_dynamic_polygon(box_polygon_shape(axle_x, axle_y, follower_len, 5), 0, 0, filter=follower_filter)
                 follower_wheel = self.add_dynamic_circle(axle_x+radius, axle_y+2.5, 5)
                 self.revolving_joint(follower_wheel, follower_body, (axle_x+radius,axle_y+2.5), friction=False)
 
@@ -790,12 +804,12 @@ class Memory (Framework):
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
             if i==7:
-                block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(-5,0,10,20), filter=filters[0])
+                block_slider_base = fixtureDef(shape=box_polygon_shape(0,0,30,5), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=box_polygon_shape(-5,0,10,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             elif i==6:
-                block_slider_base = fixtureDef(shape=makeBox(0,0,30,5), filter=filters[0])
-                block_slider_connector = fixtureDef(shape=makeBox(15,-20,6,20), filter=filters[0])
+                block_slider_base = fixtureDef(shape=box_polygon_shape(0,0,30,5), filter=filters[0])
+                block_slider_connector = fixtureDef(shape=box_polygon_shape(15,-20,6,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             else:
                 block_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
@@ -821,11 +835,188 @@ class Memory (Framework):
             for y in range(0,8):
                 if (memory_array[y] & 1<<x):
                     self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
+
+    def setup_ssem(self):
+        """ Sets up all the parts of the SSEM except cams. """
         
+        groundBox = box_polygon_shape(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
+        groundBody = self.world.CreateStaticBody(shapes=groundBox)
+        self.groundBody = groundBody
+        # Initial charge for main injector
+        self.ball_bearing_block(0,190,cols=16)
+        self.injector_cranks = []
+        self.parts.main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
+
+        self.parts.accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
+
+        (self.parts.memory_selector_holdoff, self.parts.memory_follower_holdoff) = self.memory_module(0,0, groundBody)
+        self.upper_regenerators = []
+
+        self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
+        self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
+        self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
+        self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
+        
+        # PC injector
+        self.pc_injector_cranks = []    
+        self.parts.pc_injector_raiser = self.injector(230,-290, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
+        # Initial charge for PC injector
+        self.ball_bearing_block(250,-240,cols=8)
+
+
+        sub_pos_x = -15
+        sub_pos_y = -200
+        self.parts.accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
+        skip_lever_x = sub_pos_x - 200
+        skip_lever_y = sub_pos_y - 200
+        a = fixtureDef(shape=polygonShape(vertices=[(-50,-32), (0,-30), (0,-25), (-50,-30)]), filter=filters[0], density=1.0)
+        b = fixtureDef(shape=box_polygon_shape(0,-30,5,30), filter=filters[0], density=1.0)
+        c = fixtureDef(shape=box_polygon_shape(-30,-30,5,30), filter=filters[0], density=1.0)
+        d = fixtureDef(shape=box_polygon_shape(0,0,300,5), filter=filters[2], density=1.0)
+        e = fixtureDef(shape=box_polygon_shape(285,-15,15,15), filter=filters[2], density=2.10)
+        f = fixtureDef(shape=box_polygon_shape(150,-50,5,50), filter=filters[0], density=1.0)
+        skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
+        skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
+        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_vertices(0, 0, 300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
+        self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
+        self.add_static_polygon(polygonShape(vertices=box_vertices(0, 0, 10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
+        self.parts.cmp_injector = self.horizontal_injector(skip_lever_x-48,skip_lever_y+257, groundBody)
+        self.ball_bearing_block(skip_lever_x-30,skip_lever_y+280,cols=1)
+        self.add_static_polygon(polygonShape(vertices=[(0,0), (20,0), (0,20)]), skip_lever_x-30,skip_lever_y+230)
+                            
+        self.lower_regenerators = []
+        self.parts.lower_regen_control = self.regenerator(-203,-380, groundBody, self.lower_regenerators)
+        #Program counter
+        self.parts.pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
+        # Thing that adds one ball bearing to the PC
+        pc_incrementer = self.horizontal_injector(457,-250, groundBody)
+        self.ball_bearing_block(457+20,-250+30,cols=1)
+        self.distance_joint(skip_lever, pc_incrementer)
+
+        self.connect_regenerators()
+
+        self.add_static_polygon([ (-300,-600),(500,-550), (500,-610), (-300,-610)])
+        self.add_static_polygon([ (-400,-550),(-310,-600), (-310,-610), (-400,-610)])
+
+        # Instruction decoder ROM
+        self.rom_followers = []
+        self.rom_selectors = []
+        (self.parts.instruction_selector_holdoff, self.parts.instruction_follower_holdoff) = self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
+
+        self.add_instruction_cranks(groundBody, 550, 140)
+       
+        #self.ball_bearing_lift(-200,-400,groundBody)
+        self.parts.sender_eject = self.memory_sender(200,-500, groundBody)
+        self.connect_memory()
+
+    def setup_cams(self):
+
+        groundBody = self.groundBody
+        
+        # Cams
+
+        # Cam 1: Fires PC injector, reading PC into address reg.
+        follower_body = self.add_cam(300,200, 100, bumps=[(0.0,0.02)], axis_offset=1)
+        self.distance_joint(follower_body, self.parts.pc_injector_raiser)
+
+        # Cam 2: Main memory selector lifter
+        follower_body = self.add_cam(150,300, 150, bumps=[(0.1,0.02), (0.32, 0.06)])
+        print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
+        self.distance_joint(follower_body, self.parts.memory_selector_holdoff)
+
+        # Cam 2: Memory returner (left side)
+        follower_body = self.add_cam(-400,120, 100, horizontal=True, bumps=[(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
+        self.distance_joint(follower_body, self.memory_returning_gate)
+
+        # Cam 4: Memory holdoff (right side)
+        follower_body = self.add_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
+        self.distance_joint(follower_body, self.parts.memory_follower_holdoff)
+
+        # Cam 5: Regenerator 1
+        follower_body = self.add_cam(800, 100, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)])
+        self.distance_joint(follower_body, self.parts.upper_regen_control)
+
+        # Cam 6: Split to instruction counter/reg
+        follower_body = self.add_cam(400,-120, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)])
+        self.distance_joint(follower_body, self.parts.diverter_3)
+
+        # Cam 7: Instruction selector holdoff
+        follower_body = self.add_cam(320, 300, 150, bumps=[(0.32,0.06)])
+        self.distance_joint(follower_body, self.parts.instruction_selector_holdoff)
+
+        # Cam 8: Sender eject.
+        # Note timing hazard. We cannot raise selector and eject until
+        # regenerated data is written back, so we delay for a few
+        # seconds here.  If gravity or timing changes, expect this to
+        # break.
+        follower_body = self.add_cam(600, -430, 80, bumps=[(0.30,0.02)], horizontal=True)
+        self.distance_joint(follower_body, self.parts.sender_eject)
+
+        instruction_ready_point = 0.50
+        
+        # Cam 9: Resets accumulator on LDN.
+        follower_body = self.add_cam(850, 0, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
+        self.distance_joint(follower_body, self.instruction_inputs[LDN])
+        # Attach LDN instruction output to reset bar
+        self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
+
+        # Cam 11: Instruction follower holdoff
+        follower_body = self.add_cam(1000, 100, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
+        self.distance_joint(follower_body, self.parts.instruction_follower_holdoff)
+        
+        # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
+        # will fall through the memory and be discarded.
+        follower_body = self.add_cam(0,300, 100, bumps=[(0.62,0.02)], axis_offset=1)
+        self.distance_joint(follower_body, self.parts.main_injector_raiser)
+
+        # Cam 13: Discard everything after main injector fires for all cases.
+        #follower_body = self.add_cam(900, 200, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
+        #self.distance_joint(follower_body, discard_lever_2)
+
+        # Cam 14: Divert to subtractor reader on STO.
+        # Also diverts the regenerator output on STO; we must separately discard that.
+        follower_body = self.add_cam(1000, 0, 100, bumps=[(0.49,0.2)], horizontal=True, reverse_direction=True, axis_offset=2, bump_height=3.5)
+        self.distance_joint(follower_body, self.instruction_inputs[STO])
+        self.distance_joint(self.parts.accumulator_diverter_lever, self.instruction_outputs[STO])
+        self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
+
+        # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
+        follower_body = self.add_cam(1100, 0, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
+        self.distance_joint(follower_body, self.instruction_inputs[JRP])
+        self.distance_joint(self.parts.ip_diverter_lever, self.instruction_outputs[JRP])
+
+        # Cam 16: Secondary discard, of any data falling through the memory just after main inject
+        follower_body = self.add_cam(-500,-150, 80, bumps=[(0.67,0.07)], reverse_direction=True, horizontal=True, axis_offset=2)
+        self.distance_joint(follower_body, self.parts.discard_lever_2)
+
+        # Cam 17: Fires bottom regenerator (usually empty, unless STO is on)
+        follower_body = self.add_cam(-500,-300, 80, bumps=[(0.87,0.02)], horizontal=True, axis_offset=0)
+        self.distance_joint(follower_body, self.parts.lower_regen_control)
+
+
+        # Cam 18: Reset PC on JMP
+        follower_body = self.add_cam(1230, 0, 140, bumps=[(0.5,0.1)], horizontal=True, reverse_direction=True, axis_offset=2)
+        self.distance_joint(follower_body, self.instruction_inputs[JMP])
+        self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
+
+        # Cam 19: Runs CMP.
+        follower_body = self.add_cam(900,200, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
+        self.distance_joint(follower_body, self.instruction_inputs[CMP])
+        self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
+        self.distance_joint(self.parts.cmp_injector, self.instruction_outputs[CMP])
+
+        # Cam 20: Inc PC.
+        follower_body = self.add_cam(-95,-450, 60, bumps=[(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
+
+        
+        # Notable timing points:
+        # 0.31: Memory at PC has been read and regenerated
+
     def __init__(self, testmode, test_set_no):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
+        self.parts = Parts()
         if testmode:
             self.test_mode = True
             print("Running test {}".format(test_set_no))
@@ -850,176 +1041,9 @@ class Memory (Framework):
         self.ball_bearings = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
-        groundBox = makeBox(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
-        groundBody = self.world.CreateStaticBody(shapes=groundBox)
-        # Initial charge for main injector
-        self.ball_bearing_block(0,190,cols=16)
-        self.injector_cranks = []
-        main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
-
-        (memory_selector_holdoff, memory_follower_holdoff) = self.memory_module(0,0, groundBody)
-        self.upper_regenerators = []
-
-        discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
-        upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
-        diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
-        
-        # PC injector
-        self.pc_injector_cranks = []    
-        pc_injector_raiser = self.injector(230,-290, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
-        # Initial charge for PC injector
-        self.ball_bearing_block(250,-240,cols=8)
-
-
-        sub_pos_x = -15
-        sub_pos_y = -200
-        accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
-        skip_lever_x = sub_pos_x - 200
-        skip_lever_y = sub_pos_y - 200
-        a = fixtureDef(shape=polygonShape(vertices=[(-50,-32), (0,-30), (0,-25), (-50,-30)]), filter=filters[0], density=1.0)
-        b = fixtureDef(shape=makeBox(0,-30,5,30), filter=filters[0], density=1.0)
-        c = fixtureDef(shape=makeBox(-30,-30,5,30), filter=filters[0], density=1.0)
-        d = fixtureDef(shape=makeBox(0,0,300,5), filter=filters[2], density=1.0)
-        e = fixtureDef(shape=makeBox(285,-15,15,15), filter=filters[2], density=2.10)
-        f = fixtureDef(shape=makeBox(150,-50,5,50), filter=filters[0], density=1.0)
-        skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
-        skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
-        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_vertices(0, 0, 300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
-        self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
-        self.add_static_polygon(polygonShape(vertices=box_vertices(0, 0, 10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
-        cmp_injector = self.horizontal_injector(skip_lever_x-48,skip_lever_y+257, groundBody)
-        self.ball_bearing_block(skip_lever_x-30,skip_lever_y+280,cols=1)
-        self.add_static_polygon(polygonShape(vertices=[(0,0), (20,0), (0,20)]), skip_lever_x-30,skip_lever_y+230)
-                            
-        self.lower_regenerators = []
-        lower_regen_control = self.regenerator(-203,-380, groundBody, self.lower_regenerators)
-        #Program counter
-        pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
-        # Thing that adds one ball bearing to the PC
-        pc_incrementer = self.horizontal_injector(457,-250, groundBody)
-        self.ball_bearing_block(457+20,-250+30,cols=1)
-        self.distance_joint(skip_lever, pc_incrementer)
-
-        self.connect_regenerators()
-
-        self.add_static_polygon([ (-300,-600),(500,-550), (500,-610), (-300,-610)])
-        self.add_static_polygon([ (-400,-550),(-310,-600), (-310,-610), (-400,-610)])
-
-        # Instruction decoder ROM
-        self.rom_followers = []
-        self.rom_selectors = []
-        (instruction_selector_holdoff, instruction_follower_holdoff) = self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
-
-        self.add_instruction_cranks(groundBody, 550, 140)
-       
-        #self.ball_bearing_lift(-200,-400,groundBody)
-        sender_eject = self.memory_sender(200,-500, groundBody)
-        self.connect_memory()
-        print("Scale is {}".format(self.scale))
-
-
-        
-        # Cams
-
-        # Cam 1: Fires PC injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, groundBody, 100, bumps=[(0.0,0.02)], axis_offset=1)
-        self.distance_joint(follower_body, pc_injector_raiser)
-
-        # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, groundBody, 150, bumps=[(0.1,0.02), (0.32, 0.06)])
-        print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
-        self.distance_joint(follower_body, memory_selector_holdoff)
-
-        # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, groundBody, 100, horizontal=True, bumps=[(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
-        self.distance_joint(follower_body, self.memory_returning_gate)
-
-        # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, groundBody, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
-        self.distance_joint(follower_body, memory_follower_holdoff)
-
-        # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, groundBody, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)])
-        self.distance_joint(follower_body, upper_regen_control)
-
-        # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(400,-120, groundBody, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)])
-        self.distance_joint(follower_body, diverter_3)
-
-        # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, groundBody, 150, bumps=[(0.32,0.06)])
-        self.distance_joint(follower_body, instruction_selector_holdoff)
-
-        # Cam 8: Sender eject.
-        # Note timing hazard. We cannot raise selector and eject until
-        # regenerated data is written back, so we delay for a few
-        # seconds here.  If gravity or timing changes, expect this to
-        # break.
-        follower_body = self.add_cam(600, -430, groundBody, 80, bumps=[(0.30,0.02)], horizontal=True)
-        self.distance_joint(follower_body, sender_eject)
-
-        instruction_ready_point = 0.50
-        
-        # Cam 9: Resets accumulator on LDN.
-        follower_body = self.add_cam(850, 0, groundBody, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
-        self.distance_joint(follower_body, self.instruction_inputs[LDN])
-        # Attach LDN instruction output to reset bar
-        self.distance_joint(accumulator_reset_lever, self.instruction_outputs[LDN])
-
-        # Cam 11: Instruction follower holdoff
-        follower_body = self.add_cam(1000, 100, groundBody, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
-        self.distance_joint(follower_body, instruction_follower_holdoff)
-        
-        # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
-        # will fall through the memory and be discarded.
-        follower_body = self.add_cam(0,300, groundBody, 100, bumps=[(0.62,0.02)], axis_offset=1)
-        self.distance_joint(follower_body, main_injector_raiser)
-
-        # Cam 13: Discard everything after main injector fires for all cases.
-        #follower_body = self.add_cam(900, 200, groundBody, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
-        #self.distance_joint(follower_body, discard_lever_2)
-
-        # Cam 14: Divert to subtractor reader on STO.
-        # Also diverts the regenerator output on STO; we must separately discard that.
-        follower_body = self.add_cam(1000, 0, groundBody, 100, bumps=[(0.49,0.2)], horizontal=True, reverse_direction=True, axis_offset=2, bump_height=3.5)
-        self.distance_joint(follower_body, self.instruction_inputs[STO])
-        self.distance_joint(accumulator_diverter_lever, self.instruction_outputs[STO])
-        self.distance_joint(discard_lever_2, self.instruction_outputs[STO])
-
-        # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
-        follower_body = self.add_cam(1100, 0, groundBody, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
-        self.distance_joint(follower_body, self.instruction_inputs[JRP])
-        self.distance_joint(ip_diverter_lever, self.instruction_outputs[JRP])
-
-        # Cam 16: Secondary discard, of any data falling through the memory just after main inject
-        follower_body = self.add_cam(-500,-150, groundBody, 80, bumps=[(0.67,0.07)], reverse_direction=True, horizontal=True, axis_offset=2)
-        self.distance_joint(follower_body, discard_lever_2)
-
-        # Cam 17: Fires bottom regenerator (usually empty, unless STO is on)
-        follower_body = self.add_cam(-500,-300, groundBody, 80, bumps=[(0.87,0.02)], horizontal=True, axis_offset=0)
-        self.distance_joint(follower_body, lower_regen_control)
-
-
-        # Cam 18: Reset PC on JMP
-        follower_body = self.add_cam(1230, 0, groundBody, 140, bumps=[(0.5,0.1)], horizontal=True, reverse_direction=True, axis_offset=2)
-        self.distance_joint(follower_body, self.instruction_inputs[JMP])
-        self.distance_joint(pc_reset_lever, self.instruction_outputs[JMP])
-
-        # Cam 19: Runs CMP.
-        follower_body = self.add_cam(900,200, groundBody, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
-        self.distance_joint(follower_body, self.instruction_inputs[CMP])
-        self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
-        self.distance_joint(cmp_injector, self.instruction_outputs[CMP])
-
-        # Cam 20: Inc PC.
-        follower_body = self.add_cam(-95,-450, groundBody, 60, bumps=[(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
-
-        
-        # Notable timing points:
-        # 0.31: Memory at PC has been read and regenerated
+        self.setup_ssem()
+        self.setup_cams()
         
         self.set_initial_memory(self.test_set["initial_memory"])
 
@@ -1160,6 +1184,3 @@ if __name__ == "__main__":
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
     main(Memory(args.test, args.testset))
-
-
-    
