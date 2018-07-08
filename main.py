@@ -10,7 +10,7 @@ from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 from Box2D import b2CircleShape
 from constants import *
 from test_sets import test_set
-
+from emulator import SSEM_State
 
 def box_vertices(x, y, width,height):
     return [(0,0), (width,0), (width,height), (0,height)]
@@ -1012,8 +1012,17 @@ class Memory (Framework):
             self.test_mode = False
             print("Starting in interactive mode")
             self.start_point = 0
+
+
         self.initial_accumulator =  self.test_set.get("initial_accumulator", 0)
         self.initial_pc = self.test_set.get("initial_pc",0)
+
+        self.expected_state = SSEM_State()
+        self.expected_state.pc = self.initial_pc
+        self.expected_state.accumulator = self.initial_accumulator
+        self.expected_state.mem = copy.copy(self.test_set["initial_memory"])
+        self.expected_state.advance()
+
         print("Setting initial accumulator to {}".format(self.initial_accumulator))
         self.accumulator_toggles = []
         self.ip_toggles = []
@@ -1110,7 +1119,19 @@ class Memory (Framework):
             if expected_memory[a] != memory[a]:
                 print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
                 return
-        
+
+        # Verify against emulator
+        if accumulator != self.expected_state.accumulator:
+            print("FAIL: Emulated accumulator {}, actual result {}".format(self.expected_state.accumulator, accumulator))
+            return
+        if pc != self.expected_state.pc:
+            print("FAIL: Emulated PC {}, actual result {}".format(self.expected_state.pc, pc))
+            return
+        for a in range(0,8):
+            if self.expected_state.mem[a] != memory[a]:
+                print("FAIL: At address {}, emulated memory {} but found {}".format(a,self.expected_state.mem[a], memory[a]))
+                return
+            
         print("PASS")
 
     def Step(self, settings):
