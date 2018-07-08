@@ -490,8 +490,6 @@ class Memory (Framework):
             row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(7+22*col+10,1,3,5), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(22*8+12,0,7,7), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-        self.memory_col0_x = 7
-        self.memory_row0_y = -30
         injectors=[]
         for col in range(0,8):
             injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
@@ -834,7 +832,7 @@ class Memory (Framework):
         for x in range(0,8):
             for y in range(0,8):
                 if (memory_array[y] & 1<<x):
-                    self.add_ball_bearing(self.memory_col0_x + pitch*(7-x)+2, self.memory_row0_y + 14*y+41, 0)
+                    self.add_ball_bearing(memory_col0_x + pitch*(7-x)+2, memory_row0_y + 14*y+41, 0)
 
     def setup_ssem(self):
         """ Sets up all the parts of the SSEM except cams. """
@@ -994,36 +992,34 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
-    def __init__(self, testmode, test_set_no):
+    def __init__(self, testmode, randomtest, test_set_no):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
         self.instruction_tested = False
         self.parts = Parts()
-        if testmode:
-            self.test_mode = True
+        self.prewritten_test = False
+        self.random_test = False
+        settle_delay = 400
+        if randomtest:
+            self.random_test = True
+            self.auto_test_mode = True
+            self.start_point = random.randint(settle_delay,settle_delay+100)
+            self.name="SSEM - Random test mode"
+        elif testmode:
+            self.auto_test_mode = True
+            self.prewritten_test = True
             print("Running test {}".format(test_set_no))
-            settle_delay = 400
             self.start_point = random.randint(settle_delay,settle_delay+100)
             print("Running test {} starting at tick {}".format(testmode, self.start_point))
             self.name="SSEM - {}".format(self.test_set.get("name", "Automated test"))
         else:
             # Use the test data from the specified test, but don't go into testmode.
-            self.test_mode = False
+            self.auto_test_mode = False
             print("Starting in interactive mode")
             self.start_point = 0
 
 
-        self.initial_accumulator =  self.test_set.get("initial_accumulator", 0)
-        self.initial_pc = self.test_set.get("initial_pc",0)
-
-        self.expected_state = SSEM_State()
-        self.expected_state.pc = self.initial_pc
-        self.expected_state.accumulator = self.initial_accumulator
-        self.expected_state.mem = copy.copy(self.test_set["initial_memory"])
-        self.expected_state.advance()
-
-        print("Setting initial accumulator to {}".format(self.initial_accumulator))
         self.accumulator_toggles = []
         self.ip_toggles = []
         self.cams_on = False
@@ -1038,7 +1034,20 @@ class Memory (Framework):
         self.setup_ssem()
         self.setup_cams()
         
-        self.set_initial_memory(self.test_set["initial_memory"])
+        self.expected_state = SSEM_State()
+        if self.random_test:
+            self.expected_state.set_random()
+        else:
+            self.expected_state.accumulator = self.test_set.get("initial_accumulator", 0)
+            self.expected_state.pc = self.test_set.get("initial_pc", 0)
+            self.expected_state.mem = self.test_set.get("initial_memory")
+
+        self.set_initial_memory(self.expected_state.mem)
+        self.initial_accumulator =  self.expected_state.accumulator
+        self.initial_pc = self.expected_state.pc
+
+        print("Setting initial accumulator to {}".format(self.initial_accumulator))
+        self.expected_state.advance()
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
@@ -1075,8 +1084,8 @@ class Memory (Framework):
                     x /= self.scale
                     y /= self.scale
                     
-                    expected_pos_x = self.memory_col0_x + pitch*(7-col)+2
-                    expected_pos_y = self.memory_row0_y + 14*row+41
+                    expected_pos_x = memory_col0_x + pitch*(7-col)+2
+                    expected_pos_y = memory_row0_y + 14*row+41
                     dx = expected_pos_x - x
                     dy = expected_pos_y - y
                     if abs(dx)<5 and abs(dy)<5:
@@ -1101,24 +1110,26 @@ class Memory (Framework):
         expected_pc = self.test_set.get("expected_pc", 1)
         
         accumulator = self.read_accumulator_value()
-        if expected_accumulator != accumulator:
-            print("FAIL: Expected accumulator {}, actual result {}".format(expected_accumulator, accumulator))
-            return
-        expected_memory = copy.copy(self.test_set["initial_memory"])
-        if "memory_update" in self.test_set:
-            (address, value) = self.test_set["memory_update"]
-            expected_memory[address] = value
-
         pc = self.read_pc_value()
-        if expected_pc != pc:
-            print("FAIL: Expected PC {}, actual result {}".format(expected_pc, pc))
-            return
-
         memory = self.read_memory_array()
-        for a in range(0,8):
-            if expected_memory[a] != memory[a]:
-                print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
+
+        if self.prewritten_test:
+            if expected_accumulator != accumulator:
+                print("FAIL: Expected accumulator {}, actual result {}".format(expected_accumulator, accumulator))
                 return
+            expected_memory = copy.copy(self.test_set["initial_memory"])
+            if "memory_update" in self.test_set:
+                (address, value) = self.test_set["memory_update"]
+                expected_memory[address] = value
+
+            if expected_pc != pc:
+                print("FAIL: Expected PC {}, actual result {}".format(expected_pc, pc))
+                return
+
+            for a in range(0,8):
+                if expected_memory[a] != memory[a]:
+                    print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
+                    return
 
         # Verify against emulator
         if accumulator != self.expected_state.accumulator:
@@ -1186,7 +1197,7 @@ class Memory (Framework):
             self.cams_on = False
             print("Sequence complete; cams off")
             self.verify_results()
-            if self.test_mode:
+            if self.auto_test_mode:
                 self.stopFlag = True
             
         for d in self.all_cam_drives:
@@ -1202,6 +1213,7 @@ class Memory (Framework):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--test', action='store_true')
+    parser.add_argument('--randomtest', action='store_true')
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
-    main(Memory(args.test, args.testset))
+    main(Memory(args.test, args.randomtest, args.testset))

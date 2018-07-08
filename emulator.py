@@ -69,12 +69,15 @@ class SSEM_State():
     def __str__(self):
         return "IP:%2.2X ACC:%8.8X  %s"%(self.pc, twos_comp(self.accumulator), " ".join("%8.8X"%twos_comp(x) for x in self.mem))
 
+    def set_random(self):
+        self.pc = random.randint(0,memory_rows-1)
+        self.mem = [random.randint(0,255)+i for i in range(0,memory_rows)]
+        self.accumulator = random.randint(0,(1<<memory_columns)-1)
+        
 def main():
     startstate = SSEM_State()
     # Put the machine in a random state and run one cycle
-    startstate.pc = random.randint(0,memory_rows-1)
-    startstate.mem = [random.randint(0,255)+i for i in range(0,memory_rows)]
-    startstate.accumulator = random.randint(0,(1<<memory_columns)-1)
+    startstate.set_random()
     print(startstate)
     startstate.advance()
     print(startstate)
