@@ -4,6 +4,9 @@ bb_diameter = 6.35
 
 selector_rods = 3
 memory_rows = 1<<selector_rods
+
+memory_columns = 8
+
 pitch = 22
 follower_spacing = 14
 
@@ -14,8 +17,12 @@ JRP = 1
 LDN = 2
 STO = 3
 SUB = 4
+SB2 = 5
 CMP = 6
 STOP = 7
+HLT = 7
+
+instruction_opcodes = [ "JMP", "JRP", "LDN", "STO", "SUB", "SB2", "CMP", "HLT" ]
 
 bar_gate_raisers = False
 
