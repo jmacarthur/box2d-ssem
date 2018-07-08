@@ -841,6 +841,7 @@ class Memory (Framework):
         
         groundBox = box_polygon_shape(-20,-500,1,1) # A tiny box that just acts as the ground body for everything else
         groundBody = self.world.CreateStaticBody(shapes=groundBox)
+        self.memory_sender_y = -500
         self.groundBody = groundBody
         # Initial charge for main injector
         self.ball_bearing_block(0,190,cols=16)
@@ -906,7 +907,7 @@ class Memory (Framework):
         self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
-        self.parts.sender_eject = self.memory_sender(200,-500, groundBody)
+        self.parts.sender_eject = self.memory_sender(200,self.memory_sender_y, groundBody)
         self.connect_memory()
 
     def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3):
@@ -917,6 +918,10 @@ class Memory (Framework):
 
         groundBody = self.groundBody
 
+        # Important timing points:
+        ip_ready_point = 0.15 # Address should be set up for instruction fetch at this point
+        instruction_fetched = 0.4 # Instruction should be in instruction register
+        instruction_ready_point = 0.50 # Instruction decoder should be set up, ready for cams to use
 
         # Cams
 
@@ -947,8 +952,6 @@ class Memory (Framework):
         # break.
         self.basic_cam(600, -430, 80, [(0.30,0.02)], 0, self.parts.sender_eject, horizontal=True)
 
-        instruction_ready_point = 0.50
-        
         # Cam 9: Resets accumulator on LDN.
         self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
@@ -995,6 +998,7 @@ class Memory (Framework):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
+        self.instruction_tested = False
         self.parts = Parts()
         if testmode:
             self.test_mode = True
@@ -1069,6 +1073,18 @@ class Memory (Framework):
                         row_val += 1<<col
             memory.append(row_val)
         return memory
+
+    def instruction_test(self):
+        # Early test to see if instruction has been read correctly. If not, no point continuing with test.
+        columns = []
+        for i in range(0,8):
+            (x,y) = self.memory_sensors[i].worldCenter
+            x /= self.scale
+            y /= self.scale
+            relative_pos = y - self.memory_sender_y
+            columns.append(1 if relative_pos > 2 else 0)
+        print("Instruction register value = {}".format(",".join(map(str,columns))))
+        self.instruction_tested = True
     
     def verify_results(self):
         expected_accumulator = self.test_set.get("expected_accumulator", self.initial_accumulator)
@@ -1136,10 +1152,13 @@ class Memory (Framework):
         
         if self.cams_on: self.sequence += 1
         angleTarget = (self.sequence*math.pi*2/10000.0)
+        simulation_time = (self.sequence/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
-            print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), angleTarget/(math.pi*2)))
+            print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), simulation_time ))
             print("Accumulator = {} ({}) PC= {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value(), self.read_pc_array(), self.read_pc_value()))
             print("Memory = {}".format(",".join(map(str, self.read_memory_array()))))
+        if simulation_time > 0.41 and not self.instruction_tested:
+            self.instruction_test()
         if angleTarget >= (math.pi*2) and self.cams_on:
             angleTarget = math.pi*2
             self.cams_on = False
