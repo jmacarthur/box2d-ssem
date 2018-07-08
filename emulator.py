@@ -41,11 +41,11 @@ class SSEM_State():
             self.pc += self.mem[instruction_address % memory_rows]
             self.pc %= memory_rows
         elif instruction_op == LDN:
-            self.accumulator = -self.mem[instruction_address % memory_rows]
+            self.accumulator = twos_comp(-self.mem[instruction_address % memory_rows])
         elif instruction_op == STO:
             self.mem[instruction_address % memory_rows] = self.accumulator
         elif instruction_op == SUB or instruction_op == SB2:
-            self.accumulator -= self.mem[instruction_address % memory_rows]
+            self.accumulator = twos_comp(self.accumulator - self.mem[instruction_address % memory_rows])
         elif instruction_op == CMP:
             mem_value = self.mem[instruction_address % memory_rows]
             if mem_value != 0:
