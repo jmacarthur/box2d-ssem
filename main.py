@@ -909,20 +909,21 @@ class Memory (Framework):
         self.parts.sender_eject = self.memory_sender(200,-500, groundBody)
         self.connect_memory()
 
+    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part):
+        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset)
+        self.distance_joint(follower_body, attachment_part)
+        
     def setup_cams(self):
 
         groundBody = self.groundBody
-        
+
+
         # Cams
 
         # Cam 1: Fires PC injector, reading PC into address reg.
-        follower_body = self.add_cam(300,200, 100, bumps=[(0.0,0.02)], axis_offset=1)
-        self.distance_joint(follower_body, self.parts.pc_injector_raiser)
-
+        basic_cam(300,200, 100, bumps=[(0.0,0.02)], axis_offset=1, self.parts.pc_injector_raiser)
         # Cam 2: Main memory selector lifter
-        follower_body = self.add_cam(150,300, 150, bumps=[(0.1,0.02), (0.32, 0.06)])
-        print("Attachemnt point on cam is {}".format(follower_body.attachment_point))
-        self.distance_joint(follower_body, self.parts.memory_selector_holdoff)
+        basic_cam(150,300, 150, bumps=[(0.1,0.02), (0.32, 0.06)], attachment_part=self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
         follower_body = self.add_cam(-400,120, 100, horizontal=True, bumps=[(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
@@ -1113,6 +1114,7 @@ class Memory (Framework):
         for a in range(0,8):
             if expected_memory[a] != memory[a]:
                 print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
+                return
         
         print("PASS")
 
