@@ -923,19 +923,19 @@ class Memory (Framework):
         # Cam 1: Fires PC injector, reading PC into address reg.
         self.basic_cam(300,200, 100, [(0.0,0.02)], 1, self.parts.pc_injector_raiser)
         # Cam 2: Main memory selector lifter
-        self.basic_cam(150,300, 150, [(0.1,0.02), (0.32, 0.06)], attachment_part=self.parts.memory_selector_holdoff)
+        self.basic_cam(150,300, 150, [(0.1,0.02), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1, attachment_part=self.memory_returning_gate, horizontal=True)
+        self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], -1, self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1, attachment_part=self.parts.memory_follower_holdoff)
+        self.basic_cam(-300,100, 100, [(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
-        self.basic_cam(800, 100, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)], attachment_part=self.parts.upper_regen_control)
+        self.basic_cam(800, 100, 80, [(0.25,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
 
         # Cam 6: Split to instruction counter/reg
-        self.basic_cam(400,-120, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)], attachment_part=self.parts.diverter_3)
+        self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True)
 
         # Cam 7: Instruction selector holdoff
         self.basic_cam(320, 300, 150, [(0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
