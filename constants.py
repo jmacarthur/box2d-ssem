@@ -10,6 +10,11 @@ memory_columns = 8
 pitch = 22
 follower_spacing = 14
 
+# Relative positions of data inside the memory module
+memory_col0_x = 7
+memory_row0_y = -30
+
+
 # Instruction format for the 8-bit machine: least significant 5 bits are address; top 3 bits are instruction.
 # Instructions are:
 JMP = 0

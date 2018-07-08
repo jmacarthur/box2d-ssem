@@ -7,6 +7,10 @@ from constants import *
 
 # SSEM Emulator module. This is meant to emulate the SSEM, to provide tests for the Box2D version.
 
+# Some opcodes are unsupported. Currently, CMP which uses an operand address whose value is not zero
+# will not work in the Box2D version, so we set 'unsupported_flag' which we emulate this. We also
+# don't implement opcode 5 (the second SUB instruction) or HLT.
+
 logging.basicConfig(level=logging.INFO)
 
 def twos_comp(num):
@@ -19,6 +23,7 @@ class SSEM_State():
         self.pc = 0
         self.mem = [0] * memory_rows
         self.accumulator = 0
+        self.unsupported_flag = False # This is switched on if an unsupported opcode is used.
     def advance(self):
         logging.info("Initial PC == {}".format(self.pc))
         instruction = self.mem[self.pc]
@@ -34,6 +39,7 @@ class SSEM_State():
 
         if instruction_op == SB2 or instruction_op == HLT:
             logging.warn("Executing unsupported {} opcode.".format(instruction_opcodes[instruction_op]))
+            self.unsupported_flag = True
 
         if instruction_op == JMP:
             self.pc = self.mem[instruction_address % memory_rows]
@@ -50,6 +56,9 @@ class SSEM_State():
             mem_value = self.mem[instruction_address % memory_rows]
             if mem_value != 0:
                 logging.warn("Executing CMP with non-zero operand")
+                self.unsupported_flag = True
+            if (self.accumulator & 0x80) == 0x80:
+                self.pc += 1
         elif instruction_op == HLT:
             # Rather than do anything special, this just prevents the
             # advancing of PCs, so it just executes this operation over and over.
