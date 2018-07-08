@@ -909,8 +909,8 @@ class Memory (Framework):
         self.parts.sender_eject = self.memory_sender(200,-500, groundBody)
         self.connect_memory()
 
-    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False):
-        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction)
+    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3):
+        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction, bump_height=bump_height)
         if attachment_part is not None: self.distance_joint(follower_body, attachment_part)
         
     def setup_cams(self):
@@ -945,65 +945,48 @@ class Memory (Framework):
         # regenerated data is written back, so we delay for a few
         # seconds here.  If gravity or timing changes, expect this to
         # break.
-        follower_body = self.add_cam(600, -430, 80, bumps=[(0.30,0.02)], horizontal=True)
-        self.distance_joint(follower_body, self.parts.sender_eject)
+        self.basic_cam(600, -430, 80, [(0.30,0.02)], 0, self.parts.sender_eject, horizontal=True)
 
         instruction_ready_point = 0.50
         
         # Cam 9: Resets accumulator on LDN.
-        follower_body = self.add_cam(850, 0, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
-        self.distance_joint(follower_body, self.instruction_inputs[LDN])
-        # Attach LDN instruction output to reset bar
+        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 11: Instruction follower holdoff
-        follower_body = self.add_cam(1000, 100, 100, bumps=[(0.15,0.25)], horizontal=True, axis_offset=-1)
-        self.distance_joint(follower_body, self.parts.instruction_follower_holdoff)
+        self.basic_cam(1000, 100, 100, [(0.15,0.25)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
         
         # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
         # will fall through the memory and be discarded.
-        follower_body = self.add_cam(0,300, 100, bumps=[(0.62,0.02)], axis_offset=1)
-        self.distance_joint(follower_body, self.parts.main_injector_raiser)
+        self.basic_cam(0, 300, 100, [(0.62,0.02)], 1, self.parts.main_injector_raiser)
 
-        # Cam 13: Discard everything after main injector fires for all cases.
-        #follower_body = self.add_cam(900, 200, 100, bumps=[(0.6,0.2)], horizontal=True, reverse_direction=True, axis_offset=3)
-        #self.distance_joint(follower_body, discard_lever_2)
-
-        # Cam 14: Divert to subtractor reader on STO.
+        # Cam 13: Divert to subtractor reader on STO.
         # Also diverts the regenerator output on STO; we must separately discard that.
-        follower_body = self.add_cam(1000, 0, 100, bumps=[(0.49,0.2)], horizontal=True, reverse_direction=True, axis_offset=2, bump_height=3.5)
-        self.distance_joint(follower_body, self.instruction_inputs[STO])
+        self.basic_cam(1000, 0, 100, [(0.49,0.2)], 2, self.instruction_inputs[STO], horizontal=True, reverse_direction=True, bump_height=3.5)
         self.distance_joint(self.parts.accumulator_diverter_lever, self.instruction_outputs[STO])
         self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
 
-        # Cam 15: Divert to instruction pointer, on JRP (and JMP via the same lever).
-        follower_body = self.add_cam(1100, 0, 100, bumps=[(0.5,0.2)], horizontal=True, reverse_direction=True, axis_offset=2)
-        self.distance_joint(follower_body, self.instruction_inputs[JRP])
+        # Cam 14: Divert to instruction pointer, on JRP (and JMP via the same lever).
+        self.basic_cam(1100, 0, 100, [(0.5,0.2)], 2, self.instruction_inputs[JRP], horizontal=True, reverse_direction=True)
         self.distance_joint(self.parts.ip_diverter_lever, self.instruction_outputs[JRP])
 
-        # Cam 16: Secondary discard, of any data falling through the memory just after main inject
-        follower_body = self.add_cam(-500,-150, 80, bumps=[(0.67,0.07)], reverse_direction=True, horizontal=True, axis_offset=2)
-        self.distance_joint(follower_body, self.parts.discard_lever_2)
+        # Cam 15: Secondary discard, of any data falling through the memory just after main inject
+        self.basic_cam(-500,-150, 80, [(0.67,0.07)], 2, self.parts.discard_lever_2, reverse_direction=True, horizontal=True)
 
-        # Cam 17: Fires bottom regenerator (usually empty, unless STO is on)
-        follower_body = self.add_cam(-500,-300, 80, bumps=[(0.87,0.02)], horizontal=True, axis_offset=0)
-        self.distance_joint(follower_body, self.parts.lower_regen_control)
+        # Cam 16: Fires bottom regenerator (usually empty, unless STO is on)
+        self.basic_cam(-500,-300, 80, [(0.87,0.02)], 0, self.parts.lower_regen_control, horizontal=True)
 
-
-        # Cam 18: Reset PC on JMP
-        follower_body = self.add_cam(1230, 0, 140, bumps=[(0.5,0.1)], horizontal=True, reverse_direction=True, axis_offset=2)
-        self.distance_joint(follower_body, self.instruction_inputs[JMP])
+        # Cam 17: Reset PC on JMP
+        self.basic_cam(1230, 0, 140, [(0.5,0.1)], 2, self.instruction_inputs[JMP], horizontal=True, reverse_direction=True)
         self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
 
-        # Cam 19: Runs CMP.
-        follower_body = self.add_cam(900,200, 120, bumps=[(instruction_ready_point,0.05)], horizontal=True, reverse_direction=False, axis_offset=-1)
-        self.distance_joint(follower_body, self.instruction_inputs[CMP])
+        # Cam 18: Runs CMP.
+        self.basic_cam(900,200, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[CMP], horizontal=True, reverse_direction=False)
         self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
         self.distance_joint(self.parts.cmp_injector, self.instruction_outputs[CMP])
 
-        # Cam 20: Inc PC.
-        follower_body = self.add_cam(-95,-450, 60, bumps=[(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
-
+        # Cam 19: Inc PC.
+        follower_body = self.add_cam(-95,-450, 60, [(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
