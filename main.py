@@ -1172,8 +1172,10 @@ class Memory (Framework):
             for d in self.accumulator_toggles:
                 d.motorSpeed = 10 if (self.initial_accumulator & 1<<(7-bit))==0 else -10
                 bit += 1
+            bit = 0
             for d in self.ip_toggles:
-                d.motorSpeed = -10
+                d.motorSpeed = -10 if (self.initial_pc & 1<<(4-bit))==0 else 10
+                bit += 1
         elif self.init_pulse < 50:
             for d in self.all_toggle_drives:
                 d.motorSpeed = 0
