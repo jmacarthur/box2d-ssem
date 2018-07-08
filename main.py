@@ -12,7 +12,7 @@ from constants import *
 from test_sets import test_set
 
 
-def box_polygon(width,height):
+def box_vertices(x, y, width,height):
     return [(0,0), (width,0), (width,height), (0,height)]
 
 def makeBox(x, y, width, height):
@@ -35,18 +35,18 @@ class Memory (Framework):
 
     def vertical_rotating_bar(self, xpos, ypos, height, attachment_body, support_sep=50):
         if bar_gate_raisers:
-            bar_body = self.add_dynamic_polygon(box_polygon(3,height), xpos+3, ypos, filters[0])
-            bar_body_2 = self.add_dynamic_polygon(box_polygon(3,height), xpos, ypos-15, filters[0])
+            bar_body = self.add_dynamic_polygon(box_vertices(0, 0, 3,height), xpos+3, ypos, filters[0])
+            bar_body_2 = self.add_dynamic_polygon(box_vertices(0, 0, 3,height), xpos, ypos-15, filters[0])
             for i in range(0,2):
                 pos = (0,support_sep*i)
-                support = self.add_dynamic_polygon(box_polygon(3,30), xpos+pos[0], ypos+pos[1], filters[0])
+                support = self.add_dynamic_polygon(box_vertices(0, 0, 3,30), xpos+pos[0], ypos+pos[1], filters[0])
                 self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
             bar_body.attachment_point=(xpos+4.5, ypos+height/3)
             return bar_body
         else:
-            body = self.add_dynamic_polygon(box_polygon(3,height), xpos,ypos, filters[0])
+            body = self.add_dynamic_polygon(box_vertices(0, 0, 3,height), xpos,ypos, filters[0])
             body.attachment_point = (xpos+1.5,ypos+height/2)
             self.slide_joint(attachment_body, body, (1,0), 0, 20, friction=0)
             return body
@@ -54,18 +54,18 @@ class Memory (Framework):
     def horizontal_rotating_bar(self, xpos, ypos, height, attachment_body,support_sep=0):
         if bar_gate_raisers:
             if support_sep == 0: support_sep = height/2
-            bar_body = self.add_dynamic_polygon(box_polygon(height,3), xpos, ypos+3, filters[0])
-            bar_body_2 = self.add_dynamic_polygon(box_polygon(height,3), xpos+15, ypos, filters[0])
+            bar_body = self.add_dynamic_polygon(box_vertices(0, 0, height,3), xpos, ypos+3, filters[0])
+            bar_body_2 = self.add_dynamic_polygon(box_vertices(0, 0, height,3), xpos+15, ypos, filters[0])
             for i in range(0,2):
                 pos = (support_sep*i,0)
-                support = self.add_dynamic_polygon(box_polygon(30,3), xpos+pos[0], ypos+pos[1], filters[0])
+                support = self.add_dynamic_polygon(box_vertices(0, 0, 30,3), xpos+pos[0], ypos+pos[1], filters[0])
                 self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+1.5+pos[0]+30, ypos+1.5+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+pos[0], ypos+1.5+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+15+pos[0], ypos+1.5+pos[1]))
             bar_body.attachment_point=(xpos+height/2, ypos+4.5)
             return bar_body
         else:
-            body = self.add_dynamic_polygon(box_polygon(height,3), xpos,ypos, filters[0])
+            body = self.add_dynamic_polygon(box_vertices(0, 0, height,3), xpos,ypos, filters[0])
             body.attachment_point = (xpos+height/2,ypos+1.5)
             self.slide_joint(attachment_body, body, (0,-1), -20, 0, friction=0)
             return body
@@ -94,7 +94,7 @@ class Memory (Framework):
         filterA = filters[0]
         filterB = filters[1]
         if inverted: (filterA, filterB) = (filterB, filterA)
-        conrod = self.add_dynamic_polygon(box_polygon(pitch*8,2), xpos, ypos+15, filters[2])
+        conrod = self.add_dynamic_polygon(box_vertices(0, 0, pitch*8,2), xpos, ypos+15, filters[2])
         for c in range(0,8):
             diverter_poly = [(0,0), (3,0), (3,17), (0,20)]
             diverter = self.add_dynamic_polygon(rotate_polygon(diverter_poly,-20), c*pitch+xpos, ypos, filterA)
@@ -104,9 +104,9 @@ class Memory (Framework):
         transfer_band_x = []
 
         for c in range(0,8):
-            self.add_static_polygon(box_polygon(2,10),  c*pitch+xpos,    -12+ypos, filterA)
-            self.add_static_polygon(box_polygon(2,35),  c*pitch+xpos+11, -12+ypos, filterA)
-            self.add_static_polygon(box_polygon(11,3), c*pitch+xpos+2,  -12+ypos, filterA)
+            self.add_static_polygon(box_vertices(0, 0, 2,10),  c*pitch+xpos,    -12+ypos, filterA)
+            self.add_static_polygon(box_vertices(0, 0, 2,35),  c*pitch+xpos+11, -12+ypos, filterA)
+            self.add_static_polygon(box_vertices(0, 0, 11,3), c*pitch+xpos+2,  -12+ypos, filterA)
             transfer_band_x.append((c*pitch+xpos, c*pitch+xpos+11))
 
         if discard != 0:
@@ -145,7 +145,7 @@ class Memory (Framework):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.add_static_polygon(box_polygon(7,10), c*pitch+xpos-11, -12+ypos)
+            self.add_static_polygon(box_vertices(0, 0, 7,10), c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=makeBox(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -174,7 +174,7 @@ class Memory (Framework):
         if toggle_joint_array is not None:
             toggle_joint_array.append(toggle_drive)
         # Bit that goes under the toggle to stop it moving too far
-        self.add_static_polygon(box_polygon(6,2), xpos-3, ypos-3)
+        self.add_static_polygon(box_vertices(0, 0, 6,2), xpos-3, ypos-3)
         return toggle
         
     def subtractor_output_toggle(self, xpos, ypos, attachment_body):
@@ -240,7 +240,7 @@ class Memory (Framework):
         # A reset bar
         reset_angle = math.atan2(sub_y_pitch, pitch)
         reset_len = math.sqrt((lines*pitch)**2 + (lines*sub_y_pitch)**2)
-        reset_poly = rotate_polygon_radians(box_polygon(reset_len, 5), reset_angle)
+        reset_poly = rotate_polygon_radians(box_vertices(0, 0, reset_len, 5), reset_angle)
         if is_actually_adder:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+10, ypos-sub_y_pitch*lines, filters[3])
         else:
@@ -467,7 +467,7 @@ class Memory (Framework):
                 memory_fixed_filter = filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF)
                 large_block = [(0,0), (14,0), (14,7), (0,6)]
                 self.add_static_polygon(large_block, 22*col, 14*row, filter=memory_fixed_filter)
-                self.add_static_polygon(box_polygon(3,8), 22*col+14-3+1, 14*row+6, filter=memory_fixed_filter)
+                self.add_static_polygon(box_vertices(0, 0, 3,8), 22*col+14-3+1, 14*row+6, filter=memory_fixed_filter)
                 pass
 
         row_injector_fixtures = []        
@@ -516,7 +516,7 @@ class Memory (Framework):
         self.memory_returning_gate = self.vertical_rotating_bar(xpos-32,0,14*memory_rows, groundBody)
 
         # Wall on the left of the memory to create the final channel
-        memory_fixed = self.add_static_polygon(box_polygon(3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
+        memory_fixed = self.add_static_polygon(box_vertices(0, 0, 3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
         return (selector_holdoff, follower_holdoff)
 
     def connect_regenerators(self):
@@ -798,12 +798,12 @@ class Memory (Framework):
                 block_slider_connector = fixtureDef(shape=makeBox(15,-20,6,20), filter=filters[0])
                 block_slider = self.add_multifixture([block_slider_base, block_slider_connector], xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             else:
-                block_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
+                block_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30+offset, ypos-i*andgate_spacing_y-50))
             self.slide_joint(attachment_body, block_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
             block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
             self.instruction_outputs.append(block_slider)
-            pusher_slider = self.add_dynamic_polygon(box_polygon(30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
+            pusher_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
             pusher_slider.attachment_point = (xpos+i*30+60, ypos-i*andgate_spacing_y-70)
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
@@ -887,9 +887,9 @@ class Memory (Framework):
         f = fixtureDef(shape=makeBox(150,-50,5,50), filter=filters[0], density=1.0)
         skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
         skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
-        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_polygon(300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
+        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_vertices(0, 0, 300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
         self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
-        self.add_static_polygon(polygonShape(vertices=box_polygon(10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
+        self.add_static_polygon(polygonShape(vertices=box_vertices(0, 0, 10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
         cmp_injector = self.horizontal_injector(skip_lever_x-48,skip_lever_y+257, groundBody)
         self.ball_bearing_block(skip_lever_x-30,skip_lever_y+280,cols=1)
         self.add_static_polygon(polygonShape(vertices=[(0,0), (20,0), (0,20)]), skip_lever_x-30,skip_lever_y+230)
