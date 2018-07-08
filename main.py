@@ -909,9 +909,9 @@ class Memory (Framework):
         self.parts.sender_eject = self.memory_sender(200,-500, groundBody)
         self.connect_memory()
 
-    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part):
-        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset)
-        self.distance_joint(follower_body, attachment_part)
+    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False):
+        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction)
+        if attachment_part is not None: self.distance_joint(follower_body, attachment_part)
         
     def setup_cams(self):
 
@@ -921,29 +921,24 @@ class Memory (Framework):
         # Cams
 
         # Cam 1: Fires PC injector, reading PC into address reg.
-        basic_cam(300,200, 100, bumps=[(0.0,0.02)], axis_offset=1, self.parts.pc_injector_raiser)
+        self.basic_cam(300,200, 100, [(0.0,0.02)], 1, self.parts.pc_injector_raiser)
         # Cam 2: Main memory selector lifter
-        basic_cam(150,300, 150, bumps=[(0.1,0.02), (0.32, 0.06)], attachment_part=self.parts.memory_selector_holdoff)
+        self.basic_cam(150,300, 150, [(0.1,0.02), (0.32, 0.06)], attachment_part=self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        follower_body = self.add_cam(-400,120, 100, horizontal=True, bumps=[(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1)
-        self.distance_joint(follower_body, self.memory_returning_gate)
+        self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], axis_offset=-1, attachment_part=self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        follower_body = self.add_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
-        self.distance_joint(follower_body, self.parts.memory_follower_holdoff)
+        self.basic_cam(-300,100, 100, horizontal=True, bumps=[(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], axis_offset=-1)
 
         # Cam 5: Regenerator 1
-        follower_body = self.add_cam(800, 100, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)])
-        self.distance_joint(follower_body, self.parts.upper_regen_control)
+        self.basic_cam(800, 100, 80, horizontal=True, bumps=[(0.25,0.05), (0.56,0.05)], attachment_part=self.parts.upper_regen_control)
 
         # Cam 6: Split to instruction counter/reg
-        follower_body = self.add_cam(400,-120, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)])
-        self.distance_joint(follower_body, self.parts.diverter_3)
+        self.basic_cam(400,-120, 60, horizontal=True, reverse_direction=True, axis_offset=2, bumps=[(0.18, 0.12)], attachment_part=self.parts.diverter_3)
 
         # Cam 7: Instruction selector holdoff
-        follower_body = self.add_cam(320, 300, 150, bumps=[(0.32,0.06)])
-        self.distance_joint(follower_body, self.parts.instruction_selector_holdoff)
+        self.basic_cam(320, 300, 150, [(0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
         # Note timing hazard. We cannot raise selector and eject until
