@@ -1012,7 +1012,8 @@ class Memory (Framework):
             self.test_mode = False
             print("Starting in interactive mode")
             self.start_point = 0
-        self.initial_accumulator =  self.test_set["initial_accumulator"] if "initial_accumulator" in self.test_set else 0
+        self.initial_accumulator =  self.test_set.get("initial_accumulator", 0)
+        self.initial_pc = self.test_set.get("initial_pc",0)
         print("Setting initial accumulator to {}".format(self.initial_accumulator))
         self.accumulator_toggles = []
         self.ip_toggles = []
