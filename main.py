@@ -341,8 +341,8 @@ class Memory (Framework):
         crank_y = 19
         injector_bar_height = 90
         for c in range(0,columns):
-            divider_height = 8
-            height2 =        8
+            divider_height = 6.5
+            height2 =        6.5
             divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
             divider_vertices = translate_polygon(divider_vertices, xpos+c*pitch, ypos+pitch+10)
             self.add_static_polygon(divider_vertices)
