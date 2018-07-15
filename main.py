@@ -127,7 +127,7 @@ class Memory (Framework):
             if discard>0:
                 self.add_static_polygon([(0,0), (discard,-30), (discard,-33), (0,-3) ], xpos, ypos-11, filterB)
                 self.add_static_polygon([(0,0), (5,0), (5,10), (0,10) ], xpos+discard+10, ypos-43, filterB)
-                
+                self.transfer_bands.append((ypos-43+10, ypos-43, [(xpos+discard+3, xpos+discard+13)], 1))
             else:
                 self.add_static_polygon([(8*pitch,0), (discard,-30), (discard,-33), (8*pitch,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
@@ -860,8 +860,10 @@ class Memory (Framework):
         self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
         
         # PC injector
+        pc_injector_x = 230
+        pc_injector_y = -290
         self.pc_injector_cranks = []    
-        self.parts.pc_injector_raiser = self.injector(230,-290, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
+        self.parts.pc_injector_raiser = self.injector(pc_injector_x,pc_injector_y, groundBody, injector_crank_array=self.pc_injector_cranks, columns=5)
         # Initial charge for PC injector
         self.ball_bearing_block(250,-240,cols=8)
 
@@ -891,7 +893,16 @@ class Memory (Framework):
         #Program counter
         self.parts.pc_reset_lever = self.subtractor(400,-320, groundBody, lines=5, toggle_joint_array=self.ip_toggles, is_actually_adder=True)
         # Thing that adds one ball bearing to the PC
-        pc_incrementer = self.horizontal_injector(457,-250, groundBody)
+        pc_incrementer_x = 457
+        pc_incrementer = self.horizontal_injector(pc_incrementer_x,-240, groundBody)
+        # Overspill loose ball bearings from the PC incrementer to the PC reader
+        overspill_width = pc_incrementer_x - pc_injector_x - 125
+        self.add_static_polygon([ (0, 0), (overspill_width,15), (overspill_width,20), (0,5) ], pc_injector_x+125,pc_injector_y+65)
+
+        # Block to stop right-side overspill on incrementer
+        self.add_static_polygon([ (0, 0), (5,0), (5,20), (0,20) ], pc_incrementer_x+27,-240+40)
+
+
         self.ball_bearing_block(457+20,-250+30,cols=1)
         self.distance_joint(skip_lever, pc_incrementer)
 
