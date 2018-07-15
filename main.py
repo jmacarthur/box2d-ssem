@@ -13,7 +13,7 @@ from test_sets import test_set
 from emulator import SSEM_State
 
 def box_vertices(x, y, width,height):
-    return [(0,0), (width,0), (width,height), (0,height)]
+    return [(x,y), (x+width,y), (x+width,y+height), (x,y+height)]
 
 def box_polygon_shape(x, y, width, height):
     return polygonShape(box=(width/2, height/2, (x+width/2, y+height/2), 0))
@@ -43,6 +43,7 @@ class Parts():
         self.pc_reset_lever = None
         self.cmd_injector = None
         self.memory_follower_holdoff = None
+
 class Memory (Framework):
     name = "SSEM"
 
@@ -125,6 +126,8 @@ class Memory (Framework):
         if discard != 0:
             if discard>0:
                 self.add_static_polygon([(0,0), (discard,-30), (discard,-33), (0,-3) ], xpos, ypos-11, filterB)
+                self.add_static_polygon([(0,0), (5,0), (5,10), (0,10) ], xpos+discard+10, ypos-43, filterB)
+                
             else:
                 self.add_static_polygon([(8*pitch,0), (discard,-30), (discard,-33), (8*pitch,-3) ], xpos, ypos-11, filterB)
         elif slope_x!=0:
@@ -851,7 +854,7 @@ class Memory (Framework):
         (self.parts.memory_selector_holdoff, self.parts.memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
 
-        self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=500) # Diverter 2a. Discard reader-pulse data.
+        self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=470) # Diverter 2a. Discard reader-pulse data.
         self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
         self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
@@ -907,6 +910,9 @@ class Memory (Framework):
         #self.ball_bearing_lift(-200,-400,groundBody)
         self.parts.sender_eject = self.memory_sender(200,self.memory_sender_y, groundBody)
         self.connect_memory()
+
+        # Add one final transfer band to move everything back into band 0
+        self.transfer_bands.append((-550+10, -550, [ (-300,800)], 1))
 
     def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3):
         follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction, bump_height=bump_height)
