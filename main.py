@@ -333,53 +333,6 @@ class Memory (Framework):
         self.add_static_polygon(polygonShape(vertices=[(17,27), (27,27), (27,37)]), xpos, ypos)
         return drive_rect
 
-    def single_injector(self, xpos, ypos, attachment_body, horizontal_drive=False):
-        intake_angle = 30
-        height = 8
-        crank_offset = pitch-10
-        crank_y = 19
-        injector_bar_height = 90
-        divider_height = 8
-        height2 =        8
-        divider_vertices = [ (0,0), (pitch-7,0), (pitch-7,divider_height), (0,height2) ]
-        divider_vertices = translate_polygon(divider_vertices, xpos, ypos+pitch+10)
-        self.add_static_polygon(divider_vertices)
-            
-        # The base
-        self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos, ypos+pitch+10)
-            
-        bellcrank_shape = [ fixtureDef(shape=box_polygon_shape(xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
-                            fixtureDef(shape=box_polygon_shape(xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
-        
-        bellcrank = self.add_multifixture(bellcrank_shape)
-        anchorpos = (xpos+crank_offset, ypos+crank_y+10)
-        if horizontal_drive:
-            bellcrank.attachment_point=(xpos+crank_offset, ypos+crank_y)
-        else:
-            bellcrank.attachment_point=(xpos+crank_offset+10, ypos+crank_y+10)
-        self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=0)
-
-        # Backstop for swing arm - stops the swing arm falling back too far
-        self.add_static_polygon([ (10,-20), (11,-20), (11,-3), (10,-3)], xpos, ypos+pitch+10)
-        
-        # Thing that stops all the ball bearings rolling over the one in the crank
-        self.add_static_polygon([(20.5,-6), (23,-6), (23,-3), (20.5,-3)], xpos+1, ypos+pitch+10)
-        
-        # roof
-        #        roof_height=-20
-        #        self.add_static_polygon([ (0,roof_height), (9*pitch,roof_height), (9*pitch,0), (0,0) ],
-        #                                xpos, ypos+height+45)
-
-        # End stop on the right
-        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height+30), (0,height) ], xpos+pitch, ypos+pitch+10)
-
-        # End stop on the left
-        self.add_static_polygon([ (0,0), (pitch-7,0), (pitch-7,height), (0,height+30) ], xpos, ypos+pitch+10)
-
-        # Final channel guard on the right
-        self.add_static_polygon([ (0,0), (3,0), (3,20), (0,20) ], xpos+pitch+10, ypos+pitch-10)
-        
-        return bellcrank
 
     def injector(self, xpos, ypos, attachment_body, injector_crank_array, columns=8):
         intake_angle = 30
