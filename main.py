@@ -1044,7 +1044,8 @@ class Memory (Framework):
         self.initial_pc = self.expected_state.pc
 
         print("Setting initial accumulator to {}".format(self.initial_accumulator))
-        self.expected_state.advance()
+        for i in range(0,self.test_set.get("cycles",1)):
+            self.expected_state.advance()
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
