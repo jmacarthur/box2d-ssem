@@ -911,6 +911,7 @@ class Memory (Framework):
     def rake_cam(self, xpos, ypos):
         attachment_body = self.groundBody
         radius = 30
+        slider_length = 60
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         cam_body = self.add_multifixture([disc_fixture], xpos, ypos)
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
@@ -920,9 +921,10 @@ class Memory (Framework):
         crank_body = self.add_multifixture([crank_fixture], xpos+radius, ypos)
         self.revolving_joint(cam_body, crank_body, (xpos+radius,ypos))
 
-        slider_fixture = fixtureDef(shape=polygonShape(vertices=box_vertices(0,0,50,3)),density=1.0,filter=filters[2])
-        pusher_fixture = fixtureDef(shape=polygonShape(vertices=[(50,0), (60,0), (58,5), (52,5)]),density=1.0,filter=filters[0])
-        slider_body = self.add_multifixture([crank_fixture,pusher_fixture], xpos+radius+50, ypos)
+        slider_fixture = fixtureDef(shape=polygonShape(vertices=box_vertices(0,0,slider_length,3)),density=1.0,filter=filters[2])
+        pusher_vertices = [(0,0), (10,0), (8,5), (2,5)]
+        pusher_fixture = fixtureDef(shape=polygonShape(vertices=translate_polygon(pusher_vertices, slider_length, 0)),density=1.0,filter=filters[0])
+        slider_body = self.add_multifixture([slider_fixture,pusher_fixture], xpos+radius+50, ypos)
         self.revolving_joint(crank_body, slider_body, (xpos+radius+50,ypos))
         self.slide_joint(attachment_body, slider_body, (1,0), -60, 60, friction=0)
         
