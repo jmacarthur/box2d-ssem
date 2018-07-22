@@ -169,7 +169,7 @@ class Memory (Framework):
         regen_parts = []
         pusher_parts = []
         for c in range(0,8):
-            self.add_static_polygon(box_vertices(0, 0, 7,10), c*pitch+xpos-11, -12+ypos)
+            self.add_static_polygon([(0,0), (7,0), (7,8), (5,10), (0,10)], c*pitch+xpos-11, -12+ypos)
 
             pusher = fixtureDef(shape=box_polygon_shape(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
                                       filter=filter(groupIndex=1))
@@ -491,7 +491,7 @@ class Memory (Framework):
         self.memory_returning_gate = self.vertical_rotating_bar(xpos-32,0,14*memory_rows, groundBody)
 
         # Wall on the left of the memory to create the final channel
-        memory_fixed = self.add_static_polygon(box_vertices(0, 0, 3,14*8), -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
+        memory_fixed = self.add_static_polygon([ (0,0), (3,0), (3,14*8), (0,14*8.5)], -10,0, filter=filter(groupIndex=0, categoryBits=0x0001, maskBits=0xFFFF))
         return (selector_holdoff, follower_holdoff)
 
     def connect_regenerators(self):
@@ -915,7 +915,7 @@ class Memory (Framework):
         self.basic_cam(-300,100, 100, [(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
-        self.basic_cam(800, 100, 80, [(0.25,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
+        self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
 
         # Cam 6: Split to instruction counter/reg
         self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True)
@@ -1185,19 +1185,15 @@ class Memory (Framework):
             print("Memory = {}".format(",".join(map(str, self.read_memory_array()))))
         if simulation_time > 0.41 and not self.instruction_tested:
             self.instruction_test()
-        if angleTarget >= (math.pi*2) and self.cams_on:
+        if angleTarget >= (math.pi*2*self.test_set.get("cycles",1)) and self.cams_on:
             angleTarget -= math.pi*2
-            self.cycles_complete += 1
-            if self.cycles_complete >= self.test_set.get("cycles",1):
-                self.cams_on = False
-                print("Sequence complete; cams off")
-                result = self.verify_results()
-                if result>0:
-                    sys.exit(result)
-                if self.auto_test_mode:
-                    self.stopFlag = True
-            else:
-                print("Entering cycle %d"%self.cycles_complete)
+            self.cams_on = False
+            print("Sequence complete; cams off")
+            result = self.verify_results()
+            if result>0:
+                sys.exit(result)
+            if self.auto_test_mode:
+                self.stopFlag = True
             
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
