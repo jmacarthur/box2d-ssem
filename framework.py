@@ -537,21 +537,3 @@ if __name__ == '__main__':
           'all of the frameworks.')
     exit(1)
 
-
-# Your framework classes should follow this format. If it is the 'foobar'
-# framework, then your file should be 'backends/foobar_framework.py' and you
-# should have a class 'FoobarFramework' that subclasses FrameworkBase. Ensure
-# proper capitalization for portability.
-import backends
-
-try:
-    framework_name = '%s_framework' % (fwSettings.backend.lower())
-    __import__('backends', globals(), fromlist=[framework_name], level=1)
-    framework_module = getattr(backends, framework_name)
-    Framework = getattr(framework_module,
-                        '%sFramework' % fwSettings.backend.capitalize())
-except Exception as ex:
-    print('Unable to import the back-end %s: %s' % (fwSettings.backend, ex))
-    print('Attempting to fall back on the pygame back-end.')
-
-    from backends.pygame_framework import PygameFramework as Framework

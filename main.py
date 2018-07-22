@@ -6,12 +6,12 @@ import math
 import random
 import sys
 
-from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
 from Box2D import b2CircleShape
 from constants import *
 from test_sets import test_set
 from emulator import SSEM_State
+from settings import fwSettings
 
 def box_vertices(x, y, width,height):
     return [(x,y), (x+width,y), (x+width,y+height), (x,y+height)]
@@ -37,7 +37,20 @@ WRONG_ACCUMULATOR = 1
 WRONG_IP = 2
 WRONG_MEMORY = 3
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--randomtest', action='store_true')
+    parser.add_argument('--headless', action='store_true')
+    parser.add_argument('testset', type=int)
+    args = parser.parse_args()
+    if args.headless:
+        from backends.headless_framework import HeadlessFramework as Framework
+    else:
+        from backends.pygame_framework import PygameFramework as Framework
 
+from framework import (main, Keys)
+    
 class Parts():
     """ This is a container class for parts within the SSEM. Parts are filled in gradually during setup. """
     def __init__(self):
@@ -975,7 +988,7 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
-    def __init__(self, testmode, randomtest, test_set_no):
+    def __init__(self, testmode, randomtest, test_set_no, headless):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
@@ -1205,10 +1218,5 @@ class Memory (Framework):
         if key == Keys.K_r:
             self.cams_on = not self.cams_on
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--test', action='store_true')
-    parser.add_argument('--randomtest', action='store_true')
-    parser.add_argument('testset', type=int)
-    args = parser.parse_args()
-    main(Memory(args.test, args.randomtest, args.testset))
+if __name__=="__main__":
+    main(Memory(args.test, args.randomtest, args.testset, args.headless))
