@@ -922,10 +922,10 @@ class Memory (Framework):
         self.basic_cam(150,300, 150, [(0.05,0.07), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], -1, self.memory_returning_gate, horizontal=True)
+        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.63,0.1), (0.93,0.05)], -1, self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, [(0.08,0.06), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], -1, self.parts.memory_follower_holdoff, horizontal=True)
+        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
@@ -933,7 +933,7 @@ class Memory (Framework):
         # Cam 6: Split to instruction counter/reg
         self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True)
 
-        # Cam 7: Instruction selector holdoff
+        # Cam 7: Instruction selector holdoff (veritcal)
         self.basic_cam(320, 300, 150, [(0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
@@ -941,7 +941,7 @@ class Memory (Framework):
         # regenerated data is written back, so we delay for a few
         # seconds here.  If gravity or timing changes, expect this to
         # break.
-        self.basic_cam(600, -430, 80, [(0.02, 0.02), (0.30,0.02)], 0, self.parts.sender_eject, horizontal=True)
+        self.basic_cam(600, -430, 80, [(0.02, 0.04), (0.30,0.04)], 0, self.parts.sender_eject, horizontal=True)
 
         # Cam 9: Resets accumulator on LDN.
         self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
