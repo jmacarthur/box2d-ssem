@@ -77,6 +77,22 @@ test_set = [  {        "name": "LDN Test",
                             0x00,
                             0xFF], 
         "expected_pc": 0x02
+    },
+
+    {
+        "name": "Sequenced instruction test",
+        "initial_accumulator": 0xF0,
+        "initial_memory": [ (CMP<<5)+6, # Skip next instruction if accumulator is negative. At the moment, CMP also acts as a sub so we must point it at a zero memory location.
+                            0x02,
+                            (SUB<<5)+1,
+                            0x08,
+                            0x10,
+                            0x20,
+                            0x00,
+                            0xFF], 
+        "expected_accumulator": 0xEE,
+        "cycles": 2
     }
-    
+
+              
  ]

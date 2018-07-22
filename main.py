@@ -4,6 +4,7 @@ import argparse
 import copy
 import math
 import random
+import sys
 
 from framework import (Framework, main, Keys)
 from Box2D.b2 import (edgeShape, circleShape, fixtureDef, polygonShape, filter)
@@ -29,6 +30,13 @@ def rotate_polygon_radians(polygon, r):
 
 def translate_polygon(points, xpos, ypos):
     return [(x+xpos,y+ypos) for (x,y) in points]
+
+# Error codes - return value of process
+SUCCESS = 0
+WRONG_ACCUMULATOR = 1
+WRONG_IP = 2
+WRONG_MEMORY = 3
+
 
 class Parts():
     """ This is a container class for parts within the SSEM. Parts are filled in gradually during setup. """
@@ -145,7 +153,7 @@ class Memory (Framework):
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
-        self.add_static_polygon(box_polygon_shape(xpos-10, ypos-10, 3, 20))
+        self.add_static_polygon(box_polygon_shape(xpos-12, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
         conrod.attachment_point = (xpos+pitch*8, ypos+15)
 
@@ -799,6 +807,7 @@ class Memory (Framework):
         self.groundBody = groundBody
         # Initial charge for main injector
         self.ball_bearing_block(0,190,cols=16)
+        self.add_static_polygon([ (0,20), (100,0), (100,5), (0,25)], -132, 220)
         self.injector_cranks = []
         self.parts.main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
@@ -861,8 +870,9 @@ class Memory (Framework):
 
         self.connect_regenerators()
 
-        self.add_static_polygon([ (-300,-600),(500,-550), (500,-610), (-300,-610)])
-        self.add_static_polygon([ (-400,-550),(-310,-600), (-310,-610), (-400,-610)])
+        # Large collection plates at the bottom
+        self.add_static_polygon([ (-300,-600),(700,-550), (500,-610), (-300,-610)])
+        self.add_static_polygon([ (-400,-400),(-310,-600), (-310,-610), (-400,-610)])
 
         # Instruction decoder ROM
         self.rom_followers = []
@@ -938,6 +948,7 @@ class Memory (Framework):
         self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
 
         # Cam 14: Divert to instruction pointer, on JRP (and JMP via the same lever).
+        # Cam pattern *nearly* identical to #13, please adjust to see if it works
         self.basic_cam(1100, 0, 100, [(0.5,0.2)], 2, self.instruction_inputs[JRP], horizontal=True, reverse_direction=True)
         self.distance_joint(self.parts.ip_diverter_lever, self.instruction_outputs[JRP])
 
@@ -952,7 +963,9 @@ class Memory (Framework):
         self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
 
         # Cam 18: Runs CMP.
+        # Cam pattern is identical to #9.
         self.basic_cam(900,200, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[CMP], horizontal=True, reverse_direction=False)
+        
         self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
         self.distance_joint(self.parts.cmp_injector, self.instruction_outputs[CMP])
 
@@ -970,6 +983,7 @@ class Memory (Framework):
         self.parts = Parts()
         self.prewritten_test = False
         self.random_test = False
+        self.cycles_complete = 0
         settle_delay = 400
         if randomtest:
             self.random_test = True
@@ -1086,6 +1100,7 @@ class Memory (Framework):
         if self.prewritten_test:
             if expected_accumulator != accumulator:
                 print("FAIL: Expected accumulator {}, actual result {}".format(expected_accumulator, accumulator))
+                return WRONG_ACCUMULATOR
                 return
             expected_memory = copy.copy(self.test_set["initial_memory"])
             if "memory_update" in self.test_set:
@@ -1094,26 +1109,27 @@ class Memory (Framework):
 
             if expected_pc != pc:
                 print("FAIL: Expected PC {}, actual result {}".format(expected_pc, pc))
-                return
+                return WRONG_IP
 
             for a in range(0,8):
                 if expected_memory[a] != memory[a]:
                     print("FAIL: At address {}, expected memory {} but found {}".format(a,expected_memory[a], memory[a]))
-                    return
+                    return WRONG_MEMORY
 
         # Verify against emulator
         if accumulator != self.expected_state.accumulator:
             print("FAIL: Emulated accumulator {}, actual result {}".format(self.expected_state.accumulator, accumulator))
-            return
+            return WRONG_ACCUMULATOR
         if pc != self.expected_state.pc:
             print("FAIL: Emulated PC {}, actual result {}".format(self.expected_state.pc, pc))
-            return
+            return WRONG_IP
         for a in range(0,8):
             if self.expected_state.mem[a] != memory[a]:
                 print("FAIL: At address {}, emulated memory {} but found {}".format(a,self.expected_state.mem[a], memory[a]))
-                return
+                return WRONG_MEMORY
             
         print("PASS")
+        return SUCCESS
 
     def Step(self, settings):
         super(Memory, self).Step(settings)
@@ -1137,6 +1153,11 @@ class Memory (Framework):
                                     filter=filters[plane])]
                                 
                             ),plane)
+            # Fake ball lift - returns falling ball bearings to the top
+            if y<-650:
+                self.world.DestroyBody(b)
+                self.add_ball_bearing(-50, 250, 0)
+                
         if self.init_pulse < 25:
             bit = 0
             for d in self.accumulator_toggles:
@@ -1165,12 +1186,18 @@ class Memory (Framework):
         if simulation_time > 0.41 and not self.instruction_tested:
             self.instruction_test()
         if angleTarget >= (math.pi*2) and self.cams_on:
-            angleTarget = math.pi*2
-            self.cams_on = False
-            print("Sequence complete; cams off")
-            self.verify_results()
-            if self.auto_test_mode:
-                self.stopFlag = True
+            angleTarget -= math.pi*2
+            self.cycles_complete += 1
+            if self.cycles_complete >= self.test_set.get("cycles",1):
+                self.cams_on = False
+                print("Sequence complete; cams off")
+                result = self.verify_results()
+                if result>0:
+                    sys.exit(result)
+                if self.auto_test_mode:
+                    self.stopFlag = True
+            else:
+                print("Entering cycle %d"%self.cycles_complete)
             
         for d in self.all_cam_drives:
             angleError = d.angle - angleTarget
