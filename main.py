@@ -164,8 +164,8 @@ class Memory (Framework):
             for c in range(start_at,8):
                 exit_slope = polygonShape(vertices=[(0,0), (slope_x,-slope_y), (slope_x,-slope_y-3), (0,-3) ])
                 self.add_static_polygon(exit_slope, c*pitch+xpos+offset, ypos-10, filter=filterB)
-                exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch))
-            self.transfer_bands.append((ypos-10-slope_y+10, ypos-10-slope_y, exit_transfer_band_x, 1))
+                exit_transfer_band_x.append((c*pitch+xpos+slope_x, c*pitch+xpos+slope_x+pitch-5))
+            self.transfer_bands.append((ypos-10-slope_y, ypos-10-slope_y-3, exit_transfer_band_x, 1))
 
         self.add_static_circle(xpos-10, ypos+15, 5, filterA)
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
@@ -834,8 +834,8 @@ class Memory (Framework):
 
         self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=470) # Diverter 2a. Discard reader-pulse data.
         self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
-        self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
-        self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=206, slope_y=310) # Diverter 3; splits to instruction reg/PC
+        self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=320, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
+        self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=200, slope_y=310) # Diverter 3; splits to instruction reg/PC
         
         # PC injector
         pc_injector_x = 230
