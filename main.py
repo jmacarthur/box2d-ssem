@@ -906,6 +906,24 @@ class Memory (Framework):
     def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3):
         follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction, bump_height=bump_height)
         if attachment_part is not None: self.distance_joint(follower_body, attachment_part)
+
+    def rake_cam(self, xpos, ypos):
+        attachment_body = self.groundBody
+        radius = 30
+        disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
+        cam_body = self.add_multifixture([disc_fixture], xpos, ypos)
+        cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
+        cam_driver.motorSpeed = 0.5
+
+        crank_fixture = fixtureDef(shape=polygonShape(vertices=box_vertices(0,0,50,3)),density=1.0,filter=filters[2])
+        crank_body = self.add_multifixture([crank_fixture], xpos+radius, ypos)
+        self.revolving_joint(cam_body, crank_body, (xpos+radius,ypos))
+
+        slider_fixture = fixtureDef(shape=polygonShape(vertices=box_vertices(0,0,50,3)),density=1.0,filter=filters[2])
+        pusher_fixture = fixtureDef(shape=polygonShape(vertices=[(50,0), (60,0), (58,5), (52,5)]),density=1.0,filter=filters[0])
+        slider_body = self.add_multifixture([crank_fixture,pusher_fixture], xpos+radius+50, ypos)
+        self.revolving_joint(crank_body, slider_body, (xpos+radius+50,ypos))
+        self.slide_joint(attachment_body, slider_body, (1,0), -60, 60, friction=0)
         
     def setup_cams(self):
 
@@ -1034,6 +1052,10 @@ class Memory (Framework):
 
         self.setup_ssem()
         self.setup_cams()
+
+        # Additional parts:
+        self.rake_cam(-80,195)
+
         
         self.expected_state = SSEM_State()
         if self.random_test:
