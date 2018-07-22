@@ -91,8 +91,25 @@ test_set = [  {        "name": "LDN Test",
                             0x00,
                             0xFF], 
         "expected_accumulator": 0xEE,
+        "expected_pc": 3,
+        "cycles": 2
+    },
+              {
+        "name": "SUB then LDN",
+        "initial_accumulator": 0xF0,
+        "initial_memory": [ (SUB<<5)+1, # Skip next instruction if accumulator is negative. At the moment, CMP also acts as a sub so we must point it at a zero memory location.
+                            0x02,
+                            (LDN<<5)+3,
+                            0x08,
+                            0x10,
+                            0x20,
+                            0x00,
+                            0xFF], 
+        "expected_accumulator": 0x08,
+        "expected_pc": 3,
         "cycles": 2
     }
+
 
               
  ]
