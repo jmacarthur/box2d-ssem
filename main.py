@@ -248,7 +248,7 @@ class Memory (Framework):
                                     xpos+c*pitch-pitch+3.5+output_offset_x, ypos+pitch+9, filter=filters[4])
             # Bottom-side channels, for the output            
             if c != 0 or not comparison_output:
-                self.add_static_polygon([ (-1,0), (1,0), (1,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
+                self.add_static_polygon([ (-1,0), (2,0), (2,sub_y_pitch*c+10), (-1,sub_y_pitch*c+10) ],
                                         xpos+c*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
 
         # The leftmost output channel can be diverted to support 'negative detect' for the CMP operation.
@@ -819,7 +819,7 @@ class Memory (Framework):
         self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=470) # Diverter 2a. Discard reader-pulse data.
         self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=352, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
-        self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=208, slope_y=310) # Diverter 3; splits to instruction reg/PC
+        self.parts.diverter_3 = self.diverter_set(-10,-158, groundBody, slope_x=206, slope_y=310) # Diverter 3; splits to instruction reg/PC
         
         # PC injector
         pc_injector_x = 230
@@ -882,7 +882,7 @@ class Memory (Framework):
         self.add_instruction_cranks(groundBody, 550, 140)
        
         #self.ball_bearing_lift(-200,-400,groundBody)
-        self.parts.sender_eject = self.memory_sender(200,self.memory_sender_y, groundBody)
+        self.parts.sender_eject = self.memory_sender(198,self.memory_sender_y, groundBody)
         self.connect_memory()
 
         # Add one final transfer band to move everything back into band 0
@@ -906,7 +906,7 @@ class Memory (Framework):
         # Cam 1: Fires PC injector, reading PC into address reg.
         self.basic_cam(300,200, 100, [(0.0,0.02)], 1, self.parts.pc_injector_raiser)
         # Cam 2: Main memory selector lifter
-        self.basic_cam(150,300, 150, [(0.1,0.02), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
+        self.basic_cam(150,300, 150, [(0.05,0.07), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
         self.basic_cam(-400,120, 100, [(0.05, 0.04), (0.31,0.1), (0.63,0.1), (0.93,0.05)], -1, self.memory_returning_gate, horizontal=True)
@@ -928,14 +928,14 @@ class Memory (Framework):
         # regenerated data is written back, so we delay for a few
         # seconds here.  If gravity or timing changes, expect this to
         # break.
-        self.basic_cam(600, -430, 80, [(0.30,0.02)], 0, self.parts.sender_eject, horizontal=True)
+        self.basic_cam(600, -430, 80, [(0.02, 0.02), (0.30,0.02)], 0, self.parts.sender_eject, horizontal=True)
 
         # Cam 9: Resets accumulator on LDN.
         self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 11: Instruction follower holdoff
-        self.basic_cam(1000, 100, 100, [(0.15,0.25)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
+        self.basic_cam(1000, 100, 100, [(0.05,0.35)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
         
         # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
         # will fall through the memory and be discarded.
