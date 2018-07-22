@@ -36,6 +36,7 @@ SUCCESS = 0
 WRONG_ACCUMULATOR = 1
 WRONG_IP = 2
 WRONG_MEMORY = 3
+UNSUPPORTED_OP = 0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -1072,7 +1073,9 @@ class Memory (Framework):
         print("Setting initial accumulator to {}".format(self.initial_accumulator))
         for i in range(0,self.test_set.get("cycles",1)):
             self.expected_state.advance()
-        print("--- simulation complete at PC={}".format(self.expected_state.pc))
+        if self.expected_state.unsupported_flag:
+            print("Exiting because unsupported operations were performed in the emulator.")
+            sys.exit(0)
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
