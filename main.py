@@ -951,10 +951,10 @@ class Memory (Framework):
         self.basic_cam(150,300, 150, [(0.05,0.07), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.63,0.1), (0.93,0.05)], -1, self.memory_returning_gate, horizontal=True)
+        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.63,0.1), (0.95,0.03)], -1, self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.94,0.05)], -1, self.parts.memory_follower_holdoff, horizontal=True)
+        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.96,0.03)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
