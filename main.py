@@ -42,8 +42,10 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store_true')
     parser.add_argument('--randomtest', action='store_true')
     parser.add_argument('--headless', action='store_true')
+    parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
+    print("Using random seed {}".format(args.seed))
     if args.headless:
         from backends.headless_framework import HeadlessFramework as Framework
     else:
@@ -988,7 +990,7 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
-    def __init__(self, testmode, randomtest, test_set_no, headless):
+    def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0):
         super(Memory, self).__init__()
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
@@ -1001,6 +1003,8 @@ class Memory (Framework):
         if randomtest:
             self.random_test = True
             self.auto_test_mode = True
+            if randomseed > 0:
+                random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
         elif testmode:
@@ -1046,6 +1050,7 @@ class Memory (Framework):
         print("Setting initial accumulator to {}".format(self.initial_accumulator))
         for i in range(0,self.test_set.get("cycles",1)):
             self.expected_state.advance()
+        print("--- simulation complete at PC={}".format(self.expected_state.pc))
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
@@ -1134,7 +1139,7 @@ class Memory (Framework):
         if accumulator != self.expected_state.accumulator:
             print("FAIL: Emulated accumulator {}, actual result {}".format(self.expected_state.accumulator, accumulator))
             return WRONG_ACCUMULATOR
-        if pc != self.expected_state.pc:
+        if (pc%memory_rows) != self.expected_state.pc:
             print("FAIL: Emulated PC {}, actual result {}".format(self.expected_state.pc, pc))
             return WRONG_IP
         for a in range(0,8):
@@ -1220,4 +1225,4 @@ class Memory (Framework):
             self.cams_on = not self.cams_on
 
 if __name__=="__main__":
-    main(Memory(args.test, args.randomtest, args.testset, args.headless))
+    main(Memory(args.test, args.randomtest, args.testset, args.headless, args.seed))
