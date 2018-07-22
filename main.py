@@ -286,7 +286,7 @@ class Memory (Framework):
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
         reset_lever.attachment_point=(xpos,ypos-180)
-        self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=0)
+        self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=0.01)
 
         # Transfer bands in negative reader channels (discards)
         if discard_bands:
@@ -1167,7 +1167,7 @@ class Memory (Framework):
             print("FAIL: Emulated accumulator {}, actual result {}".format(self.expected_state.accumulator, accumulator))
             return WRONG_ACCUMULATOR
         if (pc%memory_rows) != self.expected_state.pc:
-            print("FAIL: Emulated PC {}, actual result {}".format(self.expected_state.pc, pc))
+            print("FAIL: Emulated PC {}, actual result {}".format(self.expected_state.pc, (pc%memory_rows)))
             return WRONG_IP
         for a in range(0,8):
             if self.expected_state.mem[a] != memory[a]:
