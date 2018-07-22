@@ -247,10 +247,12 @@ class Memory (Framework):
 
             # Baffles which slow down every even channel
             if c%2 == 0:
-                self.add_static_polygon([ (pitch-10,-3), (pitch-7,-3), (pitch-7,-6), (pitch-10,-6) ],
+                self.add_static_polygon([ (pitch-10,-3), (pitch-6.5,-3), (pitch-8,-6), (pitch-10,-6) ],
                                         xpos+c*pitch-pitch+3.5, ypos+pitch+5, filter=filters[4])
                 self.add_static_polygon([ (pitch-1,0), (pitch,0), (pitch,3), (pitch-1,3) ],
                                         xpos+c*pitch-pitch+3.5, ypos+pitch-10, filter=filters[4])
+                self.add_static_polygon([ (pitch-10,-3), (pitch-6.5,-3), (pitch-8,-6), (pitch-10,-6) ],
+                                        xpos+c*pitch-pitch+3.5, ypos+pitch-12, filter=filters[4])
 
         for c in range(0,lines+1):
             # Large static bits that form input channels
@@ -283,9 +285,13 @@ class Memory (Framework):
         reset_poly = rotate_polygon_radians(box_vertices(0, 0, reset_len, 5), reset_angle)
         if is_actually_adder:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+10, ypos-sub_y_pitch*lines, filters[3])
+            reset_lever.attachment_point=(xpos,ypos-180)
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
-        reset_lever.attachment_point=(xpos,ypos-180)
+            reset_lever.attachment_point=(xpos,ypos-180)
+            return_crank = self.crank_left_up(xpos-300,ypos+10, attachment_body, weight=10)
+            self.distance_joint(reset_lever, return_crank)
+
         self.slide_joint(attachment_body, reset_lever, (1,0), -20,20, friction=0.01)
 
         # Transfer bands in negative reader channels (discards)
@@ -967,7 +973,7 @@ class Memory (Framework):
         self.basic_cam(600, -430, 80, [(0.02, 0.04), (0.30,0.04)], 0, self.parts.sender_eject, horizontal=True)
 
         # Cam 9: Resets accumulator on LDN.
-        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
+        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], 0, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 11: Instruction follower holdoff (horizontal)
