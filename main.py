@@ -998,7 +998,7 @@ class Memory (Framework):
         self.basic_cam(600, -430, 80, [(0.02, 0.04), (0.30,0.04)], 0, self.parts.sender_eject, horizontal=True)
 
         # Cam 9: Resets accumulator on LDN.
-        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], 0, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False)
+        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], 0, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False, bump_height=4)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 11: Instruction follower holdoff (horizontal)
