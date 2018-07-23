@@ -1064,6 +1064,7 @@ class Memory (Framework):
                 random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
+            self.test_set['cycles'] = 2
         elif testmode:
             self.auto_test_mode = True
             self.prewritten_test = True
