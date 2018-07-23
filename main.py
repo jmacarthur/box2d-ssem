@@ -702,7 +702,7 @@ class Memory (Framework):
 	                                   collideConnected=False)
 
             
-    def add_cam(self, xpos, ypos, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3):
+    def add_cam(self, xpos, ypos, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3, slow_rise=False):
         """ Very basic function which just adds a motorised circle with a bump.
         phase is between 0 and 1 and adjusts initial rotation. 
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
@@ -720,20 +720,32 @@ class Memory (Framework):
         bump_height = radius+bump_height
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         bump_fixtures = []
-        for (start, length) in bumps:
-            ang = start
-            bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
-            points = 1
-            # Max points in a polygon is 15 at the moment.
-            while ang < (start+length) and points < 15:
-                ang += 0.02
-                bump_points.append( ( bump_height*math.cos(-ang*math.pi*2), bump_height*math.sin(-ang*math.pi*2)) )
-                points += 1
-                if points == 15:
-                    print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
 
-            bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
+        if slow_rise:
+            ang=bumps[0][0]
+            bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
+            height = radius
+            for point in range(0,14):
+                ang += 0.015
+                height += 0.3
+                bump_points.append( ( height*math.cos(-ang*math.pi*2), height*math.sin(-ang*math.pi*2)) )
+            bump_points.append(( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)))
             bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0]))
+        else:
+            for (start, length) in bumps:
+                ang = start
+                bump_points = [( radius*math.cos(-ang*math.pi*2), radius*math.sin(-ang*math.pi*2)) ]
+                points = 1
+                # Max points in a polygon is 15 at the moment.
+                while ang < (start+length) and points < 15:
+                    ang += 0.02
+                    bump_points.append( ( bump_height*math.cos(-ang*math.pi*2), bump_height*math.sin(-ang*math.pi*2)) )
+                    points += 1
+                    if points == 15:
+                        print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
+
+                bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
+                bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0]))
         cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos)
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
         cam_driver.motorSpeed = 0
@@ -853,8 +865,10 @@ class Memory (Framework):
 
 
         sub_pos_x = -15
-        sub_pos_y = -200
+        sub_pos_y = -220
         self.parts.accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
+        self.dropper = self.slow_drop_unit(groundBody, sub_pos_x-18, sub_pos_y+40)
+        
         skip_lever_x = sub_pos_x - 200
         skip_lever_y = sub_pos_y - 200
         a = fixtureDef(shape=polygonShape(vertices=[(-50,-32), (0,-30), (0,-25), (-50,-30)]), filter=filters[0], density=1.0)
@@ -910,8 +924,10 @@ class Memory (Framework):
         # Add one final transfer band to move everything back into band 0
         self.transfer_bands.append((-550+10, -550, [ (-300,800)], 1))
 
-    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3):
-        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset, horizontal=horizontal, reverse_direction=reverse_direction, bump_height=bump_height)
+    def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3, slow_rise=False):
+        follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset,
+                                     horizontal=horizontal, reverse_direction=reverse_direction,
+                                     bump_height=bump_height, slow_rise=slow_rise)
         if attachment_part is not None: self.distance_joint(follower_body, attachment_part)
 
     def rake_cam(self, xpos, ypos):
@@ -933,6 +949,24 @@ class Memory (Framework):
         slider_body = self.add_multifixture([slider_fixture,pusher_fixture], xpos+radius+50, ypos)
         self.revolving_joint(crank_body, slider_body, (xpos+radius+50,ypos))
         self.slide_joint(attachment_body, slider_body, (1,0), -60, 60, friction=0)
+
+    def slow_drop_unit(self, attachment_body, xpos, ypos):
+        dropper_fixtures = []
+        for i in range(0,9):
+            self.add_static_polygon([ (0,0), (15,0), (15,3), (0,3)], xpos+pitch*i, ypos)
+            if(i<8):
+                dropper_fixtures.append(fixtureDef(shape=polygonShape(vertices=box_vertices(pitch*i,-4,4+i,3)),density=1.0,filter=filters[0]))
+
+        dropper_body = self.add_multifixture(dropper_fixtures, xpos, ypos)
+        self.slide_joint(attachment_body, dropper_body, (1,0), -60, 60, friction=0.1)
+        dropper_body.attachment_point=(xpos,ypos)
+        # End stop
+        self.add_static_polygon([ (0,0), (15,0), (15,3), (0,3)], xpos+pitch*8+8, ypos-3)
+
+        # Return lever
+        return_crank = self.crank_right_up(xpos+200,ypos-20, attachment_body, weight=10)
+        self.distance_joint(return_crank, dropper_body, posB=(xpos+150, ypos))
+        return dropper_body
         
     def setup_cams(self):
 
@@ -1013,6 +1047,9 @@ class Memory (Framework):
 
         # Cam 19: Inc PC.
         follower_body = self.add_cam(-95,-450, 60, [(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
+
+        # Cam 20: Slow dropper
+        self.basic_cam(-300,-100, 80, [(0.65,0)], 8, self.dropper, horizontal=True, reverse_direction=True, bump_height=5, slow_rise=True)
         
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
