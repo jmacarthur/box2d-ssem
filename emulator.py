@@ -49,7 +49,7 @@ class SSEM_State():
         elif instruction_op == LDN:
             self.accumulator = twos_comp(-self.mem[instruction_address % memory_rows])
         elif instruction_op == STO:
-            self.mem[instruction_address % memory_rows] = self.accumulator
+            self.mem[instruction_address % memory_rows] = self.accumulator & ((2<<memory_columns)-1)
         elif instruction_op == SUB or instruction_op == SB2:
             self.accumulator = twos_comp(self.accumulator - self.mem[instruction_address % memory_rows])
         elif instruction_op == CMP:
@@ -71,7 +71,7 @@ class SSEM_State():
 
     def set_random(self):
         self.pc = random.randint(0,memory_rows-1)
-        self.mem = [random.randint(0,255)+i for i in range(0,memory_rows)]
+        self.mem = [random.randint(0,255) for i in range(0,memory_rows)]
         self.accumulator = random.randint(0,(1<<memory_columns)-1)
         
 def main():
