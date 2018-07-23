@@ -187,7 +187,9 @@ class Memory (Framework):
         for c in range(0,8):
             self.add_static_polygon([(0,0), (7,0), (7,8), (5,10), (0,10)], c*pitch+xpos-11, -12+ypos)
 
-            pusher = fixtureDef(shape=box_polygon_shape(c*pitch+xpos-11,-12+ypos+11,2,10), density=1.0,
+            pusher_poly = [(0,0), (2,0), (2,10), (0,12)]
+            pusher_poly = translate_polygon(pusher_poly, c*pitch+xpos-11, -12+ypos+11)
+            pusher = fixtureDef(shape=polygonShape(vertices=pusher_poly), density=1.0,
                                       filter=filter(groupIndex=1))
             pusher_parts.append(pusher)
 
