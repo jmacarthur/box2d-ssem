@@ -989,8 +989,8 @@ class Memory (Framework):
         # Cam 6: Split to instruction counter/reg
         self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True)
 
-        # Cam 7: Instruction selector holdoff (veritcal)
-        self.basic_cam(320, 300, 150, [(0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
+        # Cam 7: Instruction selector holdoff (vertical)
+        self.basic_cam(320, 300, 150, [(0.04, 0.2), (0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
 
         # Cam 8: Sender eject.
         # Note timing hazard. We cannot raise selector and eject until
@@ -1004,7 +1004,7 @@ class Memory (Framework):
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
         # Cam 11: Instruction follower holdoff (horizontal)
-        self.basic_cam(1000, 100, 100, [(0.15,0.25)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
+        self.basic_cam(1000, 100, 100, [(0.02, 0.2), (0.15,0.25)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
         
         # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
         # will fall through the memory and be discarded.
