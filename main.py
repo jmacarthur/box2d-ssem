@@ -835,6 +835,7 @@ class Memory (Framework):
         # Initial charge for main injector
         self.ball_bearing_block(0,190,cols=16)
         self.add_static_polygon([ (0,20), (100,0), (100,5), (0,25)], -132, 220)
+        self.add_static_polygon([ (0,0), (3,0), (3,20), (0,20)], -132, 240)
         self.injector_cranks = []
         self.parts.main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
@@ -914,6 +915,10 @@ class Memory (Framework):
         self.parts.sender_eject = self.memory_sender(198,self.memory_sender_y, groundBody)
         self.connect_memory()
 
+        # A guard which stops waste data from the subtractor falling into the instruction register
+        self.add_static_polygon([ (0,0), (50,50), (50,53), (0,3)], 120, self.memory_sender_y-10)
+
+        
         # Add one final transfer band to move everything back into band 0
         self.transfer_bands.append((-550+10, -550, [ (-300,800)], 1))
 
