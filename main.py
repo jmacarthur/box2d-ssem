@@ -1102,24 +1102,32 @@ class Memory (Framework):
         self.rake_cam(-80,195)
 
         
-        self.expected_state = SSEM_State()
+        self.initial_state = SSEM_State()
         if self.random_test:
-            self.expected_state.set_random()
+            while True:
+                self.initial_state.set_random()
+                self.final_state = copy.copy(self.initial_state)
+                for i in range(0,self.test_set.get("cycles",1)):
+                    self.final_state.advance()
+                if self.final_state.unsupported_flag:
+                    print("Regenerating initial state because unsupported operations were performed in the emulator.")
+                else:
+                    break
         else:
-            self.expected_state.accumulator = self.test_set.get("initial_accumulator", 0)
-            self.expected_state.pc = self.test_set.get("initial_pc", 0)
-            self.expected_state.mem = self.test_set.get("initial_memory")
+            self.initial_state.accumulator = self.test_set.get("initial_accumulator", 0)
+            self.initial_state.pc = self.test_set.get("initial_pc", 0)
+            self.initial_state.mem = self.test_set.get("initial_memory")
+            self.final_state = copy.copy(self.initial_state)
+            for i in range(0,self.test_set.get("cycles",1)):
+                self.final_state.advance()
+            if self.final_state.unsupported_flag:
+                print("Exiting because unsupported operations were performed in the emulator.")
+                sys.exit(0)
 
-        self.set_initial_memory(self.expected_state.mem)
-        self.initial_accumulator =  self.expected_state.accumulator
-        self.initial_pc = self.expected_state.pc
-
-        print("Setting initial accumulator to {}".format(self.initial_accumulator))
-        for i in range(0,self.test_set.get("cycles",1)):
-            self.expected_state.advance()
-        if self.expected_state.unsupported_flag:
-            print("Exiting because unsupported operations were performed in the emulator.")
-            sys.exit(0)
+        self.expected_state = self.final_state
+        self.set_initial_memory(self.initial_state.mem)
+        self.initial_accumulator =  self.initial_state.accumulator
+        self.initial_pc = self.initial_state.pc
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
