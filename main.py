@@ -81,11 +81,13 @@ class Memory (Framework):
                 self.revolving_joint(bodyA=support, bodyB=attachment_body, anchor=(xpos+pos[0], ypos+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body, anchor=(xpos+1.5+pos[0], ypos+30+pos[1]))
                 self.revolving_joint(bodyA=support, bodyB=bar_body_2, anchor=(xpos+1.5+pos[0], ypos+15+pos[1]))
-            bar_body.attachment_point=(xpos+4.5, ypos+height/3)
+            bar_body.attachment_point=(4.5, height/3)
+            bar_body.origin=(xpos, ypos)
             return bar_body
         else:
             body = self.add_dynamic_polygon(box_vertices(0, 0, 3,height), xpos,ypos, filters[0])
-            body.attachment_point = (xpos+1.5,ypos+height/2)
+            body.attachment_point = (1.5,height/2)
+            body.origin = (xpos, ypos)
             self.slide_joint(attachment_body, body, (1,0), 0, 20, friction=0)
             return body
 
@@ -171,7 +173,8 @@ class Memory (Framework):
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
         self.add_static_polygon(box_polygon_shape(xpos-12, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
-        conrod.attachment_point = (xpos+pitch*8, ypos+15)
+        conrod.attachment_point = (pitch*8, 15)
+        conrod.origin=(xpos,ypos)
 
         crank_xpos = xpos+pitch*8+20
         if mirror:
@@ -202,7 +205,8 @@ class Memory (Framework):
             crank_list.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             
         pusher_body = self.add_multifixture(pusher_parts)
-        pusher_body.attachment_point = (xpos+8*pitch,ypos+10)
+        pusher_body.attachment_point = (8*pitch,10)
+        pusher_body.origin = (xpos, ypos)
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0, friction=0)
         return pusher_body
 
@@ -347,7 +351,8 @@ class Memory (Framework):
         left = fixtureDef(shape=box_polygon_shape(0,0.5,10,6), density=1.0, filter=filters[0])
         right = fixtureDef(shape=box_polygon_shape(17,0.5,10,6), density=1.0, filter=filters[0])
         drive_rect = self.add_multifixture([left,right], xpos, ypos)
-        drive_rect.attachment_point=(xpos+5, ypos+3.5)
+        drive_rect.attachment_point=(5, 3.5)
+        drive_rect.origin=(xpos,ypos)
         self.slide_joint(attachment_body, drive_rect, (1,0), 0, 10, friction=0)
         self.add_static_polygon(box_polygon_shape(0,-7,17,7), xpos, ypos)
         self.add_static_polygon(box_polygon_shape(0,7,10,20), xpos, ypos)# Blocks left
@@ -437,14 +442,16 @@ class Memory (Framework):
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=0)
 
         selector_holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
-        selector_holdoff_bar.attachment_point = (xpos+220,ypos+130)
+        selector_holdoff_bar.attachment_point = (220,130)
+        selector_holdoff_bar.origin=(xpos, ypos)
         # Row followers
         for row in range(0,8):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
             follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
-            follower.attachment_point = (xpos+200,0)
+            follower.attachment_point = (200,0)
+            follower.origin = (xpos, 0)
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
 
@@ -535,7 +542,8 @@ class Memory (Framework):
         crank_fixture_3 = fixtureDef(shape=box_polygon_shape(-20,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
         crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
-        crank.attachment_point=(xpos,ypos+output_length)
+        crank.attachment_point=(0,output_length)
+        crank.origin=(xpos,ypos)
         return crank
 
     def crank_right_up(self, xpos, ypos, attachment_body, output_length=20, weight=10):
@@ -544,7 +552,8 @@ class Memory (Framework):
         crank_fixture_3 = fixtureDef(shape=box_polygon_shape(10,-5,10,10), density=weight, filter=filters[0]) # Heavy weight
         crank = self.add_multifixture([crank_fixture_1, crank_fixture_2, crank_fixture_3], xpos, ypos)
         self.revolving_joint(crank, attachment_body, (xpos,ypos))
-        crank.attachment_point=(xpos,ypos+output_length)
+        crank.attachment_point=(0,output_length)
+        crank.origin=(xpos,ypos)
         return crank
 
     
@@ -565,24 +574,30 @@ class Memory (Framework):
             self.slide_joint(attachment_body, sensor, (0,1), 0, 15, friction=False)
             blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=translate_polygon(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
-        blocker_set.attachment_point=(xpos+10,ypos)
+        blocker_set.attachment_point=(10,0)
+        blocker_set.origin=(xpos,ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
         
         crank = self.crank_left_up(xpos-30, ypos-20, attachment_body)
         self.distance_joint(crank, blocker_set)
-        blocker_set.attachment_point=(xpos+c*pitch,ypos+7)
+        blocker_set.attachment_point=(c*pitch,7)
+        blocker_set.origin=(xpos, ypos)
         return blocker_set
     # Interface functions to PyBox2D
 
     def distance_joint(self, bodyA, bodyB, posA=None, posB=None):
+        if 'origin' not in bodyA.__dict__:
+            bodyA.origin = (0,0)
+        if 'origin' not in bodyB.__dict__:
+            bodyB.origin = (0,0)
         if posA is None: posA = bodyA.attachment_point
         if posB is None: posB = bodyB.attachment_point
+        
         self.world.CreateDistanceJoint(bodyA=bodyA,
 	                               bodyB=bodyB,
-	                               anchorA=(posA[0]*self.scale, posA[1]*self.scale),
-	                               anchorB=(posB[0]*self.scale, posB[1]*self.scale),
+	                               anchorA=((posA[0]+bodyA.origin[0])*self.scale, (posA[1]+bodyA.origin[1])*self.scale),
+	                               anchorB=((posB[0]+bodyB.origin[0])*self.scale, (posB[1]+bodyB.origin[1])*self.scale),
 	                               collideConnected=False)
-        self.distance_links.append((bodyA, posA, bodyB, posB))
         
     
     def add_static_polygon(self,vertices, xpos=0, ypos=0, filter=filters[0]):
@@ -815,10 +830,12 @@ class Memory (Framework):
                 block_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30+offset, ypos-i*andgate_spacing_y-50))
             self.slide_joint(attachment_body, block_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
-            block_slider.attachment_point = (xpos+i*30-30, ypos-i*andgate_spacing_y-50)
+            block_slider.attachment_point = (i*30-30, -i*andgate_spacing_y-50)
+            block_slider.origin=(xpos,ypos)
             self.instruction_outputs.append(block_slider)
             pusher_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
-            pusher_slider.attachment_point = (xpos+i*30+60, ypos-i*andgate_spacing_y-70)
+            pusher_slider.attachment_point = (i*30+60, -i*andgate_spacing_y-70)
+            pusher_slider.origin=(xpos, ypos)
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
@@ -975,6 +992,7 @@ class Memory (Framework):
         # Return lever
         return_crank = self.crank_right_up(xpos+200,ypos-20, attachment_body, weight=10)
         self.distance_joint(return_crank, dropper_body, posB=(xpos+150, ypos))
+
         return dropper_body
         
     def setup_cams(self):
@@ -1080,7 +1098,7 @@ class Memory (Framework):
                 random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
-            self.test_set['cycles'] = 2
+            self.test_set['cycles'] = 1
         elif testmode:
             self.auto_test_mode = True
             self.prewritten_test = True
