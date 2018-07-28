@@ -444,6 +444,7 @@ class Memory (Framework):
             for selector_no in range(0,selector_rods+1):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
             follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
+            follower.attachment_point = (xpos+200,0)
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
 
@@ -492,7 +493,7 @@ class Memory (Framework):
         # Add weights which bias the rows
         for col in range(0,8):
             crank = self.crank_left_up(xpos-250+30*col, ypos+14*col-30, groundBody, output_length=40, weight=50)
-            self.distance_joint(ejectors[col], crank, ejectors[col].attachment_point, crank.attachment_point)
+            self.distance_joint(ejectors[col], crank)
                               
         self.memory_followers = []
         self.memory_selectors = []
@@ -500,7 +501,7 @@ class Memory (Framework):
         
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
-            self.distance_joint(ejectors[r], self.memory_followers[r], (200,14*r+10), (200+35, 14*r+10))
+            self.distance_joint(ejectors[r], self.memory_followers[r])
 
         # Gate returner to push all the memory rows back in
         self.memory_returning_gate = self.vertical_rotating_bar(xpos-32,0,14*memory_rows, groundBody)
@@ -564,10 +565,11 @@ class Memory (Framework):
             self.slide_joint(attachment_body, sensor, (0,1), 0, 15, friction=False)
             blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=translate_polygon(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
+        blocker_set.attachment_point=(xpos+10,ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
         
         crank = self.crank_left_up(xpos-30, ypos-20, attachment_body)
-        self.distance_joint(crank, blocker_set, crank.attachment_point, (xpos+10,ypos))
+        self.distance_joint(crank, blocker_set)
         blocker_set.attachment_point=(xpos+c*pitch,ypos+7)
         return blocker_set
     # Interface functions to PyBox2D
