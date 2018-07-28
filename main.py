@@ -580,6 +580,7 @@ class Memory (Framework):
 	                               anchorA=(posA[0]*self.scale, posA[1]*self.scale),
 	                               anchorB=(posB[0]*self.scale, posB[1]*self.scale),
 	                               collideConnected=False)
+        self.distance_links.append((bodyA, posA, bodyB, posB))
         
     
     def add_static_polygon(self,vertices, xpos=0, ypos=0, filter=filters[0]):
@@ -1102,6 +1103,7 @@ class Memory (Framework):
         self.ball_bearings = []
         self.static_polygons = []
         self.dynamic_bodies = []
+        self.distance_links = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
 

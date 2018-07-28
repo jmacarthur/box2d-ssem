@@ -292,14 +292,19 @@ class PygameFramework(FrameworkBase):
                           doc='The offset of the top-left corner of the screen')
 
     def overlay_draw(self):
-        for shape in self.static_polygons:
-            self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
-        for body in self.dynamic_bodies:
-            for fixture in body.fixtures:
-                if isinstance(fixture.shape, b2CircleShape):
-                    self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
-                else:
-                    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
+        #for shape in self.static_polygons:
+        #    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
+        #for body in self.dynamic_bodies:
+        #    for fixture in body.fixtures:
+        #        if isinstance(fixture.shape, b2CircleShape):
+        #            self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
+        #        else:
+        #            self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
+        for link in self.distance_links:
+            (bodyA, posA, bodyB, posB) = link
+            a = self.renderer.to_screen2(bodyA.GetWorldPoint(posA))
+            b = self.renderer.to_screen2(bodyB.GetWorldPoint(posB))
+            self.aux_renderer.draw_line(a,b)
     
     def checkEvents(self):
         """
