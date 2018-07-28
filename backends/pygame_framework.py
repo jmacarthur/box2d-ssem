@@ -56,7 +56,7 @@ from pygame.locals import (QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN,
 
 from framework import (FrameworkBase, Keys)
 from settings import fwSettings
-from Box2D import (b2DrawExtended, b2Vec2)
+from Box2D import (b2DrawExtended, b2Vec2, b2CircleShape)
 from backends.external_renderer import ExternalRenderer
 try:
     from .pygame_gui import (fwGUI, gui)
@@ -294,9 +294,12 @@ class PygameFramework(FrameworkBase):
     def overlay_draw(self):
         for shape in self.static_polygons:
             self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
-        for body in self.dynamic_polygons:
+        for body in self.dynamic_bodies:
             for fixture in body.fixtures:
-                self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
+                if isinstance(fixture.shape, b2CircleShape):
+                    self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
+                else:
+                    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
     
     def checkEvents(self):
         """

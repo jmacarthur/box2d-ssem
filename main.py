@@ -595,6 +595,7 @@ class Memory (Framework):
     def add_dynamic_circle(self, xpos, ypos, radius, density=1.0, filter=filters[0]):
         circle = self.world.CreateDynamicBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale,ypos*self.scale)), density=density, filter=filter))
         circle.attachment_point = (xpos*self.scale, ypos*self.scale)
+        self.dynamic_bodies.append(circle)
         return circle
         
     def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0], density=1.0):
@@ -602,7 +603,7 @@ class Memory (Framework):
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
         fixture = fixtureDef(shape=shape, density=density, filter=filter)
         body = self.world.CreateDynamicBody(fixtures=fixture)
-        self.dynamic_polygons.append(body)
+        self.dynamic_bodies.append(body)
         return body
 
     def slide_joint(self, body1, body2, axis, limit1, limit2,friction=1.0):
@@ -646,7 +647,9 @@ class Memory (Framework):
                                                filter=f.filter,
                                                density=f.density))
                                                
-        return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures)
+        body = self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures)
+        self.dynamic_bodies.append(body)
+        return body
 
     def add_multipolygon(self, polygons, xpos=0, ypos=0, filter=filters[0]):
         fixtures = []
@@ -655,7 +658,9 @@ class Memory (Framework):
                                                filter=filter,
                                                density=1.0))
                                                
-        return self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=fixtures)
+        body = self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=fixtures)
+        self.dynamic_bodies.append(body)
+        return body
 
     
     def revolving_joint(self, bodyA, bodyB, anchor, friction=False, motor=0, force=1):
@@ -1096,7 +1101,7 @@ class Memory (Framework):
         self.transfer_bands = []
         self.ball_bearings = []
         self.static_polygons = []
-        self.dynamic_polygons = []
+        self.dynamic_bodies = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
 
