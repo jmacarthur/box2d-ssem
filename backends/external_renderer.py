@@ -19,5 +19,4 @@ class ExternalRenderer():
                 self.surface, (255,255,255), (int(pos[0]), int(pos[1])), int(radius), 0)
 
     def draw_line(self, a, b):
-        pygame.draw.aaline(self.surface, (0,255,0),
-                           a,b)
+        pygame.draw.aaline(self.surface, (0,255,0),a,b)
