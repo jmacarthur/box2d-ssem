@@ -598,7 +598,8 @@ class Memory (Framework):
 	                               anchorA=((posA[0]+bodyA.origin[0])*self.scale, (posA[1]+bodyA.origin[1])*self.scale),
 	                               anchorB=((posB[0]+bodyB.origin[0])*self.scale, (posB[1]+bodyB.origin[1])*self.scale),
 	                               collideConnected=False)
-        
+        self.distance_links.append((bodyA, posA, bodyB, posB))
+
     
     def add_static_polygon(self,vertices, xpos=0, ypos=0, filter=filters[0]):
         translated_vertices = translate_polygon(vertices, xpos, ypos)
@@ -985,14 +986,14 @@ class Memory (Framework):
 
         dropper_body = self.add_multifixture(dropper_fixtures, xpos, ypos)
         self.slide_joint(attachment_body, dropper_body, (1,0), -60, 60, friction=0.1)
-        dropper_body.attachment_point=(xpos,ypos)
+        dropper_body.attachment_point=(100,-2.5)
+        dropper_body.origin=(xpos,ypos)
         # End stop
         self.add_static_polygon([ (0,0), (15,0), (15,3), (0,3)], xpos+pitch*8+8, ypos-3)
 
         # Return lever
         return_crank = self.crank_right_up(xpos+200,ypos-20, attachment_body, weight=10)
-        self.distance_joint(return_crank, dropper_body, posB=(xpos+150, ypos))
-
+        self.distance_joint(return_crank, dropper_body)
         return dropper_body
         
     def setup_cams(self):

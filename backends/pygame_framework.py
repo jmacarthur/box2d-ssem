@@ -302,9 +302,11 @@ class PygameFramework(FrameworkBase):
         #            self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
         for link in self.distance_links:
             (bodyA, posA, bodyB, posB) = link
+            #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
             a = self.renderer.to_screen2(bodyA.GetWorldPoint(posA))
             b = self.renderer.to_screen2(bodyB.GetWorldPoint(posB))
             self.aux_renderer.draw_line(a,b)
+            self.aux_renderer.draw_circle(a, 8)
     
     def checkEvents(self):
         """
