@@ -586,6 +586,7 @@ class Memory (Framework):
         translated_vertices = translate_polygon(vertices, xpos, ypos)
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
         fixture = fixtureDef(shape=shape, density=1.0, filter=filter)
+        self.static_polygons.append(shape)
         return self.world.CreateStaticBody(fixtures=fixture)
 
     def add_static_circle(self, xpos, ypos, radius, filter=filters[0]):
@@ -600,7 +601,9 @@ class Memory (Framework):
         translated_vertices = translate_polygon(vertices, xpos, ypos)
         shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
         fixture = fixtureDef(shape=shape, density=density, filter=filter)
-        return self.world.CreateDynamicBody(fixtures=fixture)
+        body = self.world.CreateDynamicBody(fixtures=fixture)
+        self.dynamic_polygons.append(body)
+        return body
 
     def slide_joint(self, body1, body2, axis, limit1, limit2,friction=1.0):
         if friction==False: friction = 0
@@ -1092,6 +1095,8 @@ class Memory (Framework):
         self.scale = 1.0
         self.transfer_bands = []
         self.ball_bearings = []
+        self.static_polygons = []
+        self.dynamic_polygons = []
         self.sequence = 0 # Like step count but only increments when cams are on
         self.init_pulse = 0 # A small counter for use at startup to reset the toggles
 

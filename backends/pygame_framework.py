@@ -57,7 +57,7 @@ from pygame.locals import (QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN,
 from framework import (FrameworkBase, Keys)
 from settings import fwSettings
 from Box2D import (b2DrawExtended, b2Vec2)
-
+from backends.external_renderer import ExternalRenderer
 try:
     from .pygame_gui import (fwGUI, gui)
     GUIEnabled = True
@@ -156,9 +156,6 @@ class PygameDraw(b2DrawExtended):
         pygame.draw.circle(self.surface, (color / 2).bytes + [127],
                            center, radius, 0)
         pygame.draw.circle(self.surface, color.bytes, center, radius, 1)
-        pygame.draw.aaline(self.surface, (255, 0, 0), center,
-                           (center[0] - radius * axis[0],
-                            center[1] + radius * axis[1]))
 
     def DrawPolygon(self, vertices, color):
         """
@@ -171,7 +168,7 @@ class PygameDraw(b2DrawExtended):
             pygame.draw.aaline(self.surface, color.bytes,
                                vertices[0], vertices)
         else:
-            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
+            pygame.draw.polygon(self.surface, color.bytes, vertices, 0)
 
     def DrawSolidPolygon(self, vertices, color):
         """
@@ -186,25 +183,25 @@ class PygameDraw(b2DrawExtended):
         else:
             pygame.draw.polygon(
                 self.surface, (color / 2).bytes + [127], vertices, 0)
-            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
+            #pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     # the to_screen conversions are done in C with b2DrawExtended, leading to
     # an increase in fps.
     # You can also use the base b2Draw and implement these yourself, as the
     # b2DrawExtended is implemented:
-    # def to_screen(self, point):
-    #     """
-    #     Convert from world to screen coordinates.
-    #     In the class instance, we store a zoom factor, an offset indicating where
-    #     the view extents start at, and the screen size (in pixels).
-    #     """
-    #     x=(point.x * self.zoom)-self.offset.x
-    #     if self.flipX:
-    #         x = self.screenSize.x - x
-    #     y=(point.y * self.zoom)-self.offset.y
-    #     if self.flipY:
-    #         y = self.screenSize.y-y
-    #     return (x, y)
+    def to_screen2(self, point):
+        """
+        Convert from world to screen coordinates.
+        In the class instance, we store a zoom factor, an offset indicating where
+        the view extents start at, and the screen size (in pixels).
+        """
+        x=(point[0] * self.zoom)-self.offset.x
+        if self.flipX:
+            x = self.screenSize.x - x
+        y=(point[1] * self.zoom)-self.offset.y
+        if self.flipY:
+            y = self.screenSize.y-y
+        return (x, y)
 
 
 class PygameFramework(FrameworkBase):
@@ -273,7 +270,7 @@ class PygameFramework(FrameworkBase):
 
         self.viewCenter = (0, 20.0)
         self.groundbody = self.world.CreateBody()
-
+        self.aux_renderer = ExternalRenderer(self.screen)
     def setCenter(self, value):
         """
         Updates the view offset based on the center of the screen.
@@ -294,6 +291,13 @@ class PygameFramework(FrameworkBase):
     viewOffset = property(lambda self: self._viewOffset,
                           doc='The offset of the top-left corner of the screen')
 
+    def overlay_draw(self):
+        for shape in self.static_polygons:
+            self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
+        for body in self.dynamic_polygons:
+            for fixture in body.fixtures:
+                self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
+    
     def checkEvents(self):
         """
         Check for pygame events (mainly keyboard/mouse events).
@@ -373,6 +377,17 @@ class PygameFramework(FrameworkBase):
             if GUIEnabled and self.settings.drawMenu:
                 self.gui_app.paint(self.screen)
 
+            # Example: Draw circles
+                
+            #for i in range(0,len(self.ball_bearings)):
+            #    (b, plane) = self.ball_bearings[i]
+            #    (x,y)=self.renderer.to_screen2(b.worldCenter)
+            #    
+            #    pygame.draw.circle(self.screen, (255,0,0),
+            #                       (int(x),int(y)),3,0)
+
+            self.overlay_draw()
+                
             pygame.display.flip()
             clock.tick(self.settings.hz)
             self.fps = clock.get_fps()
