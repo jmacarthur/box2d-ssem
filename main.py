@@ -284,11 +284,11 @@ class Memory (Framework):
         reset_poly = rotate_polygon_radians(box_vertices(0, 0, reset_len, 5), reset_angle)
         if is_actually_adder:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+10, ypos-sub_y_pitch*lines, filters[3])
-            reset_lever.attachment_point=(0,-180)
+            reset_lever.attachment_point=(reset_len/2,reset_len/2)
             reset_lever.origin=(xpos,ypos)
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
-            reset_lever.attachment_point=(0,-180)
+            reset_lever.attachment_point=(reset_len/2,reset_len/2)
             reset_lever.origin=(xpos,ypos)
             return_crank = self.crank_left_up(xpos-300,ypos+10, attachment_body, weight=10)
             self.distance_joint(reset_lever, return_crank)
@@ -446,8 +446,6 @@ class Memory (Framework):
             self.slide_joint(row_selector, groundBody, (0,1), -8, 0, friction=0)
 
         selector_holdoff_bar = self.horizontal_rotating_bar(xpos+200, ypos+130, 80, groundBody, 50)
-        selector_holdoff_bar.attachment_point = (220,130)
-        selector_holdoff_bar.origin=(xpos, ypos)
         # Row followers
         for row in range(0,8):
             row_follower_fixtures = []
