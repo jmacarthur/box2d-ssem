@@ -25,7 +25,7 @@ class SSEM_State():
         self.accumulator = 0
         self.unsupported_flag = False # This is switched on if an unsupported opcode is used.
     def advance(self):
-        logging.info("Initial PC == {}".format(self.pc))
+        logging.info("Initial mem={} PC == {}".format(",".join(map(str, self.mem)), self.pc))
         instruction = self.mem[self.pc]
         if memory_columns == 32:
             instruction_address = instruction & ((1 << 13)-1)
@@ -35,7 +35,7 @@ class SSEM_State():
             instruction_op = (instruction >> 5) & 7
         else:
             raise Exception("Memory widths other than 8 or 32 are not supported.")
-        logging.info("Executing {} on address {} (wrapped to {})".format(instruction_opcodes[instruction_op], instruction_address, instruction_address % memory_rows))
+        logging.info("Executing {}: {} on address {} (wrapped to {})".format(instruction, instruction_opcodes[instruction_op], instruction_address, instruction_address % memory_rows))
 
         if instruction_op == SB2 or instruction_op == HLT:
             logging.warn("Executing unsupported {} opcode.".format(instruction_opcodes[instruction_op]))

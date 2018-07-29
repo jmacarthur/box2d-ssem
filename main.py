@@ -1159,7 +1159,7 @@ class Memory (Framework):
         if self.random_test:
             while True:
                 self.initial_state.set_random()
-                self.final_state = copy.copy(self.initial_state)
+                self.final_state = copy.deepcopy(self.initial_state)
                 for i in range(0,self.test_set.get("cycles",1)):
                     self.final_state.advance()
                 if self.final_state.unsupported_flag:
