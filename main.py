@@ -794,7 +794,6 @@ class Memory (Framework):
                 follower_body.attachment_point=(axle_x, axle_y-follower_len)
             else:
                 follower_body.attachment_point=(axle_x+follower_len, axle_y)
-            print("Setting attachment point: (x,y)={}".format(follower_body.attachment_point))
             self.revolving_joint(attachment_body, follower_body, (axle_x+2.5,axle_y+2.5), friction=False)
             print("Creating cam: xpos= {}, ypos= {}, axle_x = {} ,axle_y= {}, follower_len={}".format(xpos, ypos, axle_x, axle_y, follower_len))
 
@@ -843,8 +842,8 @@ class Memory (Framework):
                 block_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30+offset, ypos-i*andgate_spacing_y-50))
             self.slide_joint(attachment_body, block_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
-            block_slider.attachment_point = (i*30-15+offset*2, -i*andgate_spacing_y-50+2.5)
-            block_slider.origin=(xpos,ypos)
+            block_slider.attachment_point = (15, 2.5)
+            block_slider.origin=(xpos+i*30+offset*2,ypos-i*andgate_spacing_y-50)
             self.instruction_outputs.append(block_slider)
             pusher_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
             pusher_slider.attachment_point = (15, 2.5)
@@ -1285,7 +1284,7 @@ class Memory (Framework):
                         if x>left and x<right:
                             self.world.DestroyBody(b)
                             plane = 1-source_plane
-                            print("Flipping ball bearing from plane %d to plane %d"%(source_plane, plane))
+                            #print("Flipping ball bearing from plane %d to plane %d"%(source_plane, plane))
                             self.ball_bearings[i] = (self.world.CreateDynamicBody(
                                 position=b.worldCenter,
                                 fixtures=[fixtureDef(
@@ -1321,9 +1320,10 @@ class Memory (Framework):
         angleTarget = (self.sequence*math.pi*2/10000.0)
         simulation_time = (self.sequence/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
-            print("Sequence {} AngleTarget = {} degrees timing = {}".format(self.sequence, 360*angleTarget/(math.pi*2), simulation_time ))
-            print("Accumulator = {} ({}) PC= {} ({})".format(",".join(map(str,self.read_accumulator_array())), self.read_accumulator_value(), self.read_pc_array(), self.read_pc_value()))
-            print("Memory = {}".format(",".join(map(str, self.read_memory_array()))))
+            print("Step {} degrees timing = {} ACC= {} ({}) PC= {} ({}) Mem= {}".format(
+                self.sequence, simulation_time,"".join(map(str,self.read_accumulator_array())),
+                self.read_accumulator_value(), "".join(map(str,self.read_pc_array())), self.read_pc_value(),
+                format(",".join(map(str, self.read_memory_array())))))
         if simulation_time > 0.41 and not self.instruction_tested:
             self.instruction_test()
         if angleTarget >= (math.pi*2*self.test_set.get("cycles",1)) and self.cams_on:
