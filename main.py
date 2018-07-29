@@ -106,7 +106,8 @@ class Memory (Framework):
             return bar_body
         else:
             body = self.add_dynamic_polygon(box_vertices(0, 0, height,3), xpos,ypos, filters[0])
-            body.attachment_point = (xpos+height/2,ypos+1.5)
+            body.attachment_point = (height/2,1.5)
+            body.origin = (xpos, ypos)
             self.slide_joint(attachment_body, body, (0,-1), -20, 0, friction=0)
             return body
 
@@ -271,7 +272,8 @@ class Memory (Framework):
             leftmost_toggle = self.add_dynamic_polygon([ (-1,0), (1,0), (1,10), (-1,12) ],
                                                        xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines),filter=filters[4])
             self.revolving_joint(attachment_body, leftmost_toggle, (xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines)))
-            leftmost_toggle.attachment_point=(xpos+output_offset_x, ypos+pitch-30-sub_y_pitch*(lines)+10)
+            leftmost_toggle.attachment_point=(0,10)
+            leftmost_toggle.origin=(xpos+output_offset_x,ypos+pitch-30-sub_y_pitch*(lines))
             self.comparison_diverter = leftmost_toggle
             self.add_static_polygon([ (-40,-20), (2,0), (2,2), (0,2) ],
                                     xpos+output_offset_x-3, ypos+pitch-30-sub_y_pitch*(lines)+10,filter=filters[4])
@@ -282,10 +284,12 @@ class Memory (Framework):
         reset_poly = rotate_polygon_radians(box_vertices(0, 0, reset_len, 5), reset_angle)
         if is_actually_adder:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos+10, ypos-sub_y_pitch*lines, filters[3])
-            reset_lever.attachment_point=(xpos,ypos-180)
+            reset_lever.attachment_point=(0,-180)
+            reset_lever.origin=(xpos,ypos)
         else:
             reset_lever = self.add_dynamic_polygon(polygonShape(vertices=reset_poly), xpos-216, ypos-sub_y_pitch*lines+10, filters[3])
-            reset_lever.attachment_point=(xpos,ypos-180)
+            reset_lever.attachment_point=(0,-180)
+            reset_lever.origin=(xpos,ypos)
             return_crank = self.crank_left_up(xpos-300,ypos+10, attachment_body, weight=10)
             self.distance_joint(reset_lever, return_crank)
 

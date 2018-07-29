@@ -306,7 +306,6 @@ class PygameFramework(FrameworkBase):
             a = self.renderer.to_screen2(bodyA.GetWorldPoint(posA))
             b = self.renderer.to_screen2(bodyB.GetWorldPoint(posB))
             self.aux_renderer.draw_line(a,b)
-            self.aux_renderer.draw_circle(a, 8)
     
     def checkEvents(self):
         """
