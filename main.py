@@ -174,8 +174,8 @@ class Memory (Framework):
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
         self.add_static_polygon(box_polygon_shape(xpos-12, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
-        conrod.attachment_point = (pitch*8, 15)
-        conrod.origin=(xpos,ypos)
+        conrod.attachment_point = (pitch*8, 0.5)
+        conrod.origin=(xpos,ypos+15)
 
         crank_xpos = xpos+pitch*8+20
         if mirror:
@@ -576,13 +576,13 @@ class Memory (Framework):
             self.slide_joint(attachment_body, sensor, (0,1), 0, 15, friction=False)
             blocker_fixtures.append(fixtureDef(shape=polygonShape(vertices=translate_polygon(blocker_poly,c*pitch,0)), density=1.0, filter=filters[0]))
         blocker_set = self.add_multifixture(blocker_fixtures, xpos, ypos)
-        blocker_set.attachment_point=(10,0)
+        blocker_set.attachment_point=(5,3)
         blocker_set.origin=(xpos,ypos)
         self.slide_joint(attachment_body, blocker_set, (1,0), 0, 15, friction=False)
         
         crank = self.crank_left_up(xpos-30, ypos-20, attachment_body)
         self.distance_joint(crank, blocker_set)
-        blocker_set.attachment_point=(c*pitch,7)
+        blocker_set.attachment_point=(c*pitch+5,3)
         blocker_set.origin=(xpos, ypos)
         return blocker_set
     # Interface functions to PyBox2D
@@ -900,7 +900,9 @@ class Memory (Framework):
         sub_pos_y = -220
         self.parts.accumulator_reset_lever = self.subtractor(sub_pos_x,sub_pos_y, groundBody, discard_bands=True, toggle_joint_array=self.accumulator_toggles, comparison_output=True)
         self.dropper = self.slow_drop_unit(groundBody, sub_pos_x-18, sub_pos_y+40)
-        
+
+        # The 'skip lever' - the large balance arm which injects one
+        # into the program counter when comparison (CMP) succeeds
         skip_lever_x = sub_pos_x - 200
         skip_lever_y = sub_pos_y - 200
         a = fixtureDef(shape=polygonShape(vertices=[(-50,-32), (0,-30), (0,-25), (-50,-30)]), filter=filters[0], density=1.0)
@@ -910,8 +912,9 @@ class Memory (Framework):
         e = fixtureDef(shape=box_polygon_shape(285,-15,15,15), filter=filters[2], density=2.10)
         f = fixtureDef(shape=box_polygon_shape(150,-50,5,50), filter=filters[0], density=1.0)
         skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
-        skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
-        #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_vertices(0, 0, 300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
+        skip_lever.attachment_point = (150,-50)
+        skip_lever.origin = (skip_lever_x,skip_lever_y)
+
         self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
         self.add_static_polygon(polygonShape(vertices=box_vertices(0, 0, 10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
         self.parts.cmp_injector = self.horizontal_injector(skip_lever_x-48,skip_lever_y+257, groundBody)
