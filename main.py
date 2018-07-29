@@ -252,6 +252,12 @@ class Memory (Framework):
             self.add_static_polygon([ (20,-6), (27,-3), (27,0) ],
                                     xpos+c*pitch-pitch+5, ypos+pitch+6-sub_y_pitch*(lines-c))
 
+
+        # Final output channel divider on the left
+        if not comparison_output:
+            self.add_static_polygon([ (-1,0), (1,0), (1,50), (-1,50) ],
+                                xpos+(-0.5)*pitch+output_offset_x, ypos+pitch-30-sub_y_pitch*lines, filter=filters[4])
+
         for c in range(0,lines+1):
             # Large static bits that form input channels
             self.add_static_polygon([ (0,0), (pitch-7-2,-3), (pitch-7,-sub_y_pitch*(lines-c)-5), (0,-sub_y_pitch*(lines-c)-sub_y_pitch) ],
