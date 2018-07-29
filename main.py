@@ -1041,8 +1041,8 @@ class Memory (Framework):
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
 
-        # Cam 6: Split to instruction counter/reg
-        self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True)
+        # Cam 6: Split to instruction register
+        self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True, bump_height=4)
 
         # Cam 7: Instruction selector holdoff (vertical)
         self.basic_cam(320, 300, 150, [(0.04, 0.2), (0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
