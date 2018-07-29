@@ -618,10 +618,9 @@ class Memory (Framework):
         return circle
         
     def add_dynamic_polygon(self, vertices, xpos, ypos, filter=filters[0], density=1.0):
-        translated_vertices = translate_polygon(vertices, xpos, ypos)
-        shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in translated_vertices])
+        shape = polygonShape(vertices=[(x*self.scale, y*self.scale) for (x,y) in vertices])
         fixture = fixtureDef(shape=shape, density=density, filter=filter)
-        body = self.world.CreateDynamicBody(fixtures=fixture)
+        body = self.world.CreateDynamicBody(fixtures=fixture, position=(xpos,ypos))
         self.dynamic_bodies.append(body)
         return body
 
