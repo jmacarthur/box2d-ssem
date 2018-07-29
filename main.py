@@ -359,7 +359,7 @@ class Memory (Framework):
         drive_rect.origin=(xpos,ypos)
         self.slide_joint(attachment_body, drive_rect, (1,0), 0, 10, friction=0)
         self.add_static_polygon(box_polygon_shape(0,-7,17,7), xpos, ypos)
-        self.add_static_polygon(box_polygon_shape(0,7,10,20), xpos, ypos)# Blocks left
+        self.add_static_polygon(box_polygon_shape(0,7,10,20), xpos, ypos) # Blocks left
         self.add_static_polygon(box_polygon_shape(10+7,7,10,20), xpos, ypos)
         self.add_static_polygon(polygonShape(vertices=[(0,27), (10,27), (0,37)]), xpos, ypos)
         self.add_static_polygon(polygonShape(vertices=[(17,27), (27,27), (27,37)]), xpos, ypos)
@@ -381,10 +381,10 @@ class Memory (Framework):
             
         for c in range(0,columns):
             # The base
-            self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21,-13), (10,-15)], xpos+c*pitch, ypos+pitch+10)
+            self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (22,-12.5), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
             bellcrank_shape = [ fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
-                                fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset, ypos+crank_y, 3, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
+                                fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset+0.1, ypos+crank_y, 2.9, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
 
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
@@ -1025,10 +1025,10 @@ class Memory (Framework):
         self.basic_cam(150,300, 150, [(0.05,0.07), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
 
         # Cam 2: Memory returner (left side)
-        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.63,0.1), (0.95,0.03)], -1, self.memory_returning_gate, horizontal=True)
+        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.64,0.1), (0.95,0.03)], -1, self.memory_returning_gate, horizontal=True)
 
         # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.64,0.1), (0.96,0.03)], -1, self.parts.memory_follower_holdoff, horizontal=True)
+        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.65,0.1), (0.96,0.03)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
@@ -1111,7 +1111,7 @@ class Memory (Framework):
                 random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
-            self.test_set['cycles'] = 1
+            self.test_set['cycles'] = 2
         elif testmode:
             self.auto_test_mode = True
             self.prewritten_test = True
