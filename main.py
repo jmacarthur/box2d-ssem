@@ -980,7 +980,7 @@ class Memory (Framework):
     def rake_cam(self, xpos, ypos):
         attachment_body = self.groundBody
         radius = 30
-        slider_length = 60
+        slider_length = 80
         disc_fixture = fixtureDef(shape=circleShape(radius=radius, pos=(0,0)),density=1.0,filter=filters[0])
         cam_body = self.add_multifixture([disc_fixture], xpos, ypos)
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
@@ -1152,7 +1152,7 @@ class Memory (Framework):
         self.setup_cams()
 
         # Additional parts:
-        self.rake_cam(-80,195)
+        self.rake_cam(-80,190)
 
         
         self.initial_state = SSEM_State()
