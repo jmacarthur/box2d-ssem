@@ -387,7 +387,7 @@ class Memory (Framework):
             
         for c in range(0,columns):
             # The base
-            self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (22,-12.5), (10,-15)], xpos+c*pitch, ypos+pitch+10)
+            self.add_static_polygon([ (10,-20), (24,-20), (24,-15), (21.5,-12.5), (10,-15)], xpos+c*pitch, ypos+pitch+10)
             
             bellcrank_shape = [ fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset, ypos+crank_y+9, 10, 3), density=1.0, filter=filters[1]),
                                 fixtureDef(shape=box_polygon_shape(c*pitch+xpos+crank_offset+0.1, ypos+crank_y, 2.9, 12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)) ]
@@ -395,13 +395,15 @@ class Memory (Framework):
             bellcrank = self.add_multifixture(bellcrank_shape)
             anchorpos = (xpos+c*pitch+crank_offset, ypos+crank_y+10)
             self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos, friction=0)
-            injector_crank_array.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
+            # leverage adjusts the amount of distance the injector will move. Higher number = less distance but more power
+            leverage = 8
+            injector_crank_array.append((bellcrank, (anchorpos[0]+leverage,anchorpos[1])))
             # All-inject bar
             raiser = self.add_dynamic_circle(xpos+c*pitch+15, ypos+injector_bar_height+10, radius=5, density=50.0)
             self.slide_joint(attachment_body, raiser, (0,1), 0,5, friction=0)
             self.world.CreateDistanceJoint(bodyA=bellcrank,
 	                              bodyB=raiser,
-                                      anchorA=((anchorpos[0]+5)*self.scale,(anchorpos[1]-10)*self.scale),
+                                      anchorA=((anchorpos[0]+6)*self.scale,(anchorpos[1]-10)*self.scale),
 	                              anchorB=raiser.worldCenter,
 	                                   collideConnected=False)
         raiser_bar = self.horizontal_rotating_bar(xpos,ypos+injector_bar_height, pitch*9, attachment_body, support_sep=pitch*8)
