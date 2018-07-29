@@ -817,6 +817,15 @@ class Memory (Framework):
             crank = self.add_multipolygon([crank_polygon1, crank_polygon2], xpos+i*30, ypos-i*follower_spacing)
             self.revolving_joint(attachment_body, crank, (xpos+i*30,ypos-i*follower_spacing))
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=self.rom_followers[7-i], anchorA=((xpos+i*30)*self.scale, (ypos-i*follower_spacing-len1)*self.scale), anchorB=self.rom_followers[7-i].worldCenter, collideConnected=False)
+
+            # Each instruction line has three parts - 'block' is the
+            # revolving bit which drops into place when an instruction
+            # is selected. 'block_slider' is connected to that and
+            # drives the relevant parts of the machine.  'pusher' is
+            # the input, also a sliding part usually attached to a
+            # cam, which will engage and push the 'block' when that
+            # instruction is selected.
+            
             block = self.add_dynamic_polygon([ (0,0), (30,0), (28,5), (2,5) ], xpos+i*30, ypos-i*andgate_spacing_y-50)
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
@@ -832,12 +841,12 @@ class Memory (Framework):
                 block_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30-30+offset*2, ypos-i*andgate_spacing_y-50)
             self.revolving_joint(block_slider, block, (xpos+i*30+offset, ypos-i*andgate_spacing_y-50))
             self.slide_joint(attachment_body, block_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
-            block_slider.attachment_point = (i*30-30, -i*andgate_spacing_y-50)
-            block_slider.origin=(xpos,ypos)
+            block_slider.attachment_point = (xpos+i*30-15+offset*2, ypos-i*andgate_spacing_y-50+2.5)
+            #block_slider.origin=(xpos,ypos)
             self.instruction_outputs.append(block_slider)
             pusher_slider = self.add_dynamic_polygon(box_vertices(0, 0, 30,5), xpos+i*30+30-offset*2, ypos-i*andgate_spacing_y-68)
-            pusher_slider.attachment_point = (i*30+60, -i*andgate_spacing_y-70)
-            pusher_slider.origin=(xpos, ypos)
+            pusher_slider.attachment_point = (xpos+i*30+45-offset*2, ypos-i*andgate_spacing_y-70+2.5)
+            #pusher_slider.origin=(xpos, ypos)
             self.instruction_inputs.append(pusher_slider)
             self.slide_joint(attachment_body, pusher_slider, (1,0), 0 if reversed_outputs[i] else -20,20 if reversed_outputs[i] else 0, friction=0)
             self.world.CreateDistanceJoint(bodyA=crank, bodyB=block, anchorA=((xpos+i*30+len2)*self.scale, (ypos-i*follower_spacing)*self.scale), anchorB=block.worldCenter, collideConnected=False)
