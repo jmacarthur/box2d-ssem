@@ -448,9 +448,9 @@ class Memory (Framework):
         for row in range(0,8):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
-                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
-            follower.attachment_point = (200,0)
+                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,0)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 14*row+10)
+            follower.attachment_point = (30,0)
             follower.origin = (xpos, 0)
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
