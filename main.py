@@ -173,16 +173,15 @@ class Memory (Framework):
         self.add_static_circle(xpos+pitch*8-5, ypos+15, 5, filterA)
         self.add_static_polygon(box_polygon_shape(xpos-12, ypos-10, 3, 20))
         self.transfer_bands.append((-12+ypos+10, -12+ypos, transfer_band_x, 1 if inverted else 0))
-        conrod.attachment_point = (xpos+pitch*8,ypos+15+1)
-        # I don't know why but using origin (xpos,ypos) doesn't work
-        conrod.origin=(0,0)
+        conrod.attachment_point = (pitch*8, 15)
+        conrod.origin=(xpos,ypos)
 
         crank_xpos = xpos+pitch*8+20
         if mirror:
             crank_xpos = xpos-50
         return_crank = self.crank_right_up(crank_xpos,ypos, attachment_body, weight=return_weight)
         self.distance_joint(return_crank, conrod)
-        self.distance_links.append((return_crank, return_crank.attachment_point, conrod, conrod.attachment_point))
+        
         return conrod
 
     def regenerator(self, xpos, ypos, attachment_body, crank_list):
@@ -449,10 +448,10 @@ class Memory (Framework):
         for row in range(0,8):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
-                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,0)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 14*row+10)
-            follower.attachment_point = (30,0)
-            follower.origin = (xpos, 14*row+10)
+                row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,14*row+10)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
+            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 0)
+            follower.attachment_point = (200,0)
+            follower.origin = (xpos, 0)
             follower_array.append(follower)
             self.slide_joint(follower, groundBody, (1,0), limit1=0, limit2=20, friction=0)
 
@@ -911,8 +910,7 @@ class Memory (Framework):
         e = fixtureDef(shape=box_polygon_shape(285,-15,15,15), filter=filters[2], density=2.10)
         f = fixtureDef(shape=box_polygon_shape(150,-50,5,50), filter=filters[0], density=1.0)
         skip_lever=self.add_multifixture([a,b,d,e,f], skip_lever_x, skip_lever_y)
-        skip_lever.attachment_point = (150,-50)
-        skip_lever.origin=(skip_lever_x, skip_lever_y)
+        skip_lever.attachment_point = (skip_lever_x+150,skip_lever_y-50)
         #skip_lever = self.add_dynamic_polygon(polygonShape(vertices=box_vertices(0, 0, 300,5)), skip_lever_x, skip_lever_y, filter=filters[2])
         self.revolving_joint(groundBody, skip_lever, (skip_lever_x+150, skip_lever_y+2.5), friction=0)
         self.add_static_polygon(polygonShape(vertices=box_vertices(0, 0, 10,10)), skip_lever_x+270, skip_lever_y-15, filter=filters[2])
