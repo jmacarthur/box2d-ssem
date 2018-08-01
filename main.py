@@ -433,6 +433,7 @@ class Memory (Framework):
     def add_ball_bearing(self, xpos, ypos, plane):
         bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
         self.ball_bearings.append((bearing,plane))
+        return bearing
 
     def add_row_decoder(self, xpos, ypos, groundBody, follower_array, selector_array):
         for selector_no in range(0,selector_rods):
@@ -1282,6 +1283,7 @@ class Memory (Framework):
 
     def Step(self, settings):
         super(Memory, self).Step(settings)
+        new_bearings = []
         for i in range(0,len(self.ball_bearings)):
             (b, plane) = self.ball_bearings[i]
             (x,y) = b.worldCenter
@@ -1305,8 +1307,11 @@ class Memory (Framework):
             # Fake ball lift - returns falling ball bearings to the top
             if y<-650:
                 self.world.DestroyBody(b)
-                self.add_ball_bearing(-50, 250, 0)
-                
+                new_bearings.append((self.add_ball_bearing(-50, 250, 0), plane))
+            else:
+                new_bearings.append((b, plane))
+        self.ball_bearings = new_bearings
+
         if self.init_pulse < 25:
             bit = 0
             for d in self.accumulator_toggles:
