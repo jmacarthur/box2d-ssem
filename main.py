@@ -571,7 +571,7 @@ class Memory (Framework):
     def memory_sender(self, xpos, ypos, attachment_body):
         v1 = [ (0,0), (7,-4), (7,-17), (0,-13) ]
         entrace_poly = [ (-7,2), (0,0), (0,-5), (-7,0) ]
-        sensor_poly = [ (3,0), (7,-4), (7,-11), (0,-7) ]
+        sensor_poly = [ (3,0), (7,-4), (7,-11), (0.5,-7) ]
         blocker_poly = [ (7,0), (10,-4), (10,-8), (7,-4) ]
         self.memory_sensors = []
         blocker_fixtures = []
