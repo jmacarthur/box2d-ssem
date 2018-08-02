@@ -1218,8 +1218,8 @@ class Memory (Framework):
                     x /= self.scale
                     y /= self.scale
                     
-                    expected_pos_x = memory_col0_x + pitch*(7-col)+2
-                    expected_pos_y = memory_row0_y + 14*row+41
+                    expected_pos_x = memory_col0_x + pitch*(7-col)
+                    expected_pos_y = memory_row0_y + 14*row+4
                     dx = expected_pos_x - x
                     dy = expected_pos_y - y
                     if abs(dx)<5 and abs(dy)<5:
