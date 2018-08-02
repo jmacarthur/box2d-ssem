@@ -192,7 +192,7 @@ class Memory (Framework):
             self.add_static_polygon([(0,0), (7,0), (7,8), (5,10), (0,10)], c*pitch+xpos-11, -12+ypos)
 
             pusher_poly = [(0,0), (2,0), (2,10), (0,12)]
-            pusher_poly = translate_polygon(pusher_poly, c*pitch+xpos-11, -12+ypos+11)
+            pusher_poly = translate_polygon(pusher_poly, c*pitch-11, -12+11)
             pusher = fixtureDef(shape=polygonShape(vertices=pusher_poly), density=1.0,
                                       filter=filter(groupIndex=1))
             pusher_parts.append(pusher)
@@ -205,8 +205,8 @@ class Memory (Framework):
             self.revolving_joint(bodyA=bellcrank, bodyB=attachment_body, anchor=anchorpos)
             crank_list.append((bellcrank, (anchorpos[0]+8,anchorpos[1])))
             
-        pusher_body = self.add_multifixture(pusher_parts)
-        pusher_body.attachment_point = (8*pitch,10)
+        pusher_body = self.add_multifixture(pusher_parts, xpos, ypos)
+        pusher_body.attachment_point = (6.5*pitch,5)
         pusher_body.origin = (xpos, ypos)
         self.slide_joint(pusher_body, attachment_body, (1,0), -8,0, friction=0)
         return pusher_body
