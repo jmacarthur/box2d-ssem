@@ -951,8 +951,9 @@ class Memory (Framework):
         self.connect_regenerators()
 
         # Large collection plates at the bottom
-        self.add_static_polygon([ (-300,-600),(700,-550), (500,-610), (-300,-610)])
-        self.add_static_polygon([ (-400,-400),(-310,-600), (-310,-610), (-400,-610)])
+        self.add_static_polygon([ (-300,-600),(700,-550), (700,-610), (-300,-610)])
+        self.add_static_polygon([ (600,-610),(700,-610), (850,-400), (800,-400)])
+        self.add_static_polygon([ (-500,-400),(-450,-400), (-310,-610), (-400,-610)])
 
         # Instruction decoder ROM
         self.rom_followers = []
