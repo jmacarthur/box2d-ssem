@@ -215,6 +215,7 @@ class PygameFramework(FrameworkBase):
 
     def __reset(self):
         # Screen/rendering-related
+        self._fontSize = 50
         self._viewZoom = 1
         self._viewCenter = None
         self._viewOffset = None
@@ -250,10 +251,10 @@ class PygameFramework(FrameworkBase):
         self.world.renderer = self.renderer
 
         try:
-            self.font = pygame.font.Font(None, 15)
+            self.font = pygame.font.Font(None, self._fontSize)
         except IOError:
             try:
-                self.font = pygame.font.Font("freesansbold.ttf", 15)
+                self.font = pygame.font.Font("freesansbold.ttf", self._fontSize)
             except IOError:
                 print("Unable to load default font or 'freesansbold.ttf'")
                 print("Disabling text drawing.")
@@ -481,7 +482,7 @@ class PygameFramework(FrameworkBase):
         """
         self.screen.blit(self.font.render(
             str, True, color), (5, self.textLine))
-        self.textLine += 15
+        self.textLine += self._fontSize
 
     def Keyboard(self, key):
         """
