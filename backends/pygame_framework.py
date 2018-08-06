@@ -389,13 +389,6 @@ class PygameFramework(FrameworkBase):
 
             # Example: Draw circles
                 
-            #for i in range(0,len(self.ball_bearings)):
-            #    (b, plane) = self.ball_bearings[i]
-            #    (x,y)=self.renderer.to_screen2(b.worldCenter)
-            #    
-            #    pygame.draw.circle(self.screen, (255,0,0),
-            #                       (int(x),int(y)),3,0)
-
             self.overlay_draw()
                 
             pygame.display.flip()

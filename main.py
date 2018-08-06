@@ -890,7 +890,6 @@ class Memory (Framework):
         self.upper_regenerators = []
         self.parts.accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
 
-
         self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=470) # Diverter 2a. Discard reader-pulse data.
         self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
         self.parts.ip_diverter_lever = self.diverter_set(-5,-95, groundBody, slope_x=320, slope_y=170, start_at=3, return_weight=5) # Diverter 1. Splits to instruction counter.
