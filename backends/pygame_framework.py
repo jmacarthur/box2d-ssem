@@ -217,7 +217,7 @@ class PygameFramework(FrameworkBase):
         # Screen/rendering-related
         self._fontSize = 50
         self._viewZoom = 1
-        self._viewCenter = None
+        self._viewCenter = (100,0)
         self._viewOffset = None
         self.screenSize = None
         self.rMouseDown = False
@@ -244,7 +244,7 @@ class PygameFramework(FrameworkBase):
         pygame.display.set_caption(caption)
 
         # Screen and debug draw
-        self.screen = pygame.display.set_mode((1600,1024))
+        self.screen = pygame.display.set_mode((1800,1100))
         self.screenSize = b2Vec2(*self.screen.get_size())
 
         self.renderer = PygameDraw(surface=self.screen, test=self)
@@ -269,7 +269,7 @@ class PygameFramework(FrameworkBase):
             container.add(self.gui_table, 0, 0)
             self.gui_app.init(container)
 
-        self.viewCenter = (0, 20.0)
+        self.viewCenter = (360, -100.0)
         self.groundbody = self.world.CreateBody()
         self.aux_renderer = ExternalRenderer(self.screen)
     def setCenter(self, value):
