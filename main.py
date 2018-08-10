@@ -43,6 +43,7 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store_true')
     parser.add_argument('--randomtest', action='store_true')
     parser.add_argument('--headless', action='store_true')
+    parser.add_argument('--overlay', action='store_true')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('testset', type=int)
     args = parser.parse_args()
@@ -1103,8 +1104,9 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
-    def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0):
+    def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0, overlay=False):
         super(Memory, self).__init__()
+        self.settings.drawOverlay = overlay
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]
         self.instruction_tested = False
@@ -1361,4 +1363,4 @@ class Memory (Framework):
             self.cams_on = not self.cams_on
 
 if __name__=="__main__":
-    main(Memory(args.test, args.randomtest, args.testset, args.headless, args.seed))
+    main(Memory(args.test, args.randomtest, args.testset, args.headless, args.seed, args.overlay))

@@ -176,13 +176,14 @@ class PygameDraw(b2DrawExtended):
         """
         if not vertices:
             return
-
+        if type(color)!=tuple:
+            color = (color/2).bytes+[127]
         if len(vertices) == 2:
-            pygame.draw.aaline(self.surface, color.bytes,
+            pygame.draw.aaline(self.surface, color,
                                vertices[0], vertices[1])
         else:
             pygame.draw.polygon(
-                self.surface, (color / 2).bytes + [127], vertices, 0)
+                self.surface, color, vertices, 0)
             #pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     # the to_screen conversions are done in C with b2DrawExtended, leading to
@@ -294,12 +295,12 @@ class PygameFramework(FrameworkBase):
     def overlay_draw(self):
         #for shape in self.static_polygons:
         #    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
-        #for body in self.dynamic_bodies:
-        #    for fixture in body.fixtures:
-        #        if isinstance(fixture.shape, b2CircleShape):
-        #            self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
-        #        else:
-        #            self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape])
+        for body in self.dynamic_bodies:
+            for fixture in body.fixtures:
+                if isinstance(fixture.shape, b2CircleShape):
+                    self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
+                else:
+                    self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape], color=(255,0,0))
         for link in self.distance_links:
             (bodyA, posA, bodyB, posB) = link
             #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
@@ -386,16 +387,8 @@ class PygameFramework(FrameworkBase):
             if GUIEnabled and self.settings.drawMenu:
                 self.gui_app.paint(self.screen)
 
-            # Example: Draw circles
-                
-            #for i in range(0,len(self.ball_bearings)):
-            #    (b, plane) = self.ball_bearings[i]
-            #    (x,y)=self.renderer.to_screen2(b.worldCenter)
-            #    
-            #    pygame.draw.circle(self.screen, (255,0,0),
-            #                       (int(x),int(y)),3,0)
-
-            self.overlay_draw()
+            if self.settings.drawOverlay:
+                self.overlay_draw()
                 
             pygame.display.flip()
             clock.tick(self.settings.hz)

@@ -49,7 +49,7 @@ class fwSettings(object):
     drawMenu = True             # toggle by pressing F1
     drawCOMs = False            # Centers of mass
     pointSize = 2.5             # pixel radius for drawing points
-
+    drawOverlay = False         # Whether to paint ourselves (slow!) instead of using Box2D
     # Miscellaneous testbed options
     pause = False
     singleStep = False
