@@ -145,6 +145,7 @@ class FrameworkBase(b2ContactListener):
         Takes care of physics drawing (callbacks are executed after the world.Step() )
         and drawing additional information.
         """
+        renderer = self.renderer
 
         self.stepCount += 1
         # Don't do anything if the setting's Hz are <= 0
@@ -152,8 +153,6 @@ class FrameworkBase(b2ContactListener):
             timeStep = 1.0 / settings.hz
         else:
             timeStep = 0.0
-
-        renderer = self.renderer
 
         # If paused, display so
         if settings.pause:
@@ -192,7 +191,10 @@ class FrameworkBase(b2ContactListener):
                         settings.positionIterations)
         self.world.ClearForces()
         t_step = time() - t_step
+        t_step = max(b2_epsilon, t_step)
 
+    def Draw(self, settings):
+        renderer = self.renderer
         # Update the debug draw settings so that the vertices will be properly
         # converted to screen coordinates
         t_draw = time()
@@ -253,7 +255,6 @@ class FrameworkBase(b2ContactListener):
             t_draw = time() - t_draw
 
             t_draw = max(b2_epsilon, t_draw)
-            t_step = max(b2_epsilon, t_step)
 
             try:
                 self.t_draws.append(1.0 / t_draw)

@@ -432,7 +432,7 @@ class Memory (Framework):
         return raiser_bar
         
     def add_ball_bearing(self, xpos, ypos, plane):
-        bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane])
+        bearing = self.add_dynamic_circle(xpos, ypos, 6.35/2, density=5.0, filter=filters[plane], color=(255,0,0) if plane==0 else (127,0,0))
         self.ball_bearings.append((bearing,plane))
         return bearing
 
@@ -461,7 +461,7 @@ class Memory (Framework):
             row_follower_fixtures = []
             for selector_no in range(0,selector_rods+1):
                 row_follower_fixtures.append(fixtureDef(shape=circleShape(radius=3, pos=(selector_no*25+32,0)), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
-            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 14*row+10)
+            follower = self.add_multifixture(row_follower_fixtures, xpos+200, 14*row+10, color=(0,255,255))
             follower.attachment_point = (30,0)
             follower.origin = (xpos, 0)
             follower_array.append(follower)
@@ -491,7 +491,7 @@ class Memory (Framework):
         row_injector_fixtures.append(fixtureDef(shape=box_polygon_shape(-10,0,3,12), density=1.0, filter=filter(groupIndex=1, categoryBits=0x0002, maskBits=0xFFFE)))
         injectors=[]
         for col in range(0,8):
-            injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col)
+            injector = self.add_multifixture(row_injector_fixtures, 0, 7+14*col, color=(200,200,0))
             injectors.append(injector)
             self.slide_joint(injector, groundBody, (1,0), 7, 17, friction=0.1)
             
@@ -504,7 +504,7 @@ class Memory (Framework):
         
         ejectors = []
         for col in range(0,8):
-            ejector = self.add_multifixture(row_ejector_fixtures, 0, 14*col)
+            ejector = self.add_multifixture(row_ejector_fixtures, 0, 14*col, color=(200,0,200))
             ejector.attachment_point = (22*col, 0)
             ejectors.append(ejector)
             self.slide_joint(ejector, groundBody, (1,0), 0, 14, friction=0)
@@ -623,8 +623,8 @@ class Memory (Framework):
     def add_static_circle(self, xpos, ypos, radius, filter=filters[0]):
         return self.world.CreateStaticBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale, ypos*self.scale)), filter=filter))
 
-    def add_dynamic_circle(self, xpos, ypos, radius, density=1.0, filter=filters[0]):
-        circle = self.world.CreateDynamicBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale,ypos*self.scale)), density=density, filter=filter))
+    def add_dynamic_circle(self, xpos, ypos, radius, density=1.0, filter=filters[0],color=(127,127,127)):
+        circle = self.world.CreateDynamicBody(fixtures=fixtureDef(shape=circleShape(radius=radius*self.scale, pos=(xpos*self.scale,ypos*self.scale)), density=density, filter=filter), userData=color)
         circle.attachment_point = (xpos*self.scale, ypos*self.scale)
         self.dynamic_bodies.append(circle)
         return circle
@@ -663,7 +663,7 @@ class Memory (Framework):
             groundAnchorB = (groundB[0]*self.scale, groundB[1]*self.scale),
             ratio=1.0)
         
-    def add_multifixture(self, fixtures, xpos=0, ypos=0, color=(255,0,0)):
+    def add_multifixture(self, fixtures, xpos=0, ypos=0, color=(127,127,127)):
         # Multifixtures are a bit tricky - we have to go inside the shape data to scale it.
         new_fixtures = []
         for f in fixtures:
@@ -778,7 +778,7 @@ class Memory (Framework):
                 bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
                 f = fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0], userData=(0,0,255))
                 bump_fixtures.append(f)
-        cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos, (0,255,0))
+        cam_body = self.add_multifixture(bump_fixtures + [disc_fixture], xpos, ypos, (0,255,0))
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
         cam_driver.motorSpeed = 0
         follower_filter = filters[1]

@@ -158,7 +158,8 @@ class PygameDraw(b2DrawExtended):
 
         pygame.draw.circle(self.surface, color,
                            center, radius, 0)
-        pygame.draw.circle(self.surface, color, center, radius, 1)
+        line_col = [x/2 for x in color]
+        pygame.draw.circle(self.surface, line_col, center, radius, 1)
 
     def DrawPolygon(self, vertices, color):
         """
@@ -187,7 +188,8 @@ class PygameDraw(b2DrawExtended):
         else:
             pygame.draw.polygon(
                 self.surface, color, vertices, 0)
-            #pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
+            line_col = [x/2 for x in color]
+            pygame.draw.polygon(self.surface, line_col, vertices, 1)
 
     # the to_screen conversions are done in C with b2DrawExtended, leading to
     # an increase in fps.
@@ -301,7 +303,7 @@ class PygameFramework(FrameworkBase):
         for body in self.dynamic_bodies:
             # Colour is only per-body at the moment, since userdata doesn't seem to propogate in fixtures.
             color = body.userData
-            if color is None: color = (255,0,0)
+            if color is None: color = (127,127,127)
             for fixture in body.fixtures:
                 if isinstance(fixture.shape, b2CircleShape):
                     self.renderer.DrawSolidCircle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius, axis=0, color=color)
@@ -309,6 +311,8 @@ class PygameFramework(FrameworkBase):
                     if fixture.userData is not None:
                         print("bloop!")
                     self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape], color=color)
+
+    def draw_distance_links(self):
         for link in self.distance_links:
             (bodyA, posA, bodyB, posB) = link
             #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
@@ -391,12 +395,14 @@ class PygameFramework(FrameworkBase):
 
             # Run the simulation loop
             self.SimulationLoop()
-
             if GUIEnabled and self.settings.drawMenu:
                 self.gui_app.paint(self.screen)
 
+            self.draw_distance_links()
+            self.Draw(self.settings)
             if self.settings.drawOverlay:
                 self.overlay_draw()
+
                 
             pygame.display.flip()
             clock.tick(self.settings.hz)
