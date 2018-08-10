@@ -663,7 +663,7 @@ class Memory (Framework):
             groundAnchorB = (groundB[0]*self.scale, groundB[1]*self.scale),
             ratio=1.0)
         
-    def add_multifixture(self, fixtures, xpos=0, ypos=0):
+    def add_multifixture(self, fixtures, xpos=0, ypos=0, color=(255,0,0)):
         # Multifixtures are a bit tricky - we have to go inside the shape data to scale it.
         new_fixtures = []
         for f in fixtures:
@@ -677,7 +677,7 @@ class Memory (Framework):
                                                filter=f.filter,
                                                density=f.density))
                                                
-        body = self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures)
+        body = self.world.CreateDynamicBody(position=(xpos*self.scale, ypos*self.scale), fixtures=new_fixtures, userData=color)
         self.dynamic_bodies.append(body)
         return body
 
@@ -776,8 +776,9 @@ class Memory (Framework):
                         print("WARNING: Max points reached in cam bump; %2.2d%% of cam complete"%(100*(ang-start)/length))
 
                 bump_points.append(( radius*math.cos(-(ang+0.01)*math.pi*2), radius*math.sin(-(ang+0.01)*math.pi*2)))
-                bump_fixtures.append(fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0]))
-        cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos)
+                f = fixtureDef(shape=polygonShape(vertices=bump_points),density=0.0,filter=filters[0], userData=(0,0,255))
+                bump_fixtures.append(f)
+        cam_body = self.add_multifixture([disc_fixture] + bump_fixtures, xpos, ypos, (0,255,0))
         cam_driver = self.revolving_joint(attachment_body, cam_body, (xpos,ypos), motor=1, force=50)
         cam_driver.motorSpeed = 0
         follower_filter = filters[1]
@@ -1303,9 +1304,9 @@ class Memory (Framework):
                                 fixtures=[fixtureDef(
                                     shape=circleShape(radius=6.35/2*self.scale, pos=(0,0)),
                                     density=5.0,
-                                    filter=filters[plane])]
+                                    filter=filters[plane])],
                                 
-                            ),plane)
+                                userData=(255,0,0) if plane==0 else (127,0,0)),plane)
             # Fake ball lift - returns falling ball bearings to the top
             if y<-650:
                 self.world.DestroyBody(b)

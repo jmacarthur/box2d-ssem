@@ -152,10 +152,13 @@ class PygameDraw(b2DrawExtended):
             radius = 1
         else:
             radius = int(radius)
+        center = (int(center[0]), int(center[1]))
+        if type(color)!=tuple:
+            color = (color/2).bytes+[127]
 
-        pygame.draw.circle(self.surface, (color / 2).bytes + [127],
+        pygame.draw.circle(self.surface, color,
                            center, radius, 0)
-        pygame.draw.circle(self.surface, color.bytes, center, radius, 1)
+        pygame.draw.circle(self.surface, color, center, radius, 1)
 
     def DrawPolygon(self, vertices, color):
         """
@@ -296,11 +299,16 @@ class PygameFramework(FrameworkBase):
         #for shape in self.static_polygons:
         #    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
         for body in self.dynamic_bodies:
+            # Colour is only per-body at the moment, since userdata doesn't seem to propogate in fixtures.
+            color = body.userData
+            if color is None: color = (255,0,0)
             for fixture in body.fixtures:
                 if isinstance(fixture.shape, b2CircleShape):
-                    self.aux_renderer.draw_circle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius*self.renderer.zoom)
+                    self.renderer.DrawSolidCircle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius, axis=0, color=color)
                 else:
-                    self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape], color=(255,0,0))
+                    if fixture.userData is not None:
+                        print("bloop!")
+                    self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape], color=color)
         for link in self.distance_links:
             (bodyA, posA, bodyB, posB) = link
             #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
