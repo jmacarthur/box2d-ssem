@@ -58,7 +58,7 @@ from pygame.locals import (QUIT, KEYDOWN, KEYUP, MOUSEBUTTONDOWN,
 from framework import (FrameworkBase, Keys)
 from settings import fwSettings
 from Box2D import (b2DrawExtended, b2Vec2, b2CircleShape)
-from backends.external_renderer import ExternalRenderer
+
 try:
     from .pygame_gui import (fwGUI, gui)
     GUIEnabled = True
@@ -277,7 +277,7 @@ class PygameFramework(FrameworkBase):
 
         self.viewCenter = (0, 20.0)
         self.groundbody = self.world.CreateBody()
-        self.aux_renderer = ExternalRenderer(self.screen)
+
     def setCenter(self, value):
         """
         Updates the view offset based on the center of the screen.
