@@ -1,4 +1,25 @@
 
+# This is a derivative version of pygame_framework which adds code suitable
+# for Box2D-SSEM. Several functions have code copied from pygame_framework.
+#
+# Box2D C++ version Copyright (c) 2006-2007 Erin Catto http://www.box2d.org
+# Python version of pygame_framework Copyright (c) 2010 kne / sirkne at gmail dot com
+# Modified version for Box2D-SSEM Copyright (c) 2018 Jim MacArthur
+#
+# This software is provided 'as-is', without any express or implied
+# warranty.  In no event will the authors be held liable for any damages
+# arising from the use of this software.
+# Permission is granted to anyone to use this software for any purpose,
+# including commercial applications, and to alter it and redistribute it
+# freely, subject to the following restrictions:
+# 1. The origin of this software must not be misrepresented; you must not
+# claim that you wrote the original software. If you use this software
+# in a product, an acknowledgment in the product documentation would be
+# appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be
+# misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+
 import pygame
 from Box2D import (b2DrawExtended, b2Vec2, b2CircleShape)
 from settings import fwSettings
@@ -193,14 +214,11 @@ class ModifiedPygameFramework(PygameFramework):
                 if isinstance(fixture.shape, b2CircleShape):
                     self.renderer.DrawSolidCircle(self.renderer.to_screen(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius, axis=0, color=color)
                 else:
-                    if fixture.userData is not None:
-                        print("bloop!")
                     self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen(body.GetWorldPoint(x)) for x in fixture.shape], color=color)
 
     def draw_distance_links(self):
         for link in self.distance_links:
             (bodyA, posA, bodyB, posB) = link
-            #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
             a = self.renderer.to_screen(bodyA.GetWorldPoint(posA))
             b = self.renderer.to_screen(bodyB.GetWorldPoint(posB))
             self.renderer.DrawSegment(a,b,(0,255,0))
