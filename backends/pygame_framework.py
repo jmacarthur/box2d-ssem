@@ -115,7 +115,7 @@ class PygameDraw(b2DrawExtended):
         """
         Draw the line segment from p1-p2 with the specified color.
         """
-        pygame.draw.aaline(self.surface, color.bytes, p1, p2)
+        pygame.draw.aaline(self.surface, color, p1, p2)
 
     def DrawTransform(self, xf):
         """
@@ -298,8 +298,6 @@ class PygameFramework(FrameworkBase):
                           doc='The offset of the top-left corner of the screen')
 
     def overlay_draw(self):
-        #for shape in self.static_polygons:
-        #    self.aux_renderer.draw_polygon(vertices=[ self.renderer.to_screen2(x) for x in shape])
         for body in self.dynamic_bodies:
             # Colour is only per-body at the moment, since userdata doesn't seem to propogate in fixtures.
             color = body.userData
@@ -318,7 +316,7 @@ class PygameFramework(FrameworkBase):
             #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
             a = self.renderer.to_screen2(bodyA.GetWorldPoint(posA))
             b = self.renderer.to_screen2(bodyB.GetWorldPoint(posB))
-            self.aux_renderer.draw_line(a,b)
+            self.renderer.DrawSegment(a,b,(0,255,0))
     
     def checkEvents(self):
         """
