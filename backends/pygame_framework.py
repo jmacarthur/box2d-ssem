@@ -116,7 +116,7 @@ class PygameDraw(b2DrawExtended):
         """
         Draw the line segment from p1-p2 with the specified color.
         """
-        pygame.draw.aaline(self.surface, color, p1, p2)
+        pygame.draw.aaline(self.surface, color.bytes, p1, p2)
 
     def DrawTransform(self, xf):
         """
@@ -153,14 +153,13 @@ class PygameDraw(b2DrawExtended):
             radius = 1
         else:
             radius = int(radius)
-        center = (int(center[0]), int(center[1]))
-        if type(color)!=tuple:
-            color = (color/2).bytes+[127]
 
-        pygame.draw.circle(self.surface, color,
+        pygame.draw.circle(self.surface, (color / 2).bytes + [127],
                            center, radius, 0)
-        line_col = [x/2 for x in color]
-        pygame.draw.circle(self.surface, line_col, center, radius, 1)
+        pygame.draw.circle(self.surface, color.bytes, center, radius, 1)
+        pygame.draw.aaline(self.surface, (255, 0, 0), center,
+                           (center[0] - radius * axis[0],
+                            center[1] + radius * axis[1]))
 
     def DrawPolygon(self, vertices, color):
         """
@@ -173,7 +172,7 @@ class PygameDraw(b2DrawExtended):
             pygame.draw.aaline(self.surface, color.bytes,
                                vertices[0], vertices)
         else:
-            pygame.draw.polygon(self.surface, color.bytes, vertices, 0)
+            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     def DrawSolidPolygon(self, vertices, color):
         """
@@ -181,34 +180,32 @@ class PygameDraw(b2DrawExtended):
         """
         if not vertices:
             return
-        if type(color)!=tuple:
-            color = (color/2).bytes+[127]
+
         if len(vertices) == 2:
-            pygame.draw.aaline(self.surface, color,
+            pygame.draw.aaline(self.surface, color.bytes,
                                vertices[0], vertices[1])
         else:
             pygame.draw.polygon(
-                self.surface, color, vertices, 0)
-            line_col = [x/2 for x in color]
-            pygame.draw.polygon(self.surface, line_col, vertices, 1)
+                self.surface, (color / 2).bytes + [127], vertices, 0)
+            pygame.draw.polygon(self.surface, color.bytes, vertices, 1)
 
     # the to_screen conversions are done in C with b2DrawExtended, leading to
     # an increase in fps.
     # You can also use the base b2Draw and implement these yourself, as the
     # b2DrawExtended is implemented:
-    def to_screen2(self, point):
-        """
-        Convert from world to screen coordinates.
-        In the class instance, we store a zoom factor, an offset indicating where
-        the view extents start at, and the screen size (in pixels).
-        """
-        x=(point[0] * self.zoom)-self.offset.x
-        if self.flipX:
-            x = self.screenSize.x - x
-        y=(point[1] * self.zoom)-self.offset.y
-        if self.flipY:
-            y = self.screenSize.y-y
-        return (x, y)
+    # def to_screen(self, point):
+    #     """
+    #     Convert from world to screen coordinates.
+    #     In the class instance, we store a zoom factor, an offset indicating where
+    #     the view extents start at, and the screen size (in pixels).
+    #     """
+    #     x=(point.x * self.zoom)-self.offset.x
+    #     if self.flipX:
+    #         x = self.screenSize.x - x
+    #     y=(point.y * self.zoom)-self.offset.y
+    #     if self.flipY:
+    #         y = self.screenSize.y-y
+    #     return (x, y)
 
 
 class PygameFramework(FrameworkBase):
@@ -222,9 +219,8 @@ class PygameFramework(FrameworkBase):
 
     def __reset(self):
         # Screen/rendering-related
-        self._fontSize = 50
-        self._viewZoom = 1
-        self._viewCenter = (100,0)
+        self._viewZoom = 10.0
+        self._viewCenter = None
         self._viewOffset = None
         self.screenSize = None
         self.rMouseDown = False
@@ -251,17 +247,17 @@ class PygameFramework(FrameworkBase):
         pygame.display.set_caption(caption)
 
         # Screen and debug draw
-        self.screen = pygame.display.set_mode((1800,1100))
+        self.screen = pygame.display.set_mode((640, 480))
         self.screenSize = b2Vec2(*self.screen.get_size())
 
         self.renderer = PygameDraw(surface=self.screen, test=self)
         self.world.renderer = self.renderer
 
         try:
-            self.font = pygame.font.Font(None, self._fontSize)
+            self.font = pygame.font.Font(None, 15)
         except IOError:
             try:
-                self.font = pygame.font.Font("freesansbold.ttf", self._fontSize)
+                self.font = pygame.font.Font("freesansbold.ttf", 15)
             except IOError:
                 print("Unable to load default font or 'freesansbold.ttf'")
                 print("Disabling text drawing.")
@@ -276,7 +272,7 @@ class PygameFramework(FrameworkBase):
             container.add(self.gui_table, 0, 0)
             self.gui_app.init(container)
 
-        self.viewCenter = (360, -100.0)
+        self.viewCenter = (0, 20.0)
         self.groundbody = self.world.CreateBody()
 
     def setCenter(self, value):
@@ -299,27 +295,6 @@ class PygameFramework(FrameworkBase):
     viewOffset = property(lambda self: self._viewOffset,
                           doc='The offset of the top-left corner of the screen')
 
-    def overlay_draw(self):
-        for body in self.dynamic_bodies:
-            # Colour is only per-body at the moment, since userdata doesn't seem to propogate in fixtures.
-            color = body.userData
-            if color is None: color = (127,127,127)
-            for fixture in body.fixtures:
-                if isinstance(fixture.shape, b2CircleShape):
-                    self.renderer.DrawSolidCircle(self.renderer.to_screen2(body.GetWorldPoint(fixture.shape.pos)), fixture.shape.radius, axis=0, color=color)
-                else:
-                    if fixture.userData is not None:
-                        print("bloop!")
-                    self.renderer.DrawSolidPolygon(vertices=[ self.renderer.to_screen2(body.GetWorldPoint(x)) for x in fixture.shape], color=color)
-
-    def draw_distance_links(self):
-        for link in self.distance_links:
-            (bodyA, posA, bodyB, posB) = link
-            #print("Rendering link: {}, {}, {}, {}".format(bodyA, posA, bodyB, posB))
-            a = self.renderer.to_screen2(bodyA.GetWorldPoint(posA))
-            b = self.renderer.to_screen2(bodyB.GetWorldPoint(posB))
-            self.renderer.DrawSegment(a,b,(0,255,0))
-    
     def checkEvents(self):
         """
         Check for pygame events (mainly keyboard/mouse events).
@@ -385,7 +360,7 @@ class PygameFramework(FrameworkBase):
 
         running = True
         clock = pygame.time.Clock()
-        while running and not self.stopFlag:
+        while running:
             running = self.checkEvents()
             self.screen.fill((0, 0, 0))
 
@@ -395,14 +370,10 @@ class PygameFramework(FrameworkBase):
 
             # Run the simulation loop
             self.SimulationLoop()
+
             if GUIEnabled and self.settings.drawMenu:
                 self.gui_app.paint(self.screen)
 
-            self.draw_distance_links()
-            self.Draw(self.settings)
-            if self.settings.drawOverlay:
-                self.overlay_draw()
-                
             pygame.display.flip()
             clock.tick(self.settings.hz)
             self.fps = clock.get_fps()
@@ -424,7 +395,7 @@ class PygameFramework(FrameworkBase):
             elif key == Keys.K_x:     # Zoom out
                 self.viewZoom = max(0.9 * self.viewZoom, 0.02)
             elif key == Keys.K_SPACE:  # Launch a bomb
-                self.InjectBearing()
+                self.LaunchRandomBomb()
             elif key == Keys.K_F1:    # Toggle drawing the menu
                 self.settings.drawMenu = not self.settings.drawMenu
             elif key == Keys.K_F2:    # Do a single step
@@ -445,14 +416,14 @@ class PygameFramework(FrameworkBase):
         pygame.event.pump()
         self.keys = keys = pygame.key.get_pressed()
         if keys[Keys.K_LEFT]:
-            self.viewCenter -= (2, 0)
+            self.viewCenter -= (0.5, 0)
         elif keys[Keys.K_RIGHT]:
-            self.viewCenter += (2, 0)
+            self.viewCenter += (0.5, 0)
 
         if keys[Keys.K_UP]:
-            self.viewCenter += (0, 2)
+            self.viewCenter += (0, 0.5)
         elif keys[Keys.K_DOWN]:
-            self.viewCenter -= (0, 2)
+            self.viewCenter -= (0, 0.5)
 
         if keys[Keys.K_HOME]:
             self.viewZoom = 1.0
@@ -487,7 +458,7 @@ class PygameFramework(FrameworkBase):
         """
         self.screen.blit(self.font.render(
             str, True, color), (5, self.textLine))
-        self.textLine += self._fontSize
+        self.textLine += 15
 
     def Keyboard(self, key):
         """

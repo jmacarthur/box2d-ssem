@@ -51,7 +51,7 @@ if __name__ == "__main__":
     if args.headless:
         from backends.headless_framework import HeadlessFramework as Framework
     else:
-        from backends.pygame_framework import PygameFramework as Framework
+        from backends.modified_pygame_framework import ModifiedPygameFramework as Framework
 
 from framework import (main, Keys)
     
@@ -787,7 +787,7 @@ class Memory (Framework):
             # the input, also a sliding part usually attached to a
             # cam, which will engage and push the 'block' when that
             # instruction is selected.
-            
+            self.labels.append((instruction_opcodes[i], xpos+i*30, ypos-i*follower_spacing))
             block = self.add_dynamic_polygon([ (0,0), (30,0), (28,5), (2,5) ], xpos+i*30, ypos-i*andgate_spacing_y-50)
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
@@ -1058,6 +1058,7 @@ class Memory (Framework):
 
     def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0, overlay=False):
         super(Memory, self).__init__()
+        self.labels = []
         self.stopFlag = False
         self.settings.drawOverlay = overlay
         self.test_set_no = test_set_no
