@@ -290,6 +290,14 @@ class FrameworkBase(b2ContactListener):
                                      sum(self.t_steps) / len(self.t_steps))
                                )
 
+            self.drawStatus()
+
+    def drawStatus(self):
+        self.Print("{}".format(self.instruction_text))
+        self.Print("{}".format(self.phasetext))
+        self.Print("Cycle progress: {}/100".format(int(self.sequence/100)%100))
+        self.Print("PC: {} ACC: {}".format(self.read_pc_value()%8, self.read_accumulator_value()))
+
     def ShiftMouseDown(self, p):
         """
         Indicates that there was a left click at point p (world coordinates)

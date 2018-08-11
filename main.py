@@ -840,10 +840,9 @@ class Memory (Framework):
         self.injector_cranks = []
         self.parts.main_injector_raiser = self.injector(-32,150, groundBody, injector_crank_array=self.injector_cranks)
 
-        self.parts.accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
-
         (self.parts.memory_selector_holdoff, self.parts.memory_follower_holdoff) = self.memory_module(0,0, groundBody)
         self.upper_regenerators = []
+        self.parts.accumulator_diverter_lever = self.diverter_set(0,130, groundBody, slope_x=-240, slope_y=180, return_weight=10) # Diverter 1. Splits to subtractor reader.
 
         self.parts.discard_lever_2 = self.diverter_set(-5,-30, groundBody, discard=470) # Diverter 2a. Discard reader-pulse data.
         self.parts.upper_regen_control = self.regenerator(-5,-65, groundBody, self.upper_regenerators) # Regenerator 1. For regenning anything read from memory.
@@ -905,8 +904,9 @@ class Memory (Framework):
         self.connect_regenerators()
 
         # Large collection plates at the bottom
-        self.add_static_polygon([ (-300,-600),(700,-550), (500,-610), (-300,-610)])
-        self.add_static_polygon([ (-400,-400),(-310,-600), (-310,-610), (-400,-610)])
+        self.add_static_polygon([ (-300,-600),(700,-550), (700,-610), (-300,-610)])
+        self.add_static_polygon([ (600,-610),(700,-610), (850,-400), (800,-400)])
+        self.add_static_polygon([ (-500,-400),(-450,-400), (-310,-610), (-400,-610)])
 
         # Instruction decoder ROM
         self.rom_followers = []
@@ -1067,6 +1067,7 @@ class Memory (Framework):
         self.prewritten_test = False
         self.random_test = False
         self.cycles_complete = 0
+        self.phasetext = "Initializing"        
         settle_delay = 400
         if randomtest:
             self.random_test = True
@@ -1075,7 +1076,7 @@ class Memory (Framework):
                 random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
-            self.test_set['cycles'] = 2
+            self.test_set['cycles'] = 3
         elif testmode:
             self.auto_test_mode = True
             self.prewritten_test = True
@@ -1137,6 +1138,7 @@ class Memory (Framework):
         self.set_initial_memory(self.initial_state.mem)
         self.initial_accumulator =  self.initial_state.accumulator
         self.initial_pc = self.initial_state.pc
+        self.instruction_text="Fetching..."
 
     def read_pc_array(self):
         return [1 if i.angle>0 else 0 for i in self.ip_toggles]
@@ -1185,13 +1187,19 @@ class Memory (Framework):
     def instruction_test(self):
         # Early test to see if instruction has been read correctly. If not, no point continuing with test.
         columns = []
+        val = 0
         for i in range(0,8):
             (x,y) = self.memory_sensors[i].worldCenter
             x /= self.scale
             y /= self.scale
             relative_pos = y - self.memory_sender_y
             columns.append(1 if relative_pos > 2 else 0)
+            val += (1<<(7-i) if relative_pos>2 else 0)
         print("Instruction register value = {}".format(",".join(map(str,columns))))
+        instruction_op = (val >> 5) & 0x7
+        instruction_address = val & 0x1f
+        self.instruction_text="Executing {}: {} on address {} (wrapped to {})".format(val, instruction_opcodes[instruction_op], instruction_address, instruction_address % memory_rows)
+
         self.instruction_tested = True
     
     def verify_results(self):
@@ -1236,6 +1244,20 @@ class Memory (Framework):
         print("PASS")
         return SUCCESS
 
+    def update_state(self):
+        local_sequence = self.sequence % 10000
+        if local_sequence < 1500:
+            self.phasetext = "Setup instruction address"
+            self.instruction_text="Fetching..."
+        elif (local_sequence < 3600):
+            self.phasetext = "Instruction fetch"
+        elif (local_sequence < 4500):
+            self.phasetext = "Instruction decode"
+        elif (local_sequence < 8000):
+            self.phasetext = "Execute"
+        else:
+            self.phasetext = "Writeback"
+    
     def Step(self, settings):
         super(Memory, self).Step(settings)
         new_bearings = []
@@ -1287,14 +1309,17 @@ class Memory (Framework):
         
         if self.cams_on: self.sequence += 1
         angleTarget = (self.sequence*math.pi*2/10000.0)
-        simulation_time = (self.sequence/10000.0)
+        simulation_time = ((self.sequence%10000)/10000.0)
         if self.sequence % 100 == 0 and self.cams_on:
+            self.update_state()
             print("Step {} degrees timing = {} ACC= {} ({}) PC= {} ({}) Mem= {}".format(
                 self.sequence, simulation_time,"".join(map(str,self.read_accumulator_array())),
                 self.read_accumulator_value(), "".join(map(str,self.read_pc_array())), self.read_pc_value(),
                 format(",".join(map(str, self.read_memory_array())))))
         if simulation_time > 0.41 and not self.instruction_tested:
             self.instruction_test()
+        if simulation_time > 0.9:
+            self.instruction_tested = False
         if angleTarget >= (math.pi*2*self.test_set.get("cycles",1)) and self.cams_on:
             angleTarget -= math.pi*2
             self.cams_on = False

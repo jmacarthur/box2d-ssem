@@ -222,8 +222,9 @@ class PygameFramework(FrameworkBase):
 
     def __reset(self):
         # Screen/rendering-related
+        self._fontSize = 50
         self._viewZoom = 1
-        self._viewCenter = None
+        self._viewCenter = (100,0)
         self._viewOffset = None
         self.screenSize = None
         self.rMouseDown = False
@@ -250,17 +251,17 @@ class PygameFramework(FrameworkBase):
         pygame.display.set_caption(caption)
 
         # Screen and debug draw
-        self.screen = pygame.display.set_mode((1600,1024))
+        self.screen = pygame.display.set_mode((1800,1100))
         self.screenSize = b2Vec2(*self.screen.get_size())
 
         self.renderer = PygameDraw(surface=self.screen, test=self)
         self.world.renderer = self.renderer
 
         try:
-            self.font = pygame.font.Font(None, 15)
+            self.font = pygame.font.Font(None, self._fontSize)
         except IOError:
             try:
-                self.font = pygame.font.Font("freesansbold.ttf", 15)
+                self.font = pygame.font.Font("freesansbold.ttf", self._fontSize)
             except IOError:
                 print("Unable to load default font or 'freesansbold.ttf'")
                 print("Disabling text drawing.")
@@ -275,7 +276,7 @@ class PygameFramework(FrameworkBase):
             container.add(self.gui_table, 0, 0)
             self.gui_app.init(container)
 
-        self.viewCenter = (0, 20.0)
+        self.viewCenter = (360, -100.0)
         self.groundbody = self.world.CreateBody()
 
     def setCenter(self, value):
@@ -401,7 +402,6 @@ class PygameFramework(FrameworkBase):
             self.Draw(self.settings)
             if self.settings.drawOverlay:
                 self.overlay_draw()
-
                 
             pygame.display.flip()
             clock.tick(self.settings.hz)
@@ -487,7 +487,7 @@ class PygameFramework(FrameworkBase):
         """
         self.screen.blit(self.font.render(
             str, True, color), (5, self.textLine))
-        self.textLine += 15
+        self.textLine += self._fontSize
 
     def Keyboard(self, key):
         """
