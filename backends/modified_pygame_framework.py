@@ -142,6 +142,7 @@ class ModifiedPygameFramework(PygameFramework):
 
         try:
             self.font = pygame.font.Font(None, self._fontSize)
+            self.labelfont = pygame.font.Font(None, 20)
         except IOError:
             try:
                 self.font = pygame.font.Font("freesansbold.ttf", self._fontSize)
@@ -196,7 +197,9 @@ class ModifiedPygameFramework(PygameFramework):
             self.Draw(self.settings)
             if self.settings.drawOverlay:
                 self.overlay_draw()
-                
+
+            self.draw_labels()
+
             pygame.display.flip()
             clock.tick(self.settings.hz)
             self.fps = clock.get_fps()
@@ -222,7 +225,14 @@ class ModifiedPygameFramework(PygameFramework):
             a = self.renderer.to_screen(bodyA.GetWorldPoint(posA))
             b = self.renderer.to_screen(bodyB.GetWorldPoint(posB))
             self.renderer.DrawSegment(a,b,(0,255,0))
-    
+
+    def draw_labels(self):
+        for l in self.labels:
+            (text, x, y) = l
+            (x, y) = self.renderer.to_screen((x,y))
+            self.screen.blit(self.labelfont.render(
+                text, True, (255,255,255)), (x,y))
+
     def CheckKeys(self):
         """
         Check the keys that are evaluated on every main loop iteration.

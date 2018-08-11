@@ -805,7 +805,7 @@ class Memory (Framework):
             # the input, also a sliding part usually attached to a
             # cam, which will engage and push the 'block' when that
             # instruction is selected.
-            self.labels.append((instruction_opcodes[i], xpos+i*30, ypos-i*follower_spacing))
+            self.labels.append((instruction_opcodes[7-i], xpos+i*30, ypos-i*follower_spacing+10))
             block = self.add_dynamic_polygon([ (0,0), (30,0), (28,5), (2,5) ], xpos+i*30, ypos-i*andgate_spacing_y-50)
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
