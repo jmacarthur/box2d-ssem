@@ -309,54 +309,6 @@ class Memory (Framework):
             self.transfer_bands.append((band_base_y+10, band_base_y, transfer_band_x, 0))
 
         return reset_lever
-        
-    def ball_bearing_lift(self,xpos,ypos,attachment_body):
-        plane = 0
-        radius = 30
-        offset = 80
-        height=500
-        pentagon_points = [(radius*math.cos(i*(math.pi*2)/5), radius*math.sin(i*(math.pi*2)/5)) for i in range(0,5)]
-        
-        base_roller = self.add_dynamic_polygon(pentagon_points, xpos, ypos, filters[plane])
-        top_roller = self.add_dynamic_polygon(pentagon_points, xpos+offset, ypos+height, filters[plane])
-
-        joint_length = 48
-        chain_links = []
-        link_pos_x = xpos+30
-        link_pos_y = ypos
-        link_angle = 80
-        for i in range(0,30):
-            link_polygon = [ (-5,-5), (joint_length-5,-5), (joint_length-5, 5), (-5,5) ]
-            raiser_polygon = [ ((joint_length-5)/2-1.5,0), ((joint_length-5)/2+1.5,0), ((joint_length-5)/2+1.5,-20), ((joint_length-5)/2-1.5,-20) ]
-            link_polygon = rotate_polygon(link_polygon, link_angle)
-            raiser_polygon = rotate_polygon(raiser_polygon, link_angle)
-
-
-            chain_fixtures = [fixtureDef(
-                    shape=polygonShape(vertices=link_polygon),
-                    density=1.0,
-                    filter=filters[plane]),
-                          fixtureDef(
-                    shape=polygonShape(vertices=raiser_polygon),
-                    density=1.0,
-                    filter=filters[plane]),
-                ]
-            chain_link=self.add_multifixture(chain_fixtures, link_pos_x, link_pos_y)
-            
-            chain_links.append(chain_link)
-            if i>0: 
-                self.revolving_joint(bodyA=chain_link, bodyB=chain_links[i-1], anchor=(link_pos_x, link_pos_y))
-            link_pos_x += math.cos(radians(link_angle))*(joint_length-5)
-            link_pos_y += math.sin(radians(link_angle))*(joint_length-5)
-            if(i>=10 and i<15): link_angle+=(180/5)
-            if(i>=25 and i<30): link_angle+=(180/5)
-        self.revolving_joint(bodyA=chain_links[0], bodyB=chain_links[-1], anchor=(link_pos_x, link_pos_y))
-
-        self.revolving_joint(bodyA=base_roller, bodyB=attachment_body, anchor=(xpos,ypos))
-        self.revolving_joint(bodyA=top_roller, bodyB=attachment_body, anchor=(xpos+offset,ypos+height))
-
-        idler = self.add_dyanmic_circle(xpos+offset/4, ypos+height/4, 30, density=10, filter=filters[0])
-        self.revolving_joint(bodyA=base_roller, bodyB=idler, anchor=(xpos,ypos))
 
     def horizontal_injector(self, xpos, ypos, attachment_body):
         left = fixtureDef(shape=box_polygon_shape(0,0.5,10,6), density=1.0, filter=filters[0])
@@ -963,7 +915,6 @@ class Memory (Framework):
 
         self.add_instruction_cranks(groundBody, 550, 140)
        
-        #self.ball_bearing_lift(-200,-400,groundBody)
         self.parts.sender_eject = self.memory_sender(198,self.memory_sender_y, groundBody)
         self.connect_memory()
 
