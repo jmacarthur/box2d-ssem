@@ -1058,6 +1058,7 @@ class Memory (Framework):
 
     def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0, overlay=False):
         super(Memory, self).__init__()
+        self.stopFlag = False
         self.settings.drawOverlay = overlay
         self.test_set_no = test_set_no
         self.test_set = test_set[self.test_set_no]

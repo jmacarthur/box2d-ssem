@@ -123,8 +123,6 @@ class FrameworkBase(b2ContactListener):
     def __init__(self):
         super(FrameworkBase, self).__init__()
 
-        self.stopFlag = False
-
         self.__reset()
 
         # Box2D Initialization
@@ -145,7 +143,6 @@ class FrameworkBase(b2ContactListener):
         Takes care of physics drawing (callbacks are executed after the world.Step() )
         and drawing additional information.
         """
-        renderer = self.renderer
 
         self.stepCount += 1
         # Don't do anything if the setting's Hz are <= 0
@@ -153,6 +150,8 @@ class FrameworkBase(b2ContactListener):
             timeStep = 1.0 / settings.hz
         else:
             timeStep = 0.0
+
+        renderer = self.renderer
 
         # If paused, display so
         if settings.pause:
@@ -396,23 +395,6 @@ class FrameworkBase(b2ContactListener):
         v = -5.0 * p
         self.LaunchBomb(p, v)
 
-    def InjectBearing(self):
-        """
-        Create a new ball bearing at the mouse position
-        """
-        position = self.mouseWorld
-        self.world.CreateDynamicBody(
-            allowSleep=True,
-            position=position,
-            linearVelocity=(0,0),
-            fixtures=b2FixtureDef(
-                shape=b2CircleShape(radius=6.35*0.5*0.5),
-                density=5,
-                restitution=0.1)
-
-        )
-
-        
     def SimulationLoop(self):
         """
         The main simulation loop. Don't override this, override Step instead.
