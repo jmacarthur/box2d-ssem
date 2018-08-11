@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-#
-"""
-Very simple headless framework for PyBox2D - meant for automatic testing
-"""
+# A very simple headless framework for PyBox2D, meant for automatic testing
 
 from framework import FrameworkBase
 
