@@ -252,6 +252,11 @@ class Memory (Framework):
         return [(x+xpos,y+ypos) for (x,y) in points]
 
     def subtractor(self, xpos, ypos, attachment_body, lines = 8, output_offset_dir = -1, discard_bands=False, toggle_joint_array=None, is_actually_adder=False, comparison_output=False):
+        if is_actually_adder:
+            self.labels.append(("Program counter", xpos+20, ypos-50,45))
+        else:
+            self.labels.append(("Subtractor/accumulator", xpos+20, ypos-50,45))
+
         output_offset_x = pitch*(lines+1)*output_offset_dir
         sub_y_pitch = 20
         for c in range(0,lines):
@@ -443,6 +448,7 @@ class Memory (Framework):
         return (selector_holdoff_bar, follower_holdoff_bar)
         
     def memory_module(self, xpos, ypos, groundBody):
+        self.labels.append(("Memory", xpos+20, ypos,0))
         memory_fixed_shapes = []
         for row in range(0,8):
             for col in range(0,8):
@@ -487,7 +493,7 @@ class Memory (Framework):
         self.memory_followers = []
         self.memory_selectors = []
         (selector_holdoff, follower_holdoff) = self.add_row_decoder(xpos+50, ypos, groundBody, self.memory_followers, self.memory_selectors)
-        
+        self.labels.append(("Address decoder", xpos+250,ypos,0))
         # Rods which connect row selectors to ejectors
         for r in range(0,memory_rows):
             self.distance_joint(ejectors[r], self.memory_followers[r])
@@ -805,7 +811,7 @@ class Memory (Framework):
             # the input, also a sliding part usually attached to a
             # cam, which will engage and push the 'block' when that
             # instruction is selected.
-            self.labels.append((instruction_opcodes[7-i], xpos+i*30, ypos-i*follower_spacing+10))
+            self.labels.append((instruction_opcodes[7-i], xpos+i*30, ypos-i*follower_spacing+10,0))
             block = self.add_dynamic_polygon([ (0,0), (30,0), (28,5), (2,5) ], xpos+i*30, ypos-i*andgate_spacing_y-50)
             offset = 30 if reversed_outputs[i] else 0
             # A hack: pushing 0 (JMP) also pushes 1 (JRE), but not vice versa.
@@ -930,6 +936,7 @@ class Memory (Framework):
         self.rom_followers = []
         self.rom_selectors = []
         (self.parts.instruction_selector_holdoff, self.parts.instruction_follower_holdoff) = self.add_row_decoder(200, 0, groundBody, self.rom_followers, self.rom_selectors)
+        self.labels.append(("Instruction decoder", 400,0,0))
 
         self.add_instruction_cranks(groundBody, 550, 140)
        

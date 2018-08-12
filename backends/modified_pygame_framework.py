@@ -213,6 +213,8 @@ class ModifiedPygameFramework(PygameFramework):
                 self.overlay_draw()
 
             self.draw_labels()
+            if self.sequence%100 == 1:
+                pygame.image.save(self.renderer.surface, "img{}.png".format(self.sequence))
 
             pygame.display.flip()
             clock.tick(self.settings.hz)
@@ -242,10 +244,11 @@ class ModifiedPygameFramework(PygameFramework):
 
     def draw_labels(self):
         for l in self.labels:
-            (text, x, y) = l
+            (text, x, y, angle) = l
             (x, y) = self.renderer.to_screen((x,y))
-            self.screen.blit(self.labelfont.render(
-                text, True, (255,255,255)), (x,y))
+            text_surface = self.labelfont.render(text, True, (255,255,255))
+            if(angle!=0): text_surface = pygame.transform.rotate(text_surface, angle)
+            self.screen.blit(text_surface, (x,y))
 
     def CheckKeys(self):
         """
