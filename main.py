@@ -62,10 +62,8 @@ if __name__ == "__main__":
     parser.add_argument('--randomtest', action='store_true')
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--overlay', action='store_true')
-    parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('testset', type=int)
+    parser.add_argument('testset', type=int, default=0, nargs='?')
     args = parser.parse_args()
-    print("Using random seed {}".format(args.seed))
     if args.headless:
         from backends.headless_framework import HeadlessFramework as Framework
     else:
@@ -1081,13 +1079,12 @@ class Memory (Framework):
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
-    def __init__(self, testmode, randomtest, test_set_no, headless, randomseed=0, overlay=False):
+    def __init__(self, testmode, randomtest, test_set_no, headless, overlay=False):
         super(Memory, self).__init__()
         self.labels = []
         self.stopFlag = False
         self.settings.drawOverlay = overlay
         self.test_set_no = test_set_no
-        self.test_set = test_set[self.test_set_no]
         self.instruction_tested = False
         self.parts = Parts()
         self.prewritten_test = False
@@ -1096,26 +1093,31 @@ class Memory (Framework):
         self.phasetext = "Initializing"        
         settle_delay = 400
         if randomtest:
+            # Start a random test with test set 0 as the base
+            self.test_set = test_set[0]
             self.random_test = True
             self.auto_test_mode = True
+            randomseed = test_set_no
             if randomseed > 0:
                 random.seed(randomseed)
             self.start_point = random.randint(settle_delay,settle_delay+100)
             self.name="SSEM - Random test mode"
             self.test_set['cycles'] = 3
         elif testmode:
+            # Start a prewritten test
             self.auto_test_mode = True
             self.prewritten_test = True
             print("Running test {}".format(test_set_no))
             self.start_point = random.randint(settle_delay,settle_delay+100)
             print("Running test {} starting at tick {}".format(testmode, self.start_point))
+            self.test_set = test_set[self.test_set_no]
             self.name="SSEM - {}".format(self.test_set.get("name", "Automated test"))
         else:
             # Use the test data from the specified test, but don't go into testmode.
             self.auto_test_mode = False
             print("Starting in interactive mode")
             self.start_point = 0
-
+            self.test_set = test_set[self.test_set_no]
 
         self.accumulator_toggles = []
         self.ip_toggles = []
@@ -1367,4 +1369,4 @@ class Memory (Framework):
             self.cams_on = not self.cams_on
 
 if __name__=="__main__":
-    main(Memory(args.test, args.randomtest, args.testset, args.headless, args.seed, args.overlay))
+    main(Memory(args.test, args.randomtest, args.testset, args.headless, args.overlay))

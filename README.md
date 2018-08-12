@@ -62,7 +62,7 @@ Command line options are in flux. The following will work at the time of writing
 
 Start the system with default configuration:
 
-    ./main.py 0
+    ./main.py
 
 Run automated test number 3 and exit when complete:
 
@@ -70,11 +70,11 @@ Run automated test number 3 and exit when complete:
 
 Run a randomly-generated test with seed 17 and exit when complete:
 
-    ./main.py 0 --randomtest --seed 17
+    ./main.py --randomtest 17
 
 Run randomly-generated test with seed 33, without the graphical front end:
 
-    ./main.py 0 --randomtest --seed 33 --headless
+    ./main.py 0 --randomtest 33 --headless
 
 Once running, you can pan around with the arrow keys or by dragging with the right mouse button. You can zoom in by pressing 'Z' and out by pressing 'X'.
 
