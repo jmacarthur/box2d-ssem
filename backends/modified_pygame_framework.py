@@ -41,6 +41,20 @@ class ModifiedPygameDraw(PygameDraw):
         """
         pygame.draw.aaline(self.surface, color, p1, p2)
 
+    def DrawCircle(self, center, radius, color, drawwidth=1):
+        """
+        Draw a wireframe circle given the center, radius, axis of orientation
+        and color.
+        """
+        radius *= self.zoom
+        if radius < 1:
+            radius = 1
+        else:
+            radius = int(radius)
+
+        pygame.draw.circle(self.surface, (255,255,255),
+                           (int(center[0]), int(center[1])), radius, drawwidth)
+
     def DrawSolidCircle(self, center, radius, axis, color):
         """
         Draw a solid circle given the center, radius, axis of orientation and
