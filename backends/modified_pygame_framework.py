@@ -208,15 +208,18 @@ class ModifiedPygameFramework(PygameFramework):
                 self.gui_app.paint(self.screen)
 
             self.draw_distance_links()
-            self.Draw(self.settings)
-            if self.settings.drawOverlay:
-                self.overlay_draw()
+            frameskip=30
+            if self.sequence%frameskip == 1:
+                self.Draw(self.settings)
+                if self.settings.drawOverlay:
+                    self.overlay_draw()
 
-            self.draw_labels()
-            if self.sequence%100 == 1:
-                pygame.image.save(self.renderer.surface, "img{}.png".format(self.sequence))
+                self.draw_labels()
 
-            pygame.display.flip()
+            if self.sequence%frameskip == 1:
+                pygame.image.save(self.renderer.surface, "img{:05d}.png".format(int(self.sequence/frameskip)))
+
+                pygame.display.flip()
             clock.tick(self.settings.hz)
             self.fps = clock.get_fps()
 
