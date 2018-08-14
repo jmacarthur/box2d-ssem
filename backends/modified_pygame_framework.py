@@ -20,7 +20,9 @@
 # misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import os
 import pygame
+
 from Box2D import (b2DrawExtended, b2Vec2, b2CircleShape)
 from settings import fwSettings
 from .pygame_framework import PygameDraw, PygameFramework
@@ -217,7 +219,8 @@ class ModifiedPygameFramework(PygameFramework):
                 pygame.display.flip()
 
             if self.timelapse >= 1 and self.sequence%self.timelapse == 1:
-                pygame.image.save(self.renderer.surface, "img{:05d}.png".format(int(self.sequence/self.timelapse)))
+                os.makedirs("images", exist_ok=True)
+                pygame.image.save(self.renderer.surface, os.path.join("images", "img{:05d}.png".format(int(self.sequence/self.timelapse))))
 
             clock.tick(self.settings.hz)
             self.fps = clock.get_fps()
