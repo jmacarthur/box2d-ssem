@@ -2,6 +2,8 @@ This is an implementation of the Manchester Small-scale experimental machine (SS
 
 Skip to 'Requirements' or 'Usage' if you want to try this out.
 
+![Box2D SSEM](illustration.png)
+
 Overview
 ========
 The SSEM was the first stored-program electronic computer to run, which it first did in 1948. It was extremely simple, consisting of a 32x32 bit memory, a subtractor and the minimum necessary control logic. This simplicity makes it a good design if you want to implement a computer in unusual media.
