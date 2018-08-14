@@ -943,7 +943,7 @@ class Memory (Framework):
         self.connect_memory()
 
         # A guard which stops waste data from the subtractor falling into the instruction register
-        self.add_static_polygon([ (0,0), (50,50), (50,53), (0,3)], 120, self.memory_sender_y-10)
+        self.add_static_polygon([ (0,0), (120,120), (120,123), (0,3)], 120, self.memory_sender_y-10)
 
         
         # Add one final transfer band to move everything back into band 0
