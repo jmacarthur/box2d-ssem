@@ -133,7 +133,7 @@ class ModifiedPygameFramework(PygameFramework):
     def __reset(self):
         super(ModifiedPygameFramework, self).__init__()
         self._fontSize = 50
-        self._viewZoom = 1
+        self._viewZoom = 1.05
         self._viewCenter = (100,0)
                         
     def __init__(self):
@@ -150,7 +150,7 @@ class ModifiedPygameFramework(PygameFramework):
         pygame.display.set_caption(caption)
 
         # Screen and debug draw
-        self.screen = pygame.display.set_mode((1800,1100))
+        self.screen = pygame.display.set_mode((1920,1200))
         self.screenSize = b2Vec2(*self.screen.get_size())
 
         self.renderer = ModifiedPygameDraw(surface=self.screen, test=self)
