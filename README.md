@@ -43,6 +43,14 @@ You'll need:
 
 swig and pygame can be installed on a Debian-style system with 'apt install swig' and 'apt install python3-pygame' respectively.
 
+Swig version 3.0.12 does not currently work with PyBox2D. If your version of swig is 3.0.12, as it is on Ubuntu 18.04, you'll need to downgrade it to 3.0.8 to make this work, by using the following instructions:
+
+    deb http://archive.ubuntu.com/ubuntu xenial main restricted universe
+    sudo apt-get update
+    sudo apt install swig3.0=3.0.8-0ubuntu3
+
+This may break other things on your system which require 3.0.12.
+
 To run 'main.py', you'll need to put the PyBox2d framework module onto the path, for example:
 
     export PYTHONPATH=/home/jimm/apps/pybox2d/examples
