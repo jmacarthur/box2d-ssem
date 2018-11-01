@@ -1,0 +1,44 @@
+<html>
+  <head>
+    <script src="lib/prototype-1.6.0.2.js"></script>
+    <script src='box2d.min.js'></script>
+  </head>
+<body>
+    <canvas width='800' height='500'></canvas>
+
+    <script src='draw_world.js'></script>
+    <script src='create_world.js'></script>
+    <script src='shapes.js'> </script>
+    <script>
+      var world;
+      var ctx;
+
+      
+      function step(cnt) {
+        var stepping = false;
+	var timeStep = 1.0/60;
+	var iteration = 1;
+        world.Step(timeStep, iteration);
+        ctx.fillStyle="blue";
+	ctx.fillRect(0, 0, 500,300);
+	console.log("Step");
+	drawWorld(world, ctx);
+	setTimeout('step()', 100);
+      }
+
+      function onload() {
+        world = createWorld();
+	createBox(world, 30,10, 10,10,false);
+	var canvas = document.getElementsByTagName('canvas')[0];
+	ctx = canvas.getContext('2d');
+	console.log("Drawing world...");
+	drawWorld(world, ctx);
+	console.log("Stepping");
+        step();
+      }
+
+Event.observe(window, 'load', onload);
+</script>      
+      
+</body>
+</html>
