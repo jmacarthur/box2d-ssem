@@ -30,7 +30,7 @@ from constants import *
 from test_sets import test_set
 from emulator import SSEM_State
 from settings import fwSettings
-
+from cams import cams
 def box_vertices(x, y, width,height):
     return [(x,y), (x+width,y), (x+width,y+height), (x,y+height)]
 
@@ -1003,7 +1003,16 @@ class Memory (Framework):
         instruction_fetched = 0.4 # Instruction should be in instruction register
         instruction_ready_point = 0.50 # Instruction decoder should be set up, ready for cams to use
 
-        # Cams
+        # Cam mapping from signal name to computer part
+        cam_mapping = {
+            "PC INJECTOR": self.parts.pc_injector_raiser,
+        }
+
+        for c in cams:
+            if c.signal_name in cam_mapping:
+                self.basic_cam(c.xpos, c.ypos, c.steps, c.offset, cam_mapping[c.signal_name])
+            else:
+                raise Error("Can't find a part to attach signal '{}' to ".format(c.signal_name))
 
         # Cam 1: Fires PC injector, reading PC into address reg.
         self.basic_cam(300,200, 100, [(0.0,0.02)], 1, self.parts.pc_injector_raiser)

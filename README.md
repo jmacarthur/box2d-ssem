@@ -4,6 +4,8 @@ Skip to 'Requirements' or 'Usage' if you want to try this out.
 
 ![Box2D SSEM](illustration.png)
 
+There is a [Video of this operating on YouTube](https://www.youtube.com/watch?v=wiy1e3GiJ9I&VQ=HD720&hd=1). This needs to be viewed in a large window and in 720p resolution or higher to see all the components. If it's blurry, select the cog on the lower right to choose a higher resolution.
+
 Overview
 ========
 The SSEM was the first stored-program electronic computer to run, which it first did in 1948. It was extremely simple, consisting of a 32x32 bit memory, a subtractor and the minimum necessary control logic. This simplicity makes it a good design if you want to implement a computer in unusual media.
@@ -24,6 +26,7 @@ Secondly, any ball bearings falling out of the bottom of the machine are telepor
 
 Limitations
 ===========
+
 The current implementation only has an 8x8 bit memory cell, although the design is quite easily extendable to a 32x32 version. The SSEM's instruction format only uses 8 bits, of which 3 are the operation code and 5 are the address, so this fits into the 8 bit version.
 
 The CMP (compare) instruction requires that you use an address which contains zero. This isn't a significant restriction, but requires that we dedicate one memory location to hold zero at all times, and means we can't directly run software meant for the original SSEM, so I expect to fix this soon.
@@ -31,6 +34,8 @@ The CMP (compare) instruction requires that you use an address which contains ze
 HLT (halt) is unimplemented at the moment. 'JRP [31]' will put the processor into an infinite loop on one instruction, which will effectively halt the machine.
 
 Speed is of course much slower than the original; running one instruction takes about 20 seconds without the GUI or 180 seconds with it. The original SSEM took about 1 millisecond. Since the entire point of the project is to provide a visual spectacle rather than to crunch numbers, this isn't a big problem.
+
+Reliability: This is capable of running 95% of three-instruction sequences correctly at the moment. Running actual programs is a far way off yet.
 
 Requirements
 ============
@@ -86,8 +91,17 @@ Run randomly-generated test with seed 33, without the graphical front end:
 
     ./main.py 0 --randomtest 33 --headless
 
+Run randomly-generated test with seed 33 and record every tenth frame as an image in the 'images/' directory:
+
+    ./main.py 0 --randomtest 33 --timelapse 10
+
 Once running, you can pan around with the arrow keys or by dragging with the right mouse button. You can zoom in by pressing 'Z' and out by pressing 'X'.
 
 If you're not running an automated test, press 'R' to start the cams which run the computer. When running with --test or --randomtest, the machine starts automatically.
 
 Clicking on a moving part with the left mouse button and dragging allows you to apply a force to that part which can be used to move ball bearings and levers around. Naturally, doing this means the result of any tests are invalid.
+
+Related work
+============
+
+[Offspring](https://github.com/jmacarthur/offspring) is my complementary project to produce a physical version of the same machine. The two machines are similar at a high level but vary in low-level details.
