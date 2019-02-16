@@ -54,11 +54,11 @@ cams = [
     Cam(-500,-300, [(0.87,0.02)], 0, "LOWER REGEN CONTROL", horizontal=True),
 
         # Cam 17: Reset PC on JMP
-    Cam(1230, 0, [(0.5,0.1)], 2, "JMP TRIGGER", horizontal=True, reverse_direction=True)
+    Cam(1230, 0, [(0.5,0.1)], 2, "JMP TRIGGER", horizontal=True, reverse_direction=True),
 
     # Cam 18: Runs CMP.
     # Cam pattern is identical to #9.
-    Cam(900,200, 120, [(instruction_ready_point,0.05)], -1, "CMP TRIGGER", horizontal=True, reverse_direction=False)
+    Cam(900,200, [(instruction_ready_point,0.05)], -1, "CMP TRIGGER", horizontal=True, reverse_direction=False)
 
 ]
 

@@ -1044,7 +1044,7 @@ class Memory (Framework):
 
         # Cam 20: Slow dropper
         self.basic_cam(-300,-100, 80, [(0.65,0)], 8, self.dropper, horizontal=True, reverse_direction=True, bump_height=5, slow_rise=True)
-        
+
         # Notable timing points:
         # 0.31: Memory at PC has been read and regenerated
 
