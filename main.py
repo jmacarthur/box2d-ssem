@@ -993,7 +993,7 @@ class Memory (Framework):
         return_crank = self.crank_right_up(xpos+200,ypos-20, attachment_body, weight=10)
         self.distance_joint(return_crank, dropper_body)
         return dropper_body
-        
+
     def setup_cams(self):
 
         groundBody = self.groundBody
@@ -1005,26 +1005,11 @@ class Memory (Framework):
 
         # Cam mapping from signal name to computer part and arm length
         cam_mapping = {
-            "PC INJECTOR": (self.parts.pc_injector_raiser, 100)
+            "PC INJECTOR": (self.parts.pc_injector_raiser, 100),
+            "MEMORY DECODER INPUT HOLDOFF": (self.parts.memory_selector_holdoff, 150),
+            "MEMORY RETURN": (self.memory_returning_gate,100),
+            "MEMORY DECODER OUTPUT HOLDOFF": (self.parts.memory_follower_holdoff, 100),
         }
-
-        for c in cams:
-            if c.signal_name in cam_mapping:
-                (attachment_part, arm_length) = cam_mapping[c.signal_name]
-                self.basic_cam(c.xpos, c.ypos, arm_length, c.steps, c.offset, attachment_part)
-            else:
-                raise Error("Can't find a part to attach signal '{}' to ".format(c.signal_name))
-
-        # Cam 1: Fires PC injector, reading PC into address reg.
-        self.basic_cam(300,200, 100, [(0.0,0.02)], 1, self.parts.pc_injector_raiser)
-        # Cam 2: Main memory selector lifter
-        self.basic_cam(150,300, 150, [(0.05,0.07), (0.32, 0.06)], 0, self.parts.memory_selector_holdoff)
-
-        # Cam 2: Memory returner (left side)
-        self.basic_cam(-400,120, 100, [(0.02, 0.07), (0.31,0.1), (0.64,0.1), (0.95,0.03)], -1, self.memory_returning_gate, horizontal=True)
-
-        # Cam 4: Memory holdoff (right side)
-        self.basic_cam(-300,100, 100, [(0.03,0.11), (0.17,0.05), (0.31,0.1), (0.48,0.05), (0.65,0.1), (0.96,0.03)], -1, self.parts.memory_follower_holdoff, horizontal=True)
 
         # Cam 5: Regenerator 1
         self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
@@ -1035,6 +1020,14 @@ class Memory (Framework):
         # Cam 7: Instruction selector holdoff (vertical)
         self.basic_cam(320, 300, 150, [(0.04, 0.2), (0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
 
+        for c in cams:
+            if c.signal_name in cam_mapping:
+                (attachment_part, arm_length) = cam_mapping[c.signal_name]
+                self.basic_cam(c.xpos, c.ypos, arm_length, c.steps, c.offset, attachment_part, horizontal=c.horizontal)
+            else:
+                raise Exception("Can't find a part to attach signal '{}' to ".format(c.signal_name))
+
+        # Cam 2: Main memory selector lifter
         # Cam 8: Sender eject.
         # Note timing hazard. We cannot raise selector and eject until
         # regenerated data is written back, so we delay for a few
