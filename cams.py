@@ -2,12 +2,12 @@
 
 from collections import namedtuple
 
-_Cam = namedtuple("_Cam", field_names = ["xpos", "ypos", "steps", "offset", "signal_name", "horizontal", "reverse_direction", "bump_height"])
+_Cam = namedtuple("_Cam", field_names = ["xpos", "ypos", "steps", "offset", "signal_name", "horizontal", "reverse_direction", "bump_height", "follower"])
 
 class Cam(_Cam):
-    def __new__(_cls, xpos, ypos, steps, offset, signal_name, horizontal=False, reverse_direction=False, bump_height=3):
+    def __new__(_cls, xpos, ypos, steps, offset, signal_name, horizontal=False, reverse_direction=False, bump_height=3, follower=True):
         'Create new instance of Point(x, y)'
-        return _Cam.__new__(_cls, xpos, ypos, steps, offset, signal_name, horizontal, reverse_direction, bump_height)
+        return _Cam.__new__(_cls, xpos, ypos, steps, offset, signal_name, horizontal, reverse_direction, bump_height, follower)
 
 instruction_ready_point = 0.50 # Instruction decoder should be set up, ready for cams to use
 
@@ -58,7 +58,11 @@ cams = [
 
     # Cam 18: Runs CMP.
     # Cam pattern is identical to #9.
-    Cam(900,200, [(instruction_ready_point,0.05)], -1, "CMP TRIGGER", horizontal=True, reverse_direction=False)
+    Cam(900,200, [(instruction_ready_point,0.05)], -1, "CMP TRIGGER", horizontal=True, reverse_direction=False),
+    # Cam 19: Inc PC.
+    Cam(-95,-450, [(0.85,0.05)], 0, "INC PC", horizontal=True, reverse_direction=False, bump_height=5, follower=False)
+
 
 ]
+
 

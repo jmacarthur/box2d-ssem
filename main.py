@@ -938,21 +938,19 @@ class Memory (Framework):
         self.labels.append(("Instruction decoder", 400,0,0))
 
         self.add_instruction_cranks(groundBody, 550, 140)
-       
         self.parts.sender_eject = self.memory_sender(198,self.memory_sender_y, groundBody)
         self.connect_memory()
 
         # A guard which stops waste data from the subtractor falling into the instruction register
         self.add_static_polygon([ (0,0), (120,120), (120,123), (0,3)], 120, self.memory_sender_y-10)
 
-        
         # Add one final transfer band to move everything back into band 0
         self.transfer_bands.append((-550+10, -550, [ (-300,800)], 1))
 
     def basic_cam(self, x, y, arm_length, bumps, axis_offset=0, attachment_part=None, horizontal=False, reverse_direction=False, bump_height=3, slow_rise=False):
         follower_body = self.add_cam(x,y,arm_length, bumps=bumps, axis_offset=axis_offset,
                                      horizontal=horizontal, reverse_direction=reverse_direction,
-                                     bump_height=bump_height, slow_rise=slow_rise)
+                                     bump_height=bump_height, slow_rise=slow_rise, axis=(attachment_part is not None))
         if attachment_part is not None: self.distance_joint(follower_body, attachment_part)
 
     def rake_cam(self, xpos, ypos):
@@ -1021,7 +1019,8 @@ class Memory (Framework):
             "DISCARD 2": (self.parts.discard_lever_2, 80),
             "LOWER REGEN CONTROL": (self.parts.lower_regen_control, 80),
             "JMP TRIGGER": (self.instruction_inputs[JMP], 140),
-            "CMP TRIGGER": (self.instruction_inputs[CMP], 120)
+            "CMP TRIGGER": (self.instruction_inputs[CMP], 120),
+            "INC PC": (None, 60)
         }
 
         for c in cams:
@@ -1038,9 +1037,6 @@ class Memory (Framework):
         self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
         self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
         self.distance_joint(self.parts.cmp_injector, self.instruction_outputs[CMP])
-
-        # Cam 19: Inc PC.
-        follower_body = self.add_cam(-95,-450, 60, [(0.85,0.05)], horizontal=True, reverse_direction=False, axis=False, bump_height=5)
 
         # Cam 20: Slow dropper
         self.basic_cam(-300,-100, 80, [(0.65,0)], 8, self.dropper, horizontal=True, reverse_direction=True, bump_height=5, slow_rise=True)
@@ -1060,7 +1056,7 @@ class Memory (Framework):
         self.prewritten_test = False
         self.random_test = False
         self.cycles_complete = 0
-        self.phasetext = "Initializing"        
+        self.phasetext = "Initializing"
         settle_delay = 400
         if randomtest:
             # Start a random test with test set 0 as the base
