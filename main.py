@@ -1016,9 +1016,12 @@ class Memory (Framework):
             "LDN TRIGGER": (self.instruction_inputs[LDN], 120),
             "IP OUTPUT HOLDOFF": (self.parts.instruction_follower_holdoff, 100),
             "MAIN INJECTOR": (self.parts.main_injector_raiser, 100),
-            "STO TRIGGER": (self.instruction_inputs[STO], 100)
-
-            }
+            "STO TRIGGER": (self.instruction_inputs[STO], 100),
+            "JRP TRIGGER": (self.instruction_inputs[JRP],100),
+            "DISCARD 2": (self.parts.discard_lever_2, 80),
+            "LOWER REGEN CONTROL": (self.parts.lower_regen_control, 80),
+            "JMP TRIGGER": (self.instruction_inputs[JMP], 140)
+        }
         for c in cams:
             if c.signal_name in cam_mapping:
                 (attachment_part, arm_length) = cam_mapping[c.signal_name]
@@ -1032,19 +1035,8 @@ class Memory (Framework):
         self.distance_joint(self.parts.accumulator_diverter_lever, self.instruction_outputs[STO])
         self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
 
-        # Cam 14: Divert to instruction pointer, on JRP (and JMP via the same lever).
-        # Cam pattern *nearly* identical to #13, please adjust to see if it works
-        self.basic_cam(1100, 0, 100, [(0.5,0.2)], 2, self.instruction_inputs[JRP], horizontal=True, reverse_direction=True)
         self.distance_joint(self.parts.ip_diverter_lever, self.instruction_outputs[JRP])
 
-        # Cam 15: Secondary discard, of any data falling through the memory just after main inject
-        self.basic_cam(-500,-150, 80, [(0.67,0.07)], 2, self.parts.discard_lever_2, reverse_direction=True, horizontal=True)
-
-        # Cam 16: Fires bottom regenerator (usually empty, unless STO is on)
-        self.basic_cam(-500,-300, 80, [(0.87,0.02)], 0, self.parts.lower_regen_control, horizontal=True)
-
-        # Cam 17: Reset PC on JMP
-        self.basic_cam(1230, 0, 140, [(0.5,0.1)], 2, self.instruction_inputs[JMP], horizontal=True, reverse_direction=True)
         self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
 
         # Cam 18: Runs CMP.

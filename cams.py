@@ -43,7 +43,18 @@ cams = [
     Cam(0, 300, [(0.62,0.02)], 1, "MAIN INJECTOR"),
         # Cam 13: Divert to subtractor reader on STO.
         # Also diverts the regenerator output on STO; we must separately discard that.
-    Cam(1000, 0, [(0.49,0.2)], 2, "STO TRIGGER", horizontal=True, reverse_direction=True, bump_height=3.5)
+    Cam(1000, 0, [(0.49,0.2)], 2, "STO TRIGGER", horizontal=True, reverse_direction=True, bump_height=3.5),
+    # Cam 14: Divert to instruction pointer, on JRP (and JMP via the same lever).
+    # Cam pattern *nearly* identical to #13, please adjust to see if it works
+    Cam(1100, 0, [(0.5,0.2)], 2, "JRP TRIGGER", horizontal=True, reverse_direction=True),
+
+    # Cam 15: Secondary discard, of any data falling through the memory just after main inject
+    Cam(-500,-150, [(0.67,0.07)], 2, "DISCARD 2", reverse_direction=True, horizontal=True),
+        # Cam 16: Fires bottom regenerator (usually empty, unless STO is on)
+    Cam(-500,-300, [(0.87,0.02)], 0, "LOWER REGEN CONTROL", horizontal=True),
+
+        # Cam 17: Reset PC on JMP
+    Cam(1230, 0, [(0.5,0.1)], 2, "JMP TRIGGER", horizontal=True, reverse_direction=True)
 
 ]
 
