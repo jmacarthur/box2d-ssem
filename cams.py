@@ -1,10 +1,10 @@
 # Cam definition
 
-import namedtuple
+from collections import namedtuple
 
-Cam =namedtuple(["xpos", "ypos", "steps", "offset", "signal_name"])
+Cam = namedtuple("Cam", field_names = ["xpos", "ypos", "steps", "offset", "signal_name"])
 
 cams = [
-    Cam(300,200, 100, [(0.0,0.02)], 1, "PC INJECTOR"),
+    Cam(300, 200, [(0.0,0.02)], 1, "PC INJECTOR"),
 ]
-    
+

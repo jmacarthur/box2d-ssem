@@ -1003,14 +1003,15 @@ class Memory (Framework):
         instruction_fetched = 0.4 # Instruction should be in instruction register
         instruction_ready_point = 0.50 # Instruction decoder should be set up, ready for cams to use
 
-        # Cam mapping from signal name to computer part
+        # Cam mapping from signal name to computer part and arm length
         cam_mapping = {
-            "PC INJECTOR": self.parts.pc_injector_raiser,
+            "PC INJECTOR": (self.parts.pc_injector_raiser, 100)
         }
 
         for c in cams:
             if c.signal_name in cam_mapping:
-                self.basic_cam(c.xpos, c.ypos, c.steps, c.offset, cam_mapping[c.signal_name])
+                (attachment_part, arm_length) = cam_mapping[c.signal_name]
+                self.basic_cam(c.xpos, c.ypos, arm_length, c.steps, c.offset, attachment_part)
             else:
                 raise Error("Can't find a part to attach signal '{}' to ".format(c.signal_name))
 
