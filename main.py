@@ -1027,7 +1027,6 @@ class Memory (Framework):
             else:
                 raise Exception("Can't find a part to attach signal '{}' to ".format(c.signal_name))
 
-        # Cam 2: Main memory selector lifter
         # Cam 8: Sender eject.
         # Note timing hazard. We cannot raise selector and eject until
         # regenerated data is written back, so we delay for a few
