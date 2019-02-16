@@ -1009,30 +1009,17 @@ class Memory (Framework):
             "MEMORY DECODER INPUT HOLDOFF": (self.parts.memory_selector_holdoff, 150),
             "MEMORY RETURN": (self.memory_returning_gate,100),
             "MEMORY DECODER OUTPUT HOLDOFF": (self.parts.memory_follower_holdoff, 100),
+            "SENDER EJECT": (self.parts.sender_eject,80),
+            "UPPER REGEN CONTROL": (self.parts.upper_regen_control, 80),
+            "TO INSTRUCTION REGISTER": (self.parts.diverter_3, 60),
+            "INSTRUCTION OUTPUT HOLDOFF": (self.parts.instruction_selector_holdoff, 150)
         }
-
-        # Cam 5: Regenerator 1
-        self.basic_cam(800, 100, 80, [(0.24,0.05), (0.56,0.05)], 0, self.parts.upper_regen_control, horizontal=True)
-
-        # Cam 6: Split to instruction register
-        self.basic_cam(400,-120, 60, [(0.18, 0.12)], 2, self.parts.diverter_3, horizontal=True, reverse_direction=True, bump_height=4)
-
-        # Cam 7: Instruction selector holdoff (vertical)
-        self.basic_cam(320, 300, 150, [(0.04, 0.2), (0.32,0.06)], 0, self.parts.instruction_selector_holdoff)
-
         for c in cams:
             if c.signal_name in cam_mapping:
                 (attachment_part, arm_length) = cam_mapping[c.signal_name]
-                self.basic_cam(c.xpos, c.ypos, arm_length, c.steps, c.offset, attachment_part, horizontal=c.horizontal)
+                self.basic_cam(c.xpos, c.ypos, arm_length, c.steps, c.offset, attachment_part, horizontal=c.horizontal, bump_height=c.bump_height, reverse_direction=c.reverse_direction)
             else:
                 raise Exception("Can't find a part to attach signal '{}' to ".format(c.signal_name))
-
-        # Cam 8: Sender eject.
-        # Note timing hazard. We cannot raise selector and eject until
-        # regenerated data is written back, so we delay for a few
-        # seconds here.  If gravity or timing changes, expect this to
-        # break.
-        self.basic_cam(600, -430, 80, [(0.02, 0.04), (0.30,0.04)], 0, self.parts.sender_eject, horizontal=True)
 
         # Cam 9: Resets accumulator on LDN.
         self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], 0, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False, bump_height=4)
