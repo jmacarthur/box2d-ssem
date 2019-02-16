@@ -4,7 +4,9 @@ y = 0
 low = 0
 x_scale = 1000
 y_spacing = 100
-high = 10
+high = -50 # Negative is up in SVG
+rise_time = 0.02
+fall_time = 0.01
 height = len(cams)*y_spacing+100
 
 print(f'<svg width="{x_scale}" height="{height}">')
@@ -26,9 +28,9 @@ for c in cams:
     combined_steps = combine(c.steps)
     for (start, length) in combined_steps:
         polygon.append((start*x_scale, low+y))
-        polygon.append((start*x_scale, high+y))
+        polygon.append(((start+rise_time)*x_scale, high+y))
         polygon.append(((start+length)*x_scale, high+y))
-        polygon.append(((start+length)*x_scale, low+y))
+        polygon.append(((start+length+fall_time)*x_scale, low+y))
 
     start = polygon[0]
     path_data = f"M {start[0]} {start[1]} "
@@ -36,5 +38,7 @@ for c in cams:
         path_data += f"L {p[0]} {p[1]} "
     path_data += f"L {x_scale} {low+y} "
     print(f'<path d="{path_data}" fill="none" stroke="black"/>')
+
+    print(f'<text x="{start[0]+x_scale}" y="{start[1]}" class="small">{c.signal_name}</text>')
     y += y_spacing
 print('</svg>')
