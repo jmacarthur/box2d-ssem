@@ -1020,8 +1020,10 @@ class Memory (Framework):
             "JRP TRIGGER": (self.instruction_inputs[JRP],100),
             "DISCARD 2": (self.parts.discard_lever_2, 80),
             "LOWER REGEN CONTROL": (self.parts.lower_regen_control, 80),
-            "JMP TRIGGER": (self.instruction_inputs[JMP], 140)
+            "JMP TRIGGER": (self.instruction_inputs[JMP], 140),
+            "CMP TRIGGER": (self.instruction_inputs[CMP], 120)
         }
+
         for c in cams:
             if c.signal_name in cam_mapping:
                 (attachment_part, arm_length) = cam_mapping[c.signal_name]
@@ -1030,19 +1032,10 @@ class Memory (Framework):
                 raise Exception("Can't find a part to attach signal '{}' to ".format(c.signal_name))
 
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
-
-
         self.distance_joint(self.parts.accumulator_diverter_lever, self.instruction_outputs[STO])
         self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
-
         self.distance_joint(self.parts.ip_diverter_lever, self.instruction_outputs[JRP])
-
         self.distance_joint(self.parts.pc_reset_lever, self.instruction_outputs[JMP])
-
-        # Cam 18: Runs CMP.
-        # Cam pattern is identical to #9.
-        self.basic_cam(900,200, 120, [(instruction_ready_point,0.05)], -1, self.instruction_inputs[CMP], horizontal=True, reverse_direction=False)
-        
         self.distance_joint(self.comparison_diverter, self.instruction_outputs[CMP])
         self.distance_joint(self.parts.cmp_injector, self.instruction_outputs[CMP])
 
