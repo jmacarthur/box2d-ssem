@@ -1012,8 +1012,13 @@ class Memory (Framework):
             "SENDER EJECT": (self.parts.sender_eject,80),
             "UPPER REGEN CONTROL": (self.parts.upper_regen_control, 80),
             "TO INSTRUCTION REGISTER": (self.parts.diverter_3, 60),
-            "INSTRUCTION OUTPUT HOLDOFF": (self.parts.instruction_selector_holdoff, 150)
-        }
+            "INSTRUCTION OUTPUT HOLDOFF": (self.parts.instruction_selector_holdoff, 150),
+            "LDN TRIGGER": (self.instruction_inputs[LDN], 120),
+            "IP OUTPUT HOLDOFF": (self.parts.instruction_follower_holdoff, 100),
+            "MAIN INJECTOR": (self.parts.main_injector_raiser, 100),
+            "STO TRIGGER": (self.instruction_inputs[STO], 100)
+
+            }
         for c in cams:
             if c.signal_name in cam_mapping:
                 (attachment_part, arm_length) = cam_mapping[c.signal_name]
@@ -1021,20 +1026,9 @@ class Memory (Framework):
             else:
                 raise Exception("Can't find a part to attach signal '{}' to ".format(c.signal_name))
 
-        # Cam 9: Resets accumulator on LDN.
-        self.basic_cam(850, 0, 120, [(instruction_ready_point,0.05)], 0, self.instruction_inputs[LDN], horizontal=True, reverse_direction=False, bump_height=4)
         self.distance_joint(self.parts.accumulator_reset_lever, self.instruction_outputs[LDN])
 
-        # Cam 11: Instruction follower holdoff (horizontal)
-        self.basic_cam(1000, 100, 100, [(0.02, 0.2), (0.15,0.25)], -1, self.parts.instruction_follower_holdoff, horizontal=True)
-        
-        # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
-        # will fall through the memory and be discarded.
-        self.basic_cam(0, 300, 100, [(0.62,0.02)], 1, self.parts.main_injector_raiser)
 
-        # Cam 13: Divert to subtractor reader on STO.
-        # Also diverts the regenerator output on STO; we must separately discard that.
-        self.basic_cam(1000, 0, 100, [(0.49,0.2)], 2, self.instruction_inputs[STO], horizontal=True, reverse_direction=True, bump_height=3.5)
         self.distance_joint(self.parts.accumulator_diverter_lever, self.instruction_outputs[STO])
         self.distance_joint(self.parts.discard_lever_2, self.instruction_outputs[STO])
 

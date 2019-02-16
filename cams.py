@@ -9,6 +9,8 @@ class Cam(_Cam):
         'Create new instance of Point(x, y)'
         return _Cam.__new__(_cls, xpos, ypos, steps, offset, signal_name, horizontal, reverse_direction, bump_height)
 
+instruction_ready_point = 0.50 # Instruction decoder should be set up, ready for cams to use
+
 cams = [
     Cam(300, 200, [(0.0,0.02)], 1, "PC INJECTOR", horizontal=False),
     Cam(150,300, [(0.05,0.07), (0.32, 0.06)], 0, "MEMORY DECODER INPUT HOLDOFF", horizontal=False),
@@ -30,8 +32,18 @@ cams = [
     # Cam 7: Instruction selector holdoff (vertical)
     Cam(320, 300, [(0.04, 0.2), (0.32,0.06)], 0, "INSTRUCTION OUTPUT HOLDOFF"),
 
+    # Cam 9(?): LDN Trigger.
+    Cam(850, 0, [(instruction_ready_point,0.05)], 0, "LDN TRIGGER", horizontal=True, reverse_direction=False, bump_height=4),
 
+    # Cam 11(?): Instruction follower holdoff (horizontal)
+    Cam(1000, 100, [(0.02, 0.2), (0.15,0.25)], -1, "IP OUTPUT HOLDOFF", horizontal=True),
 
-    
+    # Cam 12: Fires main memory injector, injecting all 8 columns. If STO is on, this diverts to the subtractor reader. If not, it
+    # will fall through the memory and be discarded.
+    Cam(0, 300, [(0.62,0.02)], 1, "MAIN INJECTOR"),
+        # Cam 13: Divert to subtractor reader on STO.
+        # Also diverts the regenerator output on STO; we must separately discard that.
+    Cam(1000, 0, [(0.49,0.2)], 2, "STO TRIGGER", horizontal=True, reverse_direction=True, bump_height=3.5)
+
 ]
 
