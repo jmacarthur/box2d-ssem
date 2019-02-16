@@ -707,10 +707,9 @@ class Memory (Framework):
 	                                   anchorB=bodyB.worldCenter,
 	                                   collideConnected=False)
 
-            
     def add_cam(self, xpos, ypos, follower_len, bumps=[], horizontal=False, reverse_direction=False, axis_offset=0, axis=True, bump_height=3, slow_rise=False):
         """ Very basic function which just adds a motorised circle with a bump.
-        phase is between 0 and 1 and adjusts initial rotation. 
+        phase is between 0 and 1 and adjusts initial rotation.
         horizontal/vertical: Vertical means the output moves in a vertical direction, which means the follower is on top of the cam.
         reverse_direction puts the cam on the other side and only makes sense for horizontal cams.
         """
